@@ -29,7 +29,7 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-950 px-4 text-slate-100">
-      <div className="w-full max-w-md rounded-lg bg-slate-900 p-8 border border-slate-800 shadow-2xl">
+      <div className="w-full max-w-md rounded-[6px] bg-slate-900 p-8 border border-slate-800 shadow-2xl">
         <h1 className="text-3xl font-bold text-center text-white tracking-tight">
           Welcome Back
         </h1>
