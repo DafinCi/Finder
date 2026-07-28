@@ -1,1 +1,133 @@
+name: Discord Notifications
 
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    types: [opened, closed]
+  issues:
+    types: [opened, closed]
+  release:
+    types: [published]
+
+jobs:
+  discord:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send notification
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_ACTION: ${{ github.event.action }}
+          REPO: ${{ github.repository }}
+          ACTOR: ${{ github.actor }}
+          REF_NAME: ${{ github.ref_name }}
+          
+          # Mencegah Script Injection dengan menampung context ke env vars
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+          COMMIT_URL: ${{ github.event.head_commit.url }}
+          
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_HEAD: ${{ github.event.pull_request.head.ref }}
+          PR_BASE: ${{ github.event.pull_request.base.ref }}
+          PR_MERGED: ${{ github.event.pull_request.merged }}
+          
+          ISSUE_NUM: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+          
+          TAG_NAME: ${{ github.event.release.tag_name }}
+          RELEASE_NAME: ${{ github.event.release.name }}
+          RELEASE_URL: ${{ github.event.release.html_url }}
+
+        run: |
+          CONTENT=""
+
+                  if [ "$EVENT_NAME" = "push" ]; then
+                      CONTENT=$(cat <<EOF
+            🚀 **DevRoom GitHub — New Push**
+            ━━━━━━━━━━━━━━━━━━
+            📦 **Repository:** $REPO
+            🌿 **Branch:** $REF_NAME
+            👤 **Author:** $ACTOR
+            📝 **Commit:** $COMMIT_MSG
+            🔗 **View Commit:** $COMMIT_URL
+            EOF
+            )
+            
+                      elif [ "$EVENT_NAME" = "pull_request" ]; then
+                        if [ "$EVENT_ACTION" = "opened" ]; then
+                          CONTENT=$(cat <<EOF
+            🔀 **New Pull Request**
+            ━━━━━━━━━━━━━━━━━━
+            📦 **Repository:** $REPO
+            👤 **Author:** $ACTOR
+            📝 **Title:** $PR_TITLE
+            🌿 **Branch:** $PR_HEAD → $PR_BASE
+            🔗 **View PR:** $PR_URL
+            EOF
+            )
+                        elif [ "$PR_MERGED" = "true" ]; then
+                          CONTENT=$(cat <<EOF
+            🎉 **Pull Request Merged**
+            ━━━━━━━━━━━━━━━━━━
+            📦 **Repository:** $REPO
+            👤 **Merged By:** $ACTOR
+            📝 **Title:** $PR_TITLE
+            🔗 **View PR:** $PR_URL
+            EOF
+            )
+                        else
+                          CONTENT=$(cat <<EOF
+            ❌ **Pull Request Closed**
+            ━━━━━━━━━━━━━━━━━━
+            📦 **Repository:** $REPO
+            👤 **Closed By:** $ACTOR
+            📝 **Title:** $PR_TITLE
+            🔗 **View PR:** $PR_URL
+            EOF
+            )
+                        fi
+            
+                      elif [ "$EVENT_NAME" = "issues" ]; then
+                        if [ "$EVENT_ACTION" = "opened" ]; then
+                          CONTENT=$(cat <<EOF
+            🐛 **New Issue**
+            ━━━━━━━━━━━━━━━━━━
+            📦 **Repository:** $REPO
+            👤 **Author:** $ACTOR
+            📝 **Issue:** #$ISSUE_NUM — $ISSUE_TITLE
+            🔗 **View Issue:** $ISSUE_URL
+            EOF
+            )
+                        else
+                          CONTENT=$(cat <<EOF
+            ✔️ **Issue Closed**
+            ━━━━━━━━━━━━━━━━━━
+            📦 **Repository:** $REPO
+            👤 **Closed By:** $ACTOR
+            📝 **Issue:** #$ISSUE_NUM — $ISSUE_TITLE
+            🔗 **View Issue:** $ISSUE_URL
+            EOF
+            )
+                        fi
+            
+                      elif [ "$EVENT_NAME" = "release" ]; then
+                        CONTENT=$(cat <<EOF
+            🚀 **New Release**
+            ━━━━━━━━━━━━━━━━━━
+            📦 **Repository:** $REPO
+            🏷️ **Version:** $TAG_NAME
+            📝 **Title:** $RELEASE_NAME
+            🔗 **Release:** $RELEASE_URL
+            EOF
+            )
+                      fi
+            
+                      if [ -n "$CONTENT" ]; then
+                        jq -n --arg content "$CONTENT" '{content: $content}' | \
+                        curl -H "Content-Type: application/json" -d @- "$WEBHOOK"
+                      fi
