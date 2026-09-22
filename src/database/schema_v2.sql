@@ -42,7 +42,7 @@ CREATE INDEX IF NOT EXISTS idx_resumes_profile_id ON public.resumes(profile_id);
 CREATE TABLE IF NOT EXISTS public.resume_analysis (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     resume_id UUID REFERENCES public.resumes(id) ON DELETE CASCADE NOT NULL,
-    model_version TEXT DEFAULT 'gemini-1.5-flash',
+    model_version TEXT DEFAULT 'openai/gpt-oss-120b',
     prompt_version TEXT DEFAULT 'v1',
     candidate_data JSONB NOT NULL,
     extracted_skills TEXT[] DEFAULT '{}',
@@ -221,7 +221,7 @@ BEGIN
     INSERT INTO public.jobs (company_id, title, description, requirements, location, job_type, salary_range, experience_level)
     VALUES 
     (v_comp1_id, 'Senior Frontend Engineer (React/Next.js)', 'Membangun antarmuka dApp web3 dengan performa tinggi menggunakan Next.js App Router dan Tailwind CSS.', ARRAY['React', 'Next.js', 'TypeScript', 'Tailwind CSS', 'Web3 / Sui SDK'], 'Remote', 'full-time', '$4,000 - $7,000 / bln', 'Senior'),
-    (v_comp2_id, 'Fullstack Web3 & AI Developer', 'Integrasi protokol penyimpanan Walrus dan Walrus Memory ke dalam aplikasi AI generasi berikutnya.', ARRAY['TypeScript', 'Node.js', 'Next.js', 'Walrus SDK', 'Vector Databases', 'Gemini / OpenAI API'], 'Hybrid - Jakarta / Remote', 'full-time', '$3,500 - $6,000 / bln', 'Mid-Level'),
+    (v_comp2_id, 'Fullstack Web3 & AI Developer', 'Integrasi protokol penyimpanan Walrus dan Walrus Memory ke dalam aplikasi AI generasi berikutnya.', ARRAY['TypeScript', 'Node.js', 'Next.js', 'Walrus SDK', 'Vector Databases', 'Groq / OpenAI API'], 'Hybrid - Jakarta / Remote', 'full-time', '$3,500 - $6,000 / bln', 'Mid-Level'),
     (v_comp3_id, 'AI Agent Systems Architect', 'Merancang arsitektur memory agent mandiri menggunakan Walrus Memory dan LLM reasoning.', ARRAY['Python', 'TypeScript', 'LangChain', 'Sui Move', 'pgvector', 'Prompt Engineering'], 'Remote', 'full-time', '$5,000 - $9,000 / bln', 'Lead / Staff');
 END $$;
 

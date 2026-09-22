@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { extractCandidateProfile } from "@/lib/gemini/profile-extractor";
-import { analyzeJobMatches } from "@/lib/gemini/job-matcher";
+import { extractCandidateProfile } from "@/lib/groq/profile-extractor";
+import { analyzeJobMatches } from "@/lib/groq/job-matcher";
+import { DEFAULT_GROQ_MODEL } from "@/lib/groq/client";
 
-const MODEL_NAME = process.env.MODEL_NAME || "gemini-flash-lite";
+const MODEL_NAME = process.env.GROQ_MODEL || DEFAULT_GROQ_MODEL;
 const PROMPT_VERSION = "v1.0";
 const TOP_JOB_LIMIT = 10;
 
