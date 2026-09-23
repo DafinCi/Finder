@@ -1,7 +1,6 @@
 import {
   MessageSquarePlus,
   BriefcaseBusiness,
-  User,
   type LucideIcon,
 } from "lucide-react";
 
@@ -22,10 +21,5 @@ export const MenuItems: MenuItem[] = [
     title: "Explore Jobs",
     href: "/jobs",
     icon: BriefcaseBusiness,
-  },
-  {
-    title: "My Profile",
-    href: "/profile",
-    icon: User,
   },
 ];

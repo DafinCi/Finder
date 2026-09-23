@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Plus, BriefcaseBusiness, User } from "lucide-react";
+import { Plus, BriefcaseBusiness } from "lucide-react";
 import { useSessions } from "@/features/chat/hooks/useSessions";
 import SessionHistoryList from "./SessionHistoryList";
 
@@ -40,17 +40,6 @@ export default function SidebarNavigation({
         >
           <BriefcaseBusiness className="w-4 h-4" />
         </Link>
-        <Link
-          href="/profile"
-          className={`p-2.5 rounded-xl border transition-all ${
-            pathname === "/profile"
-              ? "bg-primary text-primary-foreground border-primary"
-              : "bg-secondary/60 text-muted-foreground hover:text-foreground border-border"
-          }`}
-          title="My Profile"
-        >
-          <User className="w-4 h-4" />
-        </Link>
       </nav>
     );
   }
@@ -78,18 +67,6 @@ export default function SidebarNavigation({
         >
           <BriefcaseBusiness className="w-3.5 h-3.5 text-primary" />
           <span>Explore Jobs</span>
-        </Link>
-
-        <Link
-          href="/profile"
-          className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-            pathname === "/profile"
-              ? "bg-secondary text-foreground font-semibold"
-              : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
-          }`}
-        >
-          <User className="w-3.5 h-3.5 text-primary" />
-          <span>My Profile</span>
         </Link>
       </div>
 

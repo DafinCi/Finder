@@ -1,8 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 
 export async function GET(req: NextRequest) {
   try {
+    const supabaseAuth = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabaseAuth.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: "Unauthorized! Silakan login terlebih dahulu." },
+        { status: 401 },
+      );
+    }
+
     const { searchParams } = new URL(req.url);
     const analysisId = searchParams.get("analysisId");
 
@@ -13,7 +26,8 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const { data: matches, error } = await supabaseAdmin
+    // Query with authenticated client to enforce RLS policy
+    const { data: matches, error } = await supabaseAuth
       .from("job_matches")
       .select(
         `
@@ -38,7 +52,7 @@ export async function GET(req: NextRequest) {
       .order("match_score", { ascending: false });
 
     if (error) {
-      console.error("Supabase Query Error:", error);
+      console.error("Supabase Query Error on /api/matches:", error);
       throw new Error("Gagal mengambil data dari database");
     }
 
