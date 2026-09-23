@@ -24,17 +24,17 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { resumeId, rawText, sessionId } = body;
 
-    if (!resumeId || !rawText) {
+    if (!resumeId) {
       return NextResponse.json(
-        { error: "resumeId dan rawText wajib dikirim" },
+        { error: "resumeId wajib dikirim." },
         { status: 400 },
       );
     }
 
-    // Verify resume ownership to prevent IDOR attacks
+    // Verify resume ownership and fetch canonical stored raw_text to prevent tampering
     const { data: resumeRecord, error: resumeFetchError } = await supabaseAdmin
       .from("resumes")
-      .select("id, profile_id")
+      .select("id, profile_id, raw_text")
       .eq("id", resumeId)
       .single();
 
@@ -49,6 +49,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: "Forbidden! Anda tidak memiliki izin untuk resume ini." },
         { status: 403 },
+      );
+    }
+
+    // Security P1: Always prioritize canonical database raw_text (fallback to client only if db was empty)
+    const canonicalRawText =
+      resumeRecord.raw_text?.trim() ||
+      (typeof rawText === "string" ? rawText.trim() : "");
+
+    if (!canonicalRawText || canonicalRawText.length < 50) {
+      return NextResponse.json(
+        {
+          error:
+            "Teks resume kosong atau tidak mencukupi untuk dianalisis oleh AI.",
+        },
+        { status: 400 },
       );
     }
 
@@ -80,7 +95,7 @@ export async function POST(req: NextRequest) {
     const result = await runResumeAnalysisWorkflow({
       userId: user.id,
       resumeId,
-      rawText,
+      rawText: canonicalRawText,
       sessionId,
     });
 

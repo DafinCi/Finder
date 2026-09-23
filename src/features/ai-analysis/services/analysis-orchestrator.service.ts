@@ -5,10 +5,10 @@ import {
 } from "@/lib/groq/profile-extractor";
 import { analyzeJobMatches } from "@/lib/groq/job-matcher";
 import { DEFAULT_GROQ_MODEL } from "@/lib/groq/client";
+import { PROFILE_EXTRACTOR_PROMPT_VERSION } from "@/lib/groq/prompts/profile-extractor.prompt";
 import { MatchedJobItem } from "@/types/chat";
 
 const MODEL_NAME = process.env.GROQ_MODEL || DEFAULT_GROQ_MODEL;
-const PROMPT_VERSION = "v1.0";
 const TOP_JOB_LIMIT = 10;
 
 export interface RunResumeAnalysisParams {
@@ -46,30 +46,102 @@ interface MatchQueryRow {
 /**
  * Domain Service: Executes the end-to-end resume analysis and matching workflow.
  * Encapsulates AI model execution, database transaction tracking, skill matching,
- * foreign key integrity guarantees, and conversational session bootstrapping.
+ * foreign key integrity guarantees, idempotency caching, and graceful degradation.
  */
 export async function runResumeAnalysisWorkflow({
   resumeId,
   rawText,
   sessionId,
 }: RunResumeAnalysisParams): Promise<RunResumeAnalysisResult> {
-  // 1. Mark resume processing
+  // 1. Idempotency Check: Reuse existing analysis if resume is already completed
+  const { data: currentResume } = await supabaseAdmin
+    .from("resumes")
+    .select("status")
+    .eq("id", resumeId)
+    .single();
+
+  if (currentResume?.status === "completed") {
+    const { data: existingAnalysis } = await supabaseAdmin
+      .from("resume_analysis")
+      .select("id, candidate_data, extracted_skills")
+      .eq("resume_id", resumeId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existingAnalysis?.candidate_data) {
+      console.log(
+        `[ANALYSIS:IDEMPOTENT] Reusing cached completed analysis ${existingAnalysis.id} for resume ${resumeId}`,
+      );
+
+      const { data: fullMatches } = await supabaseAdmin
+        .from("job_matches")
+        .select(
+          `
+          id,
+          job_id,
+          match_score,
+          reason,
+          missing_skills,
+          jobs:job_id (
+            id,
+            title,
+            location,
+            job_type,
+            salary_range,
+            companies:company_id (
+              name,
+              logo_url
+            )
+          )
+        `,
+        )
+        .eq("analysis_id", existingAnalysis.id)
+        .order("match_score", { ascending: false });
+
+      const cachedMatchedJobs: MatchedJobItem[] = (
+        (fullMatches as unknown as MatchQueryRow[]) || []
+      ).map((m) => ({
+        id: m.id,
+        job_id: m.job_id,
+        match_score: m.match_score,
+        reason: m.reason,
+        missing_skills: m.missing_skills,
+        title: m.jobs?.title || "Position",
+        company: m.jobs?.companies?.name || "Company",
+        logo_url: m.jobs?.companies?.logo_url,
+        location: m.jobs?.location || "Remote",
+        job_type: m.jobs?.job_type || "Full-time",
+        salary_range: m.jobs?.salary_range,
+      }));
+
+      return {
+        analysisId: existingAnalysis.id,
+        analysis:
+          existingAnalysis.candidate_data as ExtractedProfileResult["json_profile"],
+        jobMatches: cachedMatchedJobs,
+      };
+    }
+  }
+
+  // 2. Mark resume processing
   await supabaseAdmin
     .from("resumes")
     .update({ status: "processing" })
     .eq("id", resumeId);
 
   try {
-    // 2. Extract profile using AI model with fallback resilience
+    // 3. Extract profile using AI model with fallback resilience
     const aiCandidateData = await extractCandidateProfile(rawText);
 
-    // 3. Persist analysis record
+    // 4. Persist analysis record with accurate model lineage and prompt version
+    const actualModelUsed = aiCandidateData._modelUsed || MODEL_NAME;
     const { data: analysisData, error: analysisError } = await supabaseAdmin
       .from("resume_analysis")
       .insert({
         resume_id: resumeId,
-        model_version: MODEL_NAME,
-        prompt_version: PROMPT_VERSION,
+        model_version: actualModelUsed,
+        prompt_version: PROFILE_EXTRACTOR_PROMPT_VERSION,
         candidate_data: aiCandidateData.json_profile,
         extracted_skills: aiCandidateData.extracted_skills,
       })
@@ -79,7 +151,7 @@ export async function runResumeAnalysisWorkflow({
     if (analysisError) throw analysisError;
     const analysisId = analysisData.id;
 
-    // 4. Sanitize skills and retrieve relevant job opportunities
+    // 5. Sanitize skills and retrieve relevant job opportunities (strictly active roles)
     const sanitizedSkills = (aiCandidateData.extracted_skills || [])
       .map((s) => s.replace(/["{},]/g, "").trim())
       .filter(Boolean);
@@ -96,6 +168,7 @@ export async function runResumeAnalysisWorkflow({
       const { data: matchedSkillsJobs, error: jobsError } = await supabaseAdmin
         .from("jobs")
         .select("id, title, description, requirements, company_id")
+        .eq("is_active", true) // Reliability P1: Only query currently active opportunities
         .filter("requirements", "ov", `{${sanitizedSkills.join(",")}}`)
         .limit(TOP_JOB_LIMIT);
 
@@ -113,14 +186,52 @@ export async function runResumeAnalysisWorkflow({
       topJobs = fallbackJobs || [];
     }
 
-    // 5. Perform AI job matching with scoring rubric
+    // 6. Perform Job Matching with Graceful Degradation fallback
     let matchedJobsWithDetails: MatchedJobItem[] = [];
 
     if (topJobs && topJobs.length > 0) {
-      const matchResults = await analyzeJobMatches(
-        aiCandidateData.json_profile,
-        topJobs,
-      );
+      let matchResults;
+
+      try {
+        matchResults = await analyzeJobMatches(
+          aiCandidateData.json_profile,
+          topJobs,
+        );
+      } catch (matchingError) {
+        console.warn(
+          "[ANALYSIS:DEGRADED_MODE] AI job matching failed, applying deterministic fallback:",
+          matchingError,
+        );
+
+        // Graceful Degradation: Compute deterministic match score based on skill overlap
+        const candidateSkillSet = new Set(
+          (aiCandidateData.extracted_skills || []).map((s) =>
+            s.toLowerCase().trim(),
+          ),
+        );
+
+        matchResults = topJobs.map((job) => {
+          const jobReqs = (job.requirements || []).map((r) =>
+            r.toLowerCase().trim(),
+          );
+          const matchedCount = jobReqs.filter((r) =>
+            candidateSkillSet.has(r),
+          ).length;
+          const overlapRatio =
+            jobReqs.length > 0 ? matchedCount / jobReqs.length : 0.5;
+          const score = Math.round(55 + overlapRatio * 35); // 55 - 90
+          const missing = (job.requirements || []).filter(
+            (r) => !candidateSkillSet.has(r.toLowerCase().trim()),
+          );
+
+          return {
+            job_id: job.id,
+            score,
+            reason: `Kecocokan dihitung berdasarkan keselarasan keahlian (${matchedCount} dari ${jobReqs.length} kualifikasi terpenuhi).`,
+            missing_skills: missing.slice(0, 3),
+          };
+        });
+      }
 
       // Validate that returned job_ids actually exist in topJobs (foreign key integrity guard)
       const validJobIdSet = new Set(topJobs.map((j) => j.id));
@@ -188,7 +299,7 @@ export async function runResumeAnalysisWorkflow({
       }));
     }
 
-    // 6. Bootstrap conversational session if session_id is provided
+    // 7. Bootstrap conversational session if session_id is provided
     if (sessionId) {
       const candidateName = aiCandidateData.json_profile.candidate.name;
       const candidateTitle = aiCandidateData.json_profile.candidate.title;
@@ -242,7 +353,7 @@ Berikut adalah ringkasan profil keahlian Anda dan kurasi **lowongan pekerjaan ya
         .eq("id", sessionId);
     }
 
-    // 7. Mark resume as completed
+    // 8. Mark resume as completed
     await supabaseAdmin
       .from("resumes")
       .update({ status: "completed" })
@@ -254,7 +365,7 @@ Berikut adalah ringkasan profil keahlian Anda dan kurasi **lowongan pekerjaan ya
       jobMatches: matchedJobsWithDetails,
     };
   } catch (error) {
-    // 8. Rollback status to failed upon workflow interruption
+    // 9. Rollback status to failed upon unrecoverable workflow interruption
     await supabaseAdmin
       .from("resumes")
       .update({ status: "failed" })

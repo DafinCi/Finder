@@ -82,9 +82,13 @@ export type ExtractedProfileResult = z.infer<
   typeof ExtractedProfileResultSchema
 >;
 
+export type ExtractedProfileResultWithMeta = ExtractedProfileResult & {
+  _modelUsed?: string;
+};
+
 export async function extractCandidateProfile(
   rawText: string,
-): Promise<ExtractedProfileResult> {
+): Promise<ExtractedProfileResultWithMeta> {
   const userPrompt = buildProfileExtractorUserPrompt(rawText);
 
   try {
@@ -111,7 +115,7 @@ export async function extractCandidateProfile(
       },
     );
 
-    return result.data;
+    return { ...result.data, _modelUsed: result.modelUsed };
   } catch (error) {
     console.error("Groq Profile Extraction Error:", error);
     const friendlyMessage = normalizeGroqError(error);

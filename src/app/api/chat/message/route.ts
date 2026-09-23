@@ -83,59 +83,74 @@ export async function POST(req: NextRequest) {
     let matchesContext = "";
 
     if (session.resume_id) {
-      const { data: analysis } = await supabaseAdmin
-        .from("resume_analysis")
-        .select("id, candidate_data, extracted_skills")
-        .eq("resume_id", session.resume_id)
-        .order("created_at", { ascending: false })
-        .limit(1)
+      // Security P0: Verify linked resume actually belongs to current user to prevent cross-tenant data leakage
+      const { data: resumeOwnership } = await supabaseAdmin
+        .from("resumes")
+        .select("id, profile_id")
+        .eq("id", session.resume_id)
         .maybeSingle();
 
-      if (analysis?.candidate_data) {
-        interface CompressedCandidate {
-          name?: string;
-          title?: string;
-          years_of_experience?: number;
-          skills?: { core?: string[] };
-        }
-        interface CompressedCareer {
-          career_level?: string;
-          strengths?: string[];
-        }
-        interface RawData {
-          candidate?: CompressedCandidate;
-          career?: CompressedCareer;
-          name?: string;
-          title?: string;
-          years_of_experience?: number;
-          skills?: { core?: string[] };
-          career_level?: string;
-          strengths?: string[];
-        }
+      const isResumeOwner =
+        resumeOwnership && resumeOwnership.profile_id === user.id;
 
-        const raw = analysis.candidate_data as RawData;
-        const c = raw.candidate || raw;
-        const career = raw.career || raw;
-        const coreSkills = Array.isArray(c?.skills?.core)
-          ? c.skills.core.join(", ")
-          : (analysis.extracted_skills || []).slice(0, 15).join(", ");
-        const strengths = Array.isArray(career?.strengths)
-          ? career.strengths.slice(0, 3).join("; ")
-          : "";
+      if (!isResumeOwner) {
+        console.warn(
+          `[SECURITY ALERT] Blocked candidate context leakage: Session ${session_id} has resume_id ${session.resume_id} not owned by user ${user.id}`,
+        );
+      } else {
+        const { data: analysis } = await supabaseAdmin
+          .from("resume_analysis")
+          .select("id, candidate_data, extracted_skills")
+          .eq("resume_id", session.resume_id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-        candidateContext = `\n\n[RINGKASAN PROFIL KANDIDAT AKTIF]:
+        if (analysis?.candidate_data) {
+          interface CompressedCandidate {
+            name?: string;
+            title?: string;
+            years_of_experience?: number;
+            skills?: { core?: string[] };
+          }
+          interface CompressedCareer {
+            career_level?: string;
+            strengths?: string[];
+          }
+          interface RawData {
+            candidate?: CompressedCandidate;
+            career?: CompressedCareer;
+            name?: string;
+            title?: string;
+            years_of_experience?: number;
+            skills?: { core?: string[] };
+            career_level?: string;
+            strengths?: string[];
+          }
+
+          const raw = analysis.candidate_data as RawData;
+          const c = raw.candidate || raw;
+          const career = raw.career || raw;
+          const coreSkills = Array.isArray(c?.skills?.core)
+            ? c.skills.core.join(", ")
+            : (analysis.extracted_skills || []).slice(0, 15).join(", ");
+          const strengths = Array.isArray(career?.strengths)
+            ? career.strengths.slice(0, 3).join("; ")
+            : "";
+
+          candidateContext = `\n\n[RINGKASAN PROFIL KANDIDAT AKTIF]:
 - Nama & Title: ${c?.name || "Kandidat"} | ${c?.title || "Professional"}
 - Pengalaman: ${c?.years_of_experience ?? 0} tahun
 - Keahlian Utama: ${coreSkills || "General"}
 - Kekuatan: ${strengths || "Teknis & Adaptif"}
 - Level Karir: ${career?.career_level || "Mid-Level"}`;
 
-        // Grounding: Load candidate's top matched jobs for this session
-        if (analysis.id) {
-          const { data: topMatches } = await supabaseAdmin
-            .from("job_matches")
-            .select(
-              `
+          // Grounding: Load candidate's top matched jobs for this session
+          if (analysis.id) {
+            const { data: topMatches } = await supabaseAdmin
+              .from("job_matches")
+              .select(
+                `
               match_score,
               missing_skills,
               jobs:job_id (
@@ -148,36 +163,37 @@ export async function POST(req: NextRequest) {
                 )
               )
             `,
-            )
-            .eq("analysis_id", analysis.id)
-            .order("match_score", { ascending: false })
-            .limit(3);
-
-          interface MatchJoinRow {
-            match_score: number;
-            missing_skills: string[];
-            jobs: {
-              id: string;
-              title: string;
-              location: string;
-              experience_level: string;
-              companies: { name: string } | null;
-            } | null;
-          }
-
-          if (topMatches && topMatches.length > 0) {
-            const typedMatches = topMatches as unknown as MatchJoinRow[];
-            const listStr = typedMatches
-              .map(
-                (m) =>
-                  `- ${m.jobs?.title || "Peran"} di ${
-                    m.jobs?.companies?.name || "Perusahaan Mitra"
-                  } (Kecocokan: ${m.match_score}%, Missing Skills: ${
-                    (m.missing_skills || []).slice(0, 3).join(", ") || "None"
-                  })`,
               )
-              .join("\n");
-            matchesContext = `\n\n[REKOMENDASI LOWONGAN COCOK UNTUK KANDIDAT INI]:\n${listStr}`;
+              .eq("analysis_id", analysis.id)
+              .order("match_score", { ascending: false })
+              .limit(3);
+
+            interface MatchJoinRow {
+              match_score: number;
+              missing_skills: string[];
+              jobs: {
+                id: string;
+                title: string;
+                location: string;
+                experience_level: string;
+                companies: { name: string } | null;
+              } | null;
+            }
+
+            if (topMatches && topMatches.length > 0) {
+              const typedMatches = topMatches as unknown as MatchJoinRow[];
+              const listStr = typedMatches
+                .map(
+                  (m) =>
+                    `- ${m.jobs?.title || "Peran"} di ${
+                      m.jobs?.companies?.name || "Perusahaan Mitra"
+                    } (Kecocokan: ${m.match_score}%, Missing Skills: ${
+                      (m.missing_skills || []).slice(0, 3).join(", ") || "None"
+                    })`,
+                )
+                .join("\n");
+              matchesContext = `\n\n[REKOMENDASI LOWONGAN COCOK UNTUK KANDIDAT INI]:\n${listStr}`;
+            }
           }
         }
       }
@@ -356,7 +372,7 @@ export async function POST(req: NextRequest) {
             "Maaf, saya tidak dapat memproses jawaban saat ini. Silakan coba kembali.";
 
           // Save assistant response to database with telemetry metadata
-          const { data: assistantMsg } = await supabaseAdmin
+          const { data: assistantMsg, error: insertError } = await supabaseAdmin
             .from("chat_messages")
             .insert({
               session_id,
@@ -372,6 +388,17 @@ export async function POST(req: NextRequest) {
             .select()
             .single();
 
+          if (insertError || !assistantMsg) {
+            console.error(
+              "Database Assistant Message Insert Error:",
+              insertError,
+            );
+            throw new Error(
+              insertError?.message ||
+                "Gagal menyimpan respon asisten ke database.",
+            );
+          }
+
           // Update session timestamp
           await supabaseAdmin
             .from("chat_sessions")
@@ -383,19 +410,34 @@ export async function POST(req: NextRequest) {
               `data: ${JSON.stringify({
                 done: true,
                 userMessage: userMsg,
-                assistantMessage: assistantMsg || {
-                  id: `asst-${Date.now()}`,
-                  session_id,
-                  role: "assistant",
-                  content: finalContent,
-                  created_at: new Date().toISOString(),
-                },
+                assistantMessage: assistantMsg,
               })}\n\n`,
             ),
           );
         } catch (streamError) {
           console.error("Groq Stream Error:", streamError);
           const friendlyMessage = normalizeGroqError(streamError);
+
+          // Persist error state so the chat history does not leave an orphaned, unanswered user turn
+          try {
+            await supabaseAdmin.from("chat_messages").insert({
+              session_id,
+              role: "assistant",
+              content: `⚠️ Maaf, terjadi kendala saat memproses balasan: ${friendlyMessage}`,
+              metadata: {
+                error: true,
+                error_detail: (streamError as Error).message,
+                model: modelUsed,
+                failed_at: new Date().toISOString(),
+              },
+            });
+          } catch (persistErr) {
+            console.error(
+              "Failed to persist streaming failure message:",
+              persistErr,
+            );
+          }
+
           controller.enqueue(
             encoder.encode(
               `data: ${JSON.stringify({

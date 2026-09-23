@@ -34,6 +34,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB hard limit
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        {
+          error:
+            "Ukuran file terlalu besar! Maksimal ukuran file resume adalah 5 MB.",
+        },
+        { status: 413 },
+      );
+    }
+
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
@@ -89,6 +100,14 @@ export async function POST(req: NextRequest) {
         },
         { status: 400 },
       );
+    }
+
+    const MAX_RAW_TEXT_CHARS = 15000;
+    if (rawText.length > MAX_RAW_TEXT_CHARS) {
+      console.warn(
+        `[UPLOAD] Truncating excessive raw text from ${rawText.length} to ${MAX_RAW_TEXT_CHARS} chars`,
+      );
+      rawText = rawText.slice(0, MAX_RAW_TEXT_CHARS);
     }
 
     const timestamp = Date.now();
