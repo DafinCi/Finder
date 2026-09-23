@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
 
     if (!email || !password) {
       return NextResponse.json(
-        { error: "Email dan password wajib diisi!" },
+        { error: "Email and password are required." },
         { status: 400 },
       );
     }
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        message: "Login sukses!",
+        message: "Sign in successful.",
         user: data.user,
       },
       { status: 200 },
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("Signin Error:", error);
     return NextResponse.json(
-      { error: "Terjadi kesalahan pada server" },
+      { error: "An unexpected server error occurred." },
       { status: 500 },
     );
   }

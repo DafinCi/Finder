@@ -143,7 +143,7 @@ export default function JobsView() {
 
   if (isLoading) {
     return (
-      <div className="h-full flex-1 overflow-y-auto bg-background text-foreground py-10 px-4 scrollbar-thin">
+      <div className="h-full flex-1 overflow-y-auto bg-background text-foreground py-10 px-4 custom-scrollbar">
         <JobsPageSkeleton />
       </div>
     );
@@ -151,7 +151,7 @@ export default function JobsView() {
 
   if (error) {
     return (
-      <div className="h-full flex-1 overflow-y-auto bg-background text-foreground flex items-center justify-center p-4">
+      <div className="h-full flex-1 overflow-y-auto bg-background text-foreground flex items-center justify-center p-4 custom-scrollbar">
         <div className="max-w-md w-full border border-destructive/20 bg-destructive/10 rounded-xl p-6 text-center space-y-4 shadow-sm">
           <div className="w-10 h-10 rounded-full bg-destructive/15 text-destructive flex items-center justify-center mx-auto">
             <AlertCircle className="w-5 h-5" />
@@ -176,7 +176,7 @@ export default function JobsView() {
   }
 
   return (
-    <div className="h-full flex-1 overflow-y-auto bg-background text-foreground pb-20 relative scrollbar-thin">
+    <div className="h-full flex-1 overflow-y-auto bg-background text-foreground pb-20 relative custom-scrollbar">
       <div className="max-w-5xl mx-auto pt-10 pb-8 px-4 space-y-7">
         {/* Page Header */}
         <div className="space-y-1">
@@ -341,14 +341,14 @@ export default function JobsView() {
                 type="button"
                 onClick={handleCloseDrawer}
                 aria-label="Close job details"
-                className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors cursor-pointer"
+                className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Drawer Body */}
-            <div className="flex-1 overflow-y-auto py-5 space-y-5 pr-1 scrollbar-thin">
+            <div className="flex-1 overflow-y-auto py-5 space-y-5 pr-1 custom-scrollbar">
               <div className="space-y-2">
                 <div className="flex items-start justify-between gap-3">
                   <h2

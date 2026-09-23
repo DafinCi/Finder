@@ -63,7 +63,13 @@ export default function LoginPage() {
               placeholder="name@company.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-secondary/50 border border-border rounded-lg px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-sans"
+              aria-invalid={Boolean(error)}
+              aria-describedby={error ? "auth-error-msg" : undefined}
+              className={`w-full bg-secondary/50 border rounded-lg px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 transition-all font-sans ${
+                error
+                  ? "border-destructive/60 focus:border-destructive focus:ring-destructive/20"
+                  : "border-border focus:border-primary focus:ring-primary/20"
+              }`}
               required
               autoComplete="email"
             />
@@ -84,7 +90,13 @@ export default function LoginPage() {
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-secondary/50 border border-border rounded-lg px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-sans"
+              aria-invalid={Boolean(error)}
+              aria-describedby={error ? "auth-error-msg" : undefined}
+              className={`w-full bg-secondary/50 border rounded-lg px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 transition-all font-sans ${
+                error
+                  ? "border-destructive/60 focus:border-destructive focus:ring-destructive/20"
+                  : "border-border focus:border-primary focus:ring-primary/20"
+              }`}
               required
               autoComplete="current-password"
             />
@@ -92,6 +104,7 @@ export default function LoginPage() {
 
           {error && (
             <div
+              id="auth-error-msg"
               role="alert"
               aria-live="polite"
               className="rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-destructive text-xs font-medium flex items-start gap-2"

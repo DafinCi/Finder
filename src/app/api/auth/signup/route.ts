@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
 
     if (!email || !password) {
       return NextResponse.json(
-        { error: "Email dan password wajib diisi!" },
+        { error: "Email and password are required." },
         { status: 400 },
       );
     }
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
       {
         success: true,
         message:
-          "Registrasi berhasil! Silakan cek email kamu untuk verifikasi jika diperlukan.",
+          "Registration successful. Please check your email for confirmation if required.",
         user: data.user,
       },
       { status: 201 },
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("Signup Error:", error);
     return NextResponse.json(
-      { error: "Terjadi kesalahan pada server" },
+      { error: "An unexpected server error occurred." },
       { status: 500 },
     );
   }

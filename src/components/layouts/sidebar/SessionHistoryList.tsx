@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Trash2, Clock, RotateCcw, AlertCircle } from "lucide-react";
+import { Trash2, Clock, RotateCcw, AlertCircle, Loader2 } from "lucide-react";
 import { ChatSession } from "@/types/chat";
 import { GroupedSessions } from "@/features/chat/hooks/useSessions";
 
@@ -11,6 +11,7 @@ interface SessionHistoryListProps {
   groupedSessions: GroupedSessions;
   isLoading: boolean;
   error?: string | null;
+  deletingId?: string | null;
   onRetry?: () => void;
   onDeleteSession: (id: string) => void;
 }
@@ -19,6 +20,7 @@ export default function SessionHistoryList({
   groupedSessions,
   isLoading,
   error,
+  deletingId,
   onRetry,
   onDeleteSession,
 }: SessionHistoryListProps) {
@@ -86,19 +88,29 @@ export default function SessionHistoryList({
                 <span className="truncate">{session.title}</span>
               </Link>
 
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onDeleteSession(session.id);
-                }}
-                aria-label={`Delete session ${session.title}`}
-                className="opacity-70 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 p-1.5 hover:text-destructive hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-destructive/50 rounded-md transition-all cursor-pointer"
-                title="Delete session"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
+              {(() => {
+                const isThisDeleting = deletingId === session.id;
+                return (
+                  <button
+                    type="button"
+                    disabled={isThisDeleting || Boolean(deletingId)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onDeleteSession(session.id);
+                    }}
+                    aria-label={`Delete session ${session.title}`}
+                    className="opacity-70 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 min-w-[36px] min-h-[36px] flex items-center justify-center hover:text-destructive hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-destructive/50 rounded-md transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                    title={isThisDeleting ? "Deleting..." : "Delete session"}
+                  >
+                    {isThisDeleting ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
+                    ) : (
+                      <Trash2 className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                );
+              })()}
             </div>
           );
         })}
@@ -123,7 +135,7 @@ export default function SessionHistoryList({
   }
 
   return (
-    <div className="overflow-y-auto max-h-[calc(100vh-220px)] px-2 py-1 scrollbar-thin">
+    <div className="flex-1 overflow-y-auto px-2 py-1 no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
       {renderGroup("Today", groupedSessions.today)}
       {renderGroup("Yesterday", groupedSessions.yesterday)}
       {renderGroup("Previous 7 Days", groupedSessions.previous7Days)}

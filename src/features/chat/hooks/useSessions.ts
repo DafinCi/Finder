@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { ChatSession } from "@/types/chat";
 import { chatService } from "../services/chat.service";
 import { toast } from "sonner";
@@ -16,6 +17,10 @@ export function useSessions() {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const router = useRouter();
+  const pathname = usePathname();
 
   const fetchSessions = useCallback(async () => {
     try {
@@ -38,15 +43,12 @@ export function useSessions() {
       .then((data) => {
         if (!cancelled) {
           setSessions(data);
+          setIsLoading(false);
         }
       })
       .catch((err) => {
         if (!cancelled) {
           setError((err as Error).message);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
           setIsLoading(false);
         }
       });
@@ -57,19 +59,29 @@ export function useSessions() {
   }, []);
 
   const deleteSession = async (id: string) => {
+    if (deletingId) return; // Prevent concurrent multiple clicks
+    setDeletingId(id);
+
     const previous = [...sessions];
     setSessions((prev) => prev.filter((s) => s.id !== id));
+
     try {
       await chatService.deleteSession(id);
-      setSessions((prev) => prev.filter((s) => s.id !== id));
       toast.success("Chat session deleted");
+
+      // If user deletes the session they are currently viewing, navigate to home (new chat)
+      if (pathname === `/c/${id}`) {
+        router.push("/");
+      }
     } catch (err) {
-      console.error("Gagal menghapus sesi:", err);
+      console.error("Failed to delete session:", err);
       setSessions(previous);
       toast.error("Failed to delete session", {
         description:
           (err as Error).message || "An error occurred while deleting.",
       });
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -104,6 +116,7 @@ export function useSessions() {
     groupedSessions,
     isLoading,
     error,
+    deletingId,
     refreshSessions: fetchSessions,
     deleteSession,
   };

@@ -157,7 +157,7 @@ export default function OmniPromptInput({
               type="button"
               onClick={handleRemoveFile}
               aria-label="Remove attached CV"
-              className="p-1 min-w-[24px] min-h-[24px] flex items-center justify-center hover:bg-secondary rounded text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+              className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center hover:bg-destructive/10 rounded-md text-muted-foreground hover:text-destructive focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-destructive/50 cursor-pointer transition-colors"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -174,7 +174,7 @@ export default function OmniPromptInput({
           rows={1}
           disabled={isLoading}
           aria-label="Career goal or prompt"
-          className="w-full resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none leading-relaxed py-1 min-h-[38px] max-h-[160px] overflow-y-auto scrollbar-thin"
+          className="w-full resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none leading-relaxed py-1 min-h-[38px] max-h-[160px] overflow-y-auto custom-scrollbar"
         />
 
         {/* Action Toolbar */}
@@ -194,7 +194,7 @@ export default function OmniPromptInput({
               onClick={() => fileInputRef.current?.click()}
               disabled={isLoading}
               aria-label="Attach CV in PDF format up to 10MB"
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/70 transition-colors cursor-pointer disabled:opacity-50"
+              className="min-h-[36px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors cursor-pointer disabled:opacity-50"
             >
               <Paperclip className="w-3.5 h-3.5" />
               <span>Attach CV</span>
@@ -209,7 +209,7 @@ export default function OmniPromptInput({
             type="submit"
             disabled={!canSubmit}
             aria-label="Send message"
-            className={`p-2 rounded-lg transition-all duration-150 flex items-center justify-center ${
+            className={`w-9 h-9 rounded-lg transition-all duration-150 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 focus-visible:ring-offset-card ${
               canSubmit
                 ? "bg-primary text-primary-foreground hover:opacity-90 shadow-2xs cursor-pointer active:scale-95"
                 : "bg-secondary text-muted-foreground cursor-not-allowed opacity-50"

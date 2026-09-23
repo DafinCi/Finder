@@ -13,8 +13,14 @@ export default function SidebarNavigation({
   collapsed: boolean;
 }) {
   const pathname = usePathname();
-  const { groupedSessions, isLoading, error, refreshSessions, deleteSession } =
-    useSessions();
+  const {
+    groupedSessions,
+    isLoading,
+    error,
+    deletingId,
+    refreshSessions,
+    deleteSession,
+  } = useSessions();
 
   if (collapsed) {
     return (
@@ -46,7 +52,7 @@ export default function SidebarNavigation({
   }
 
   return (
-    <nav className="flex-1 flex flex-col px-3 py-3 overflow-hidden">
+    <nav className="flex-1 flex flex-col px-3 py-3 overflow-hidden min-h-0 no-scrollbar">
       {/* Primary Action Button: New Chat */}
       <Link
         href="/"
@@ -74,11 +80,12 @@ export default function SidebarNavigation({
       <hr className="border-border/60 my-1 mx-2" />
 
       {/* Dynamic Session History */}
-      <div className="flex-1 overflow-hidden flex flex-col mt-2">
+      <div className="flex-1 overflow-hidden flex flex-col mt-2 min-h-0 no-scrollbar">
         <SessionHistoryList
           groupedSessions={groupedSessions}
           isLoading={isLoading}
           error={error}
+          deletingId={deletingId}
           onRetry={refreshSessions}
           onDeleteSession={deleteSession}
         />

@@ -70,7 +70,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center h-full px-4 py-8 animate-in fade-in duration-300 relative">
+    <div className="flex-1 flex flex-col items-center justify-center h-full px-4 py-8 animate-in fade-in duration-300 relative overflow-y-auto custom-scrollbar">
       <div className="w-full max-w-2xl text-center space-y-7 my-auto">
         {/* Hero Title */}
         <div className="space-y-2">

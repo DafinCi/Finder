@@ -87,7 +87,12 @@ export default function ChatTimeline({
         </div>
       )}
 
-      <div ref={bottomRef} className="h-4" />
+      {/* Bottom spacer ensures messages and actions clear the floating bottom omnibar */}
+      <div
+        ref={bottomRef}
+        className="h-36 sm:h-40 shrink-0"
+        aria-hidden="true"
+      />
     </div>
   );
 }
