@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { groq, DEFAULT_GROQ_MODEL } from "@/lib/groq/client";
+import {
+  groq,
+  DEFAULT_GROQ_MODEL,
+  FALLBACK_GROQ_MODEL,
+  normalizeGroqError,
+} from "@/lib/groq/client";
 
 export const dynamic = "force-dynamic";
+
+const MAX_PROMPT_CHARS = 2000;
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,6 +30,18 @@ export async function POST(req: NextRequest) {
     if (!session_id || !content?.trim()) {
       return NextResponse.json(
         { error: "session_id dan content wajib diisi" },
+        { status: 400 },
+      );
+    }
+
+    const cleanContent = content.trim();
+
+    // Input length guardrail to protect TPM and model window
+    if (cleanContent.length > MAX_PROMPT_CHARS) {
+      return NextResponse.json(
+        {
+          error: `Pesan terlalu panjang. Maksimal ${MAX_PROMPT_CHARS} karakter per pesan.`,
+        },
         { status: 400 },
       );
     }
@@ -48,19 +67,21 @@ export async function POST(req: NextRequest) {
       .insert({
         session_id,
         role: "user",
-        content: content.trim(),
+        content: cleanContent,
       })
       .select()
       .single();
 
     if (userMsgError) throw userMsgError;
 
-    // Load candidate profile context in compressed format to preserve Groq TPM budget
+    // 1. Load candidate profile context in compressed format to preserve Groq TPM budget
     let candidateContext = "";
+    let matchesContext = "";
+
     if (session.resume_id) {
       const { data: analysis } = await supabaseAdmin
         .from("resume_analysis")
-        .select("candidate_data, extracted_skills")
+        .select("id, candidate_data, extracted_skills")
         .eq("resume_id", session.resume_id)
         .order("created_at", { ascending: false })
         .limit(1)
@@ -104,10 +125,104 @@ export async function POST(req: NextRequest) {
 - Keahlian Utama: ${coreSkills || "General"}
 - Kekuatan: ${strengths || "Teknis & Adaptif"}
 - Level Karir: ${career?.career_level || "Mid-Level"}`;
+
+        // Grounding: Load candidate's top matched jobs for this session
+        if (analysis.id) {
+          const { data: topMatches } = await supabaseAdmin
+            .from("job_matches")
+            .select(
+              `
+              match_score,
+              missing_skills,
+              jobs:job_id (
+                id,
+                title,
+                location,
+                experience_level,
+                companies:company_id (
+                  name
+                )
+              )
+            `,
+            )
+            .eq("analysis_id", analysis.id)
+            .order("match_score", { ascending: false })
+            .limit(3);
+
+          interface MatchJoinRow {
+            match_score: number;
+            missing_skills: string[];
+            jobs: {
+              id: string;
+              title: string;
+              location: string;
+              experience_level: string;
+              companies: { name: string } | null;
+            } | null;
+          }
+
+          if (topMatches && topMatches.length > 0) {
+            const typedMatches = topMatches as unknown as MatchJoinRow[];
+            const listStr = typedMatches
+              .map(
+                (m) =>
+                  `- ${m.jobs?.title || "Peran"} di ${
+                    m.jobs?.companies?.name || "Perusahaan Mitra"
+                  } (Kecocokan: ${m.match_score}%, Missing Skills: ${
+                    (m.missing_skills || []).slice(0, 3).join(", ") || "None"
+                  })`,
+              )
+              .join("\n");
+            matchesContext = `\n\n[REKOMENDASI LOWONGAN COCOK UNTUK KANDIDAT INI]:\n${listStr}`;
+          }
+        }
       }
     }
 
-    // Load recent message history for context (up to 10 most recent messages, ordered chronologically)
+    // 2. Specific Job Grounding: check if user query mentions a specific active job title or company
+    let specificJobContext = "";
+    const { data: allActiveJobs } = await supabaseAdmin
+      .from("jobs")
+      .select(
+        "id, title, description, requirements, location, job_type, salary_range, companies:company_id ( name )",
+      )
+      .eq("is_active", true)
+      .limit(20);
+
+    if (allActiveJobs && allActiveJobs.length > 0) {
+      interface ActiveJobRow {
+        id: string;
+        title: string;
+        description: string;
+        requirements: string[];
+        location: string;
+        job_type: string;
+        salary_range: string | null;
+        companies: { name: string } | null;
+      }
+      const lowerContent = cleanContent.toLowerCase();
+      const matchedActiveJob = (
+        allActiveJobs as unknown as ActiveJobRow[]
+      ).find(
+        (j) =>
+          lowerContent.includes(j.title.toLowerCase()) ||
+          (j.companies?.name &&
+            lowerContent.includes(j.companies.name.toLowerCase())),
+      );
+
+      if (matchedActiveJob) {
+        specificJobContext = `\n\n[DATA RESMI LOWONGAN PEKERJAAN YANG SEDANG DITANYAKAN]:
+- Posisi: ${matchedActiveJob.title}
+- Perusahaan: ${matchedActiveJob.companies?.name || "Perusahaan Mitra"}
+- Lokasi & Tipe: ${matchedActiveJob.location} (${matchedActiveJob.job_type})
+- Gaji / Kompensasi: ${matchedActiveJob.salary_range || "Sesuai Standar Industri"}
+- Kualifikasi Persyaratan: ${matchedActiveJob.requirements.join(", ")}
+- Ringkasan Deskripsi: ${matchedActiveJob.description.slice(0, 350)}...
+(Gunakan data lowongan resmi di atas untuk menjawab secara akurat dan objektif; jangan mengarang fakta yang bertolak belakang).`;
+      }
+    }
+
+    // 3. Load recent message history with sliding character budget to protect the 8K TPM limit
     const { data: recentHistory } = await supabaseAdmin
       .from("chat_messages")
       .select("role, content")
@@ -116,6 +231,27 @@ export async function POST(req: NextRequest) {
       .limit(10);
 
     const chronologicalHistory = (recentHistory || []).reverse();
+
+    // Budget historical context to max 4,000 characters (preserving most recent messages)
+    const MAX_HISTORY_CHARS = 4000;
+    let accumulatedChars = 0;
+    const budgetedHistory: Array<{
+      role: "user" | "assistant";
+      content: string;
+    }> = [];
+
+    for (let i = chronologicalHistory.length - 1; i >= 0; i--) {
+      const msg = chronologicalHistory[i];
+      if (accumulatedChars + msg.content.length <= MAX_HISTORY_CHARS) {
+        budgetedHistory.unshift({
+          role: msg.role as "user" | "assistant",
+          content: msg.content,
+        });
+        accumulatedChars += msg.content.length;
+      } else {
+        break;
+      }
+    }
 
     const messagesForGroq: Array<{
       role: "system" | "user" | "assistant";
@@ -126,35 +262,65 @@ export async function POST(req: NextRequest) {
         content: `Kamu adalah Personal AI Career Copilot & Senior Tech Recruiter.
 Tugasmu adalah membantu kandidat dalam perencanaan karir, peningkatan skill, pembuatan cover letter/pitch, strategi interview, serta mencocokkan karirnya dengan pasar kerja terkini (terutama ekosistem modern seperti Fullstack, AI, dan Web3).
 Jawablah dengan gaya bahasa yang profesional, suportif, ramah, to-the-point, dan berbobot dalam Bahasa Indonesia.
-Gunakan format Markdown bersih (bullet points dengan '-' atau '*', teks tebal untuk penekanan, dan tabel ringkas jika diperlukan). JANGAN mencampur tag HTML mentah seperti <ul>, <li>, atau <br> di dalam teks maupun tabel; gunakan sintaks Markdown murni.${candidateContext}`,
+Gunakan format Markdown bersih (bullet points dengan '-' atau '*', teks tebal untuk penekanan, dan tabel ringkas jika diperlukan). JANGAN mencampur tag HTML mentah seperti <ul>, <li>, atau <br> di dalam teks maupun tabel; gunakan sintaks Markdown murni.${candidateContext}${matchesContext}${specificJobContext}`,
       },
     ];
 
-    if (chronologicalHistory && chronologicalHistory.length > 0) {
-      chronologicalHistory.forEach((msg) => {
-        if (msg.role === "user" || msg.role === "assistant") {
-          messagesForGroq.push({
-            role: msg.role,
-            content: msg.content,
-          });
-        }
+    if (budgetedHistory.length > 0) {
+      budgetedHistory.forEach((msg) => {
+        messagesForGroq.push({
+          role: msg.role,
+          content: msg.content,
+        });
       });
     } else {
       messagesForGroq.push({
         role: "user",
-        content: content.trim(),
+        content: cleanContent,
       });
     }
 
     const maxTokensLimit = Number(process.env.GROQ_MAX_TOKENS) || 2500;
 
-    const stream = await groq.chat.completions.create({
-      model: DEFAULT_GROQ_MODEL,
-      messages: messagesForGroq,
-      temperature: 0.6,
-      max_tokens: maxTokensLimit,
-      stream: true,
-    });
+    // Resilient stream initialization with model fallback
+    let stream;
+    let modelUsed = DEFAULT_GROQ_MODEL;
+    const startTime = Date.now();
+
+    try {
+      stream = await groq.chat.completions.create({
+        model: modelUsed,
+        messages: messagesForGroq,
+        temperature: 0.6,
+        max_tokens: maxTokensLimit,
+        stream: true,
+      });
+    } catch (primaryError) {
+      const errStr = (primaryError as Error).message || "";
+      const isRecoverable =
+        errStr.includes("429") ||
+        errStr.includes("503") ||
+        errStr.includes("rate limit") ||
+        errStr.includes("overloaded") ||
+        errStr.includes("not found") ||
+        errStr.includes("model");
+
+      if (isRecoverable && DEFAULT_GROQ_MODEL !== FALLBACK_GROQ_MODEL) {
+        console.warn(
+          `[AI:ChatStream] Primary model ${DEFAULT_GROQ_MODEL} failed (${errStr}). Falling back to ${FALLBACK_GROQ_MODEL}...`,
+        );
+        modelUsed = FALLBACK_GROQ_MODEL;
+        stream = await groq.chat.completions.create({
+          model: modelUsed,
+          messages: messagesForGroq,
+          temperature: 0.6,
+          max_tokens: maxTokensLimit,
+          stream: true,
+        });
+      } else {
+        throw primaryError;
+      }
+    }
 
     const encoder = new TextEncoder();
 
@@ -172,6 +338,11 @@ Gunakan format Markdown bersih (bullet points dengan '-' atau '*', teks tebal un
               );
             }
           }
+
+          const durationMs = Date.now() - startTime;
+          console.log(
+            `[AI:Telemetry] op=ChatStream model=${modelUsed} status=success duration=${durationMs}ms chars=${fullAssistantContent.length}`,
+          );
 
           const finalContent =
             fullAssistantContent.trim() ||
@@ -211,10 +382,11 @@ Gunakan format Markdown bersih (bullet points dengan '-' atau '*', teks tebal un
           );
         } catch (streamError) {
           console.error("Groq Stream Error:", streamError);
+          const friendlyMessage = normalizeGroqError(streamError);
           controller.enqueue(
             encoder.encode(
               `data: ${JSON.stringify({
-                error: (streamError as Error).message,
+                error: friendlyMessage,
               })}\n\n`,
             ),
           );
@@ -233,9 +405,7 @@ Gunakan format Markdown bersih (bullet points dengan '-' atau '*', teks tebal un
     });
   } catch (error) {
     console.error("POST /api/chat/message error:", error);
-    return NextResponse.json(
-      { error: (error as Error).message },
-      { status: 500 },
-    );
+    const friendlyMessage = normalizeGroqError(error);
+    return NextResponse.json({ error: friendlyMessage }, { status: 500 });
   }
 }
