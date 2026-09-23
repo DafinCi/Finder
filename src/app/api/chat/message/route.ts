@@ -7,6 +7,10 @@ import {
   FALLBACK_GROQ_MODEL,
   normalizeGroqError,
 } from "@/lib/groq/client";
+import {
+  buildCareerCopilotSystemPrompt,
+  CAREER_COPILOT_PROMPT_VERSION,
+} from "@/lib/groq/prompts/career-copilot.prompt";
 
 export const dynamic = "force-dynamic";
 
@@ -253,16 +257,19 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    const systemPromptContent = buildCareerCopilotSystemPrompt({
+      candidateContext,
+      matchesContext,
+      specificJobContext,
+    });
+
     const messagesForGroq: Array<{
       role: "system" | "user" | "assistant";
       content: string;
     }> = [
       {
         role: "system",
-        content: `Kamu adalah Personal AI Career Copilot & Senior Tech Recruiter.
-Tugasmu adalah membantu kandidat dalam perencanaan karir, peningkatan skill, pembuatan cover letter/pitch, strategi interview, serta mencocokkan karirnya dengan pasar kerja terkini (terutama ekosistem modern seperti Fullstack, AI, dan Web3).
-Jawablah dengan gaya bahasa yang profesional, suportif, ramah, to-the-point, dan berbobot dalam Bahasa Indonesia.
-Gunakan format Markdown bersih (bullet points dengan '-' atau '*', teks tebal untuk penekanan, dan tabel ringkas jika diperlukan). JANGAN mencampur tag HTML mentah seperti <ul>, <li>, atau <br> di dalam teks maupun tabel; gunakan sintaks Markdown murni.${candidateContext}${matchesContext}${specificJobContext}`,
+        content: systemPromptContent,
       },
     ];
 
@@ -348,13 +355,19 @@ Gunakan format Markdown bersih (bullet points dengan '-' atau '*', teks tebal un
             fullAssistantContent.trim() ||
             "Maaf, saya tidak dapat memproses jawaban saat ini. Silakan coba kembali.";
 
-          // Save assistant response to database
+          // Save assistant response to database with telemetry metadata
           const { data: assistantMsg } = await supabaseAdmin
             .from("chat_messages")
             .insert({
               session_id,
               role: "assistant",
               content: finalContent,
+              metadata: {
+                model: modelUsed,
+                duration_ms: durationMs,
+                prompt_version: CAREER_COPILOT_PROMPT_VERSION,
+                total_chars: finalContent.length,
+              },
             })
             .select()
             .single();
