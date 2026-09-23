@@ -104,7 +104,8 @@ export default function JobCard({ match, onSelect }: JobCardProps) {
       <button
         type="button"
         onClick={() => onSelect(match)}
-        className="w-full md:w-auto mt-2 md:mt-0 flex items-center justify-center gap-1 px-3.5 py-2 border border-border/80 bg-secondary/60 hover:bg-primary hover:border-primary hover:text-primary-foreground rounded-lg text-xs font-semibold transition-all whitespace-nowrap self-stretch md:self-center cursor-pointer shadow-2xs"
+        aria-label={`View match details for ${title} at ${companyName}`}
+        className="w-full md:w-auto mt-2 md:mt-0 min-h-[38px] flex items-center justify-center gap-1.5 px-4 py-2 border border-border/80 bg-secondary/60 hover:bg-primary hover:border-primary hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-lg text-xs font-semibold transition-all whitespace-nowrap self-stretch md:self-center cursor-pointer shadow-2xs"
       >
         <span>View Details</span>
         <ChevronRight className="w-3.5 h-3.5 ml-0.5" />

@@ -10,6 +10,7 @@ export function useChat(sessionId?: string) {
   const [isLoading, setIsLoading] = useState(false);
   const [thinkingStatus, setThinkingStatus] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+  const [failedPrompt, setFailedPrompt] = useState<string | null>(null);
 
   const fetchSessionData = useCallback(async () => {
     if (!sessionId) return;
@@ -27,8 +28,32 @@ export function useChat(sessionId?: string) {
   }, [sessionId]);
 
   useEffect(() => {
-    fetchSessionData();
-  }, [fetchSessionData]);
+    if (!sessionId) return;
+    let cancelled = false;
+
+    chatService
+      .getSessionDetail(sessionId)
+      .then((data) => {
+        if (!cancelled) {
+          setSession(data.session);
+          setMessages(data.messages);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError((err as Error).message);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId]);
 
   const sendMessage = async (prompt: string, file?: File | null) => {
     if (!sessionId) return;
@@ -120,10 +145,12 @@ export function useChat(sessionId?: string) {
           res.userMessage,
           res.assistantMessage,
         ]);
+        setFailedPrompt(null);
       }
     } catch (err) {
       const errorMsg = (err as Error).message;
       setError(errorMsg);
+      setFailedPrompt(prompt);
       // Clean up unpersisted optimistic temp messages on error
       setMessages((prev) =>
         prev.filter(
@@ -136,13 +163,21 @@ export function useChat(sessionId?: string) {
     }
   };
 
+  const retryLastMessage = () => {
+    if (failedPrompt) {
+      sendMessage(failedPrompt);
+    }
+  };
+
   return {
     session,
     messages,
     isLoading,
     thinkingStatus,
     error,
+    failedPrompt,
     sendMessage,
+    retryLastMessage,
     refreshSession: fetchSessionData,
   };
 }

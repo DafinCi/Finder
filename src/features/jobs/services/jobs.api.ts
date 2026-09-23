@@ -14,6 +14,8 @@ export interface FormattedJobMatch {
   companyId?: string;
   companyName?: string;
   companyLogo?: string | null;
+  companyWebsite?: string | null;
+  applyUrl?: string | null;
 }
 
 export const jobsApi = {
@@ -37,6 +39,8 @@ export const jobsApi = {
             id,
             name,
             logo_url
+            logo_url,
+            website
           )
         )
       `,
@@ -49,7 +53,6 @@ export const jobsApi = {
       throw new Error("Gagal mengambil rekomendasi lowongan kerja.");
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (data || []).map((match: any) => ({
       matchId: match.id,
       matchScore: match.match_score,
@@ -68,6 +71,8 @@ export const jobsApi = {
       companyId: match.jobs?.companies?.id,
       companyName: match.jobs?.companies?.name,
       companyLogo: match.jobs?.companies?.logo_url,
+      companyWebsite: match.jobs?.companies?.website || null,
+      applyUrl: match.jobs?.companies?.website || null,
     }));
   },
 

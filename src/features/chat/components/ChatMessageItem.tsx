@@ -21,6 +21,7 @@ export default function ChatMessageItem({
   const attachment = message.metadata?.attachment;
   const analysis = message.metadata?.analysis;
   const jobMatches = message.metadata?.job_matches;
+  const isStreaming = message.id.startsWith("stream-");
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -62,34 +63,6 @@ export default function ChatMessageItem({
   return (
     <div className="group relative my-6 animate-in fade-in duration-300">
       <div className="space-y-3">
-        {/* Model Identifier Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-foreground tracking-tight">
-              Finder
-            </span>
-            <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-mono">
-              Groq gpt-oss-120b
-            </span>
-          </div>
-
-          {/* Quick Copy Action Button */}
-          {message.content && (
-            <button
-              type="button"
-              onClick={handleCopy}
-              title="Copy message"
-              className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/70 transition-all cursor-pointer"
-            >
-              {copied ? (
-                <Check className="w-3.5 h-3.5 text-emerald-500" />
-              ) : (
-                <Copy className="w-3.5 h-3.5" />
-              )}
-            </button>
-          )}
-        </div>
-
         {/* Rich Markdown Text Content */}
         {message.content ? (
           <ChatMarkdown content={message.content} />
@@ -107,6 +80,32 @@ export default function ChatMessageItem({
         {/* Embedded Matched Jobs Carousel */}
         {jobMatches && jobMatches.length > 0 && (
           <JobMatchCarousel jobs={jobMatches} onAskAboutJob={onAskAboutJob} />
+        )}
+
+        {/* Bottom Action: Always visible Quick Copy Button once response is fully rendered */}
+        {!isStreaming && message.content && (
+          <div className="flex items-center gap-2 pt-1">
+            <button
+              type="button"
+              onClick={handleCopy}
+              aria-label="Copy response to clipboard"
+              title="Copy response"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/70 focus:bg-secondary/70 focus:outline-none focus:ring-1 focus:ring-ring transition-colors cursor-pointer"
+            >
+              {copied ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-500" />
+                  <span className="text-[11px] text-emerald-500 font-medium">
+                    Copied
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5" />
+                </>
+              )}
+            </button>
+          </div>
         )}
       </div>
     </div>

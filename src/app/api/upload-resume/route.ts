@@ -58,7 +58,6 @@ export async function POST(req: NextRequest) {
 
     try {
       // Dynamic import to handle pdf-parse in ESM / Next.js server runtime
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const pdfModule: any = await import("pdf-parse");
       const PDFParse = pdfModule.PDFParse || pdfModule.default || pdfModule;
       if (
@@ -66,13 +65,11 @@ export async function POST(req: NextRequest) {
         PDFParse.prototype &&
         "getText" in PDFParse.prototype
       ) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const parser = new (PDFParse as any)({ data: buffer });
         const result = await parser.getText();
         rawText = result.text.trim();
         if (parser.destroy) await parser.destroy();
       } else if (typeof PDFParse === "function") {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const data = await (PDFParse as any)(buffer);
         rawText = data.text?.trim() || "";
       }

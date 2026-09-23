@@ -3,19 +3,23 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Trash2, Clock } from "lucide-react";
+import { Trash2, Clock, RotateCcw, AlertCircle } from "lucide-react";
 import { ChatSession } from "@/types/chat";
 import { GroupedSessions } from "@/features/chat/hooks/useSessions";
 
 interface SessionHistoryListProps {
   groupedSessions: GroupedSessions;
   isLoading: boolean;
+  error?: string | null;
+  onRetry?: () => void;
   onDeleteSession: (id: string) => void;
 }
 
 export default function SessionHistoryList({
   groupedSessions,
   isLoading,
+  error,
+  onRetry,
   onDeleteSession,
 }: SessionHistoryListProps) {
   const pathname = usePathname();
@@ -29,6 +33,27 @@ export default function SessionHistoryList({
             className="h-8 bg-secondary/50 rounded-lg animate-pulse"
           />
         ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-3 mx-1 my-2 rounded-lg border border-destructive/20 bg-destructive/10 text-center space-y-2 text-xs">
+        <div className="flex items-center justify-center gap-1.5 text-destructive font-medium">
+          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+          <span>Failed to load history</span>
+        </div>
+        {onRetry && (
+          <button
+            type="button"
+            onClick={onRetry}
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-secondary hover:bg-secondary/80 text-foreground text-[11px] font-semibold transition-colors cursor-pointer"
+          >
+            <RotateCcw className="w-3 h-3" />
+            <span>Retry</span>
+          </button>
+        )}
       </div>
     );
   }
@@ -68,10 +93,11 @@ export default function SessionHistoryList({
                   e.stopPropagation();
                   onDeleteSession(session.id);
                 }}
-                className="opacity-0 group-hover:opacity-100 p-1 hover:text-destructive rounded transition-opacity cursor-pointer"
+                aria-label={`Delete session ${session.title}`}
+                className="opacity-70 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 p-1.5 hover:text-destructive hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-destructive/50 rounded-md transition-all cursor-pointer"
                 title="Delete session"
               >
-                <Trash2 className="w-3 h-3" />
+                <Trash2 className="w-3.5 h-3.5" />
               </button>
             </div>
           );

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Bot, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import OmniPromptInput from "@/features/chat/components/OmniPromptInput";
+import ChatActionPills from "@/features/chat/components/ChatActionPills";
 import { chatService } from "@/features/chat/services/chat.service";
 
 export default function HomePage() {
@@ -87,6 +88,13 @@ export default function HomePage() {
           />
         </div>
 
+        {/* Quick Action Suggestions */}
+        {!isLoading && (
+          <ChatActionPills
+            onSelectPrompt={(promptText) => handleSubmit(promptText)}
+          />
+        )}
+
         {/* Loading / Status State */}
         {isLoading && (
           <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground animate-pulse py-2">
@@ -96,10 +104,11 @@ export default function HomePage() {
         )}
 
         {/* Trust & Privacy Footnote */}
-        <div className="pt-4 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground/60">
+        <div className="pt-2 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground/60">
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-500/70" />
           <span>
-            Clean text-based PDF supported. Powered by Groq gpt-oss-120b.
+            Clean text-based PDF supported. Fast, private & sovereign career
+            workspace.
           </span>
         </div>
       </div>

@@ -2,7 +2,7 @@
 
 import React, { use } from "react";
 import Link from "next/link";
-import { Plus, Bot, AlertCircle } from "lucide-react";
+import { Plus, Bot } from "lucide-react";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { useChat } from "@/features/chat/hooks/useChat";
 import ChatTimeline from "@/features/chat/components/ChatTimeline";
@@ -15,8 +15,15 @@ export default function ChatSessionPage({
 }) {
   const { id } = use(params);
   const { collapsed } = useSidebar();
-  const { session, messages, isLoading, thinkingStatus, error, sendMessage } =
-    useChat(id);
+  const {
+    session,
+    messages,
+    isLoading,
+    thinkingStatus,
+    error,
+    sendMessage,
+    retryLastMessage,
+  } = useChat(id);
 
   const handleAskAboutJob = (jobTitle: string, company: string) => {
     sendMessage(
@@ -33,13 +40,13 @@ export default function ChatSessionPage({
           collapsed ? "pl-14 pr-4 md:pr-6" : "px-4 md:px-6"
         }`}
       >
-        {/* Session Title without decorative icon */}
+        {/* Session Title */}
         <div className="flex items-center gap-3 min-w-0">
           <h2 className="text-sm font-semibold text-foreground truncate">
             {session?.title || "Career Workspace"}
           </h2>
-          <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-secondary text-muted-foreground border border-border">
-            Groq gpt-oss-120b
+          <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-secondary text-muted-foreground border border-border">
+            Career Copilot
           </span>
         </div>
 
@@ -54,16 +61,22 @@ export default function ChatSessionPage({
         </Link>
       </div>
 
-      {/* Error Banner */}
-      {error && (
-        <div className="m-4 p-3 rounded-lg border border-destructive/20 bg-destructive/5 text-destructive flex items-center gap-2 text-xs">
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          <span>{error}</span>
-        </div>
-      )}
-
       {/* Main Chat Scrollable Stream */}
       <div className="flex-1 overflow-y-auto scrollbar-thin">
+        {/* Initial Loading Skeleton */}
+        {isLoading && messages.length === 0 && (
+          <div className="w-full max-w-3xl mx-auto px-4 py-8 space-y-6 animate-pulse">
+            <div className="flex justify-end">
+              <div className="w-56 h-10 bg-secondary/60 rounded-xl" />
+            </div>
+            <div className="space-y-3">
+              <div className="w-20 h-4 bg-secondary/60 rounded" />
+              <div className="w-full h-16 bg-secondary/40 rounded-xl" />
+              <div className="w-4/5 h-12 bg-secondary/30 rounded-xl" />
+            </div>
+          </div>
+        )}
+
         {messages.length === 0 && !isLoading && (
           <div className="h-full flex flex-col items-center justify-center text-center p-8 text-muted-foreground space-y-3">
             <Bot className="w-8 h-8 opacity-40" />
@@ -81,6 +94,8 @@ export default function ChatSessionPage({
           messages={messages}
           isLoading={isLoading}
           thinkingStatus={thinkingStatus}
+          error={error}
+          onRetry={retryLastMessage}
           onAskAboutJob={handleAskAboutJob}
         />
       </div>

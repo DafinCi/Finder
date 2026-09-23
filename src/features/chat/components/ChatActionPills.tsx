@@ -46,9 +46,9 @@ export default function ChatActionPills({
             key={idx}
             type="button"
             onClick={() => onSelectPrompt(item.prompt)}
-            className="flex items-center gap-2.5 p-3 rounded-xl border border-border/70 bg-card/40 hover:bg-secondary/60 hover:border-border text-left transition-all duration-150 group cursor-pointer"
+            className="flex items-center gap-2.5 p-3 rounded-lg border border-border bg-card/60 hover:bg-secondary/60 hover:border-border text-left transition-all duration-150 group cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring/30"
           >
-            <div className="p-2 rounded-lg bg-secondary/80 text-primary border border-border/40 group-hover:bg-primary group-hover:text-primary-foreground transition-colors shrink-0">
+            <div className="p-2 rounded-md bg-secondary text-primary border border-border/60 group-hover:bg-primary group-hover:text-primary-foreground transition-colors shrink-0">
               <Icon className="w-4 h-4" />
             </div>
             <div className="overflow-hidden">

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Sparkles, Briefcase, CheckCircle2 } from "lucide-react";
+import { Briefcase, CheckCircle2 } from "lucide-react";
 import { CandidateAnalysis } from "@/types/candidate";
 
 interface CandidateSummaryCardProps {
@@ -43,9 +43,8 @@ export default function CandidateSummaryCard({
           </div>
         </div>
 
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 w-fit">
-          <Sparkles className="w-3 h-3" />
-          Verified AI Profile
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium bg-secondary/80 text-muted-foreground border border-border w-fit">
+          Extracted from your resume
         </span>
       </div>
 

@@ -13,7 +13,8 @@ export default function SidebarNavigation({
   collapsed: boolean;
 }) {
   const pathname = usePathname();
-  const { groupedSessions, isLoading, deleteSession } = useSessions();
+  const { groupedSessions, isLoading, error, refreshSessions, deleteSession } =
+    useSessions();
 
   if (collapsed) {
     return (
@@ -77,6 +78,8 @@ export default function SidebarNavigation({
         <SessionHistoryList
           groupedSessions={groupedSessions}
           isLoading={isLoading}
+          error={error}
+          onRetry={refreshSessions}
           onDeleteSession={deleteSession}
         />
       </div>

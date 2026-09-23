@@ -1,8 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { AlertCircle, ArrowRight } from "lucide-react";
 import { login } from "@/features/auth/services/auth.service";
+import { Button } from "@/components/ui/button";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -22,75 +25,101 @@ export default function LoginPage() {
       router.refresh();
     } catch (err: unknown) {
       const errorObj = err as Error;
-      setError(errorObj.message);
+      setError(
+        errorObj.message ||
+          "Failed to sign in. Please verify your credentials.",
+      );
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-slate-950 px-4 text-slate-100">
-      <div className="w-full max-w-md rounded-[6px] bg-slate-900 p-8 border border-slate-800 shadow-2xl">
-        <h1 className="text-3xl font-bold text-center text-white tracking-tight">
-          Welcome Back
-        </h1>
+    <main className="min-h-screen flex items-center justify-center bg-background px-4 text-foreground">
+      <div className="w-full max-w-md rounded-xl bg-card p-8 border border-border shadow-md space-y-6">
+        {/* Brand Header */}
+        <div className="text-center space-y-2">
+          <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 text-primary mb-1"></div>
+          <h1 className="text-2xl font-bold font-heading text-foreground tracking-tight">
+            Welcome to Finder
+          </h1>
+          <p className="text-xs text-muted-foreground font-sans">
+            Sign in to access your sovereign career workspace and AI matches.
+          </p>
+        </div>
 
-        <p className="text-center text-slate-400 mt-2 mb-8 text-sm">
-          Login to your developer account
-        </p>
-
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="block mb-2 text-sm font-semibold text-slate-300">
+        {/* Login Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-1.5">
+            <label
+              htmlFor="login-email"
+              className="block text-xs font-semibold text-foreground"
+            >
               Email Address
             </label>
             <input
+              id="login-email"
               type="email"
               placeholder="name@company.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-md px-4 py-3 text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
+              className="w-full bg-secondary/50 border border-border rounded-lg px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-sans"
               required
+              autoComplete="email"
             />
           </div>
 
-          <div>
-            <label className="block mb-2 text-sm font-semibold text-slate-300">
-              Password
-            </label>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label
+                htmlFor="login-password"
+                className="block text-xs font-semibold text-foreground"
+              >
+                Password
+              </label>
+            </div>
             <input
+              id="login-password"
               type="password"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-md px-4 py-3 text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
+              className="w-full bg-secondary/50 border border-border rounded-lg px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-sans"
               required
+              autoComplete="current-password"
             />
           </div>
 
           {error && (
-            <div className="rounded-md bg-red-950/50 border border-red-900/80 p-3.5 text-red-400 text-xs font-medium">
-              ⚠️ {error}
+            <div
+              role="alert"
+              aria-live="polite"
+              className="rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-destructive text-xs font-medium flex items-start gap-2"
+            >
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{error}</span>
             </div>
           )}
 
-          <button
+          <Button
             type="submit"
             disabled={loading}
-            className="w-full rounded-md bg-blue-600 py-3 text-white font-semibold hover:bg-blue-500 active:bg-blue-700 disabled:opacity-50 transition-all text-sm shadow-lg shadow-blue-900/20"
+            className="w-full h-10 text-xs font-semibold"
           >
-            {loading ? "Signing In..." : "Login to Dashboard"}
-          </button>
+            <span>{loading ? "Signing In..." : "Sign In"}</span>
+            <ArrowRight className="w-3.5 h-3.5 ml-1" />
+          </Button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-slate-400">
+        {/* Footer Navigation */}
+        <p className="text-center text-xs text-muted-foreground font-sans pt-2 border-t border-border/60">
           {"Don't have an account? "}
-          <button
-            onClick={() => router.push("/register")}
-            className="text-blue-400 font-semibold hover:text-blue-300 hover:underline transition-all"
+          <Link
+            href="/register"
+            className="text-primary font-semibold hover:underline transition-colors"
           >
-            Register
-          </button>
+            Create an account
+          </Link>
         </p>
       </div>
     </main>

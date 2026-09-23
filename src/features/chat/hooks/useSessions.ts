@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { ChatSession } from "@/types/chat";
 import { chatService } from "../services/chat.service";
+import { toast } from "sonner";
 
 export interface GroupedSessions {
   today: ChatSession[];
@@ -30,15 +31,45 @@ export function useSessions() {
   }, []);
 
   useEffect(() => {
-    fetchSessions();
-  }, [fetchSessions]);
+    let cancelled = false;
+
+    chatService
+      .getSessions()
+      .then((data) => {
+        if (!cancelled) {
+          setSessions(data);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError((err as Error).message);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const deleteSession = async (id: string) => {
+    const previous = [...sessions];
+    setSessions((prev) => prev.filter((s) => s.id !== id));
     try {
       await chatService.deleteSession(id);
       setSessions((prev) => prev.filter((s) => s.id !== id));
+      toast.success("Chat session deleted");
     } catch (err) {
       console.error("Gagal menghapus sesi:", err);
+      setSessions(previous);
+      toast.error("Failed to delete session", {
+        description:
+          (err as Error).message || "An error occurred while deleting.",
+      });
     }
   };
 
