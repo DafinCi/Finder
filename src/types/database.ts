@@ -115,3 +115,21 @@ export interface JobMatch {
   created_at: string;
   jobs?: Job;
 }
+
+export interface ChatSessionRow {
+  id: string;
+  user_id: string;
+  title: string;
+  resume_id?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ChatMessageRow {
+  id: string;
+  session_id: string;
+  role: "user" | "assistant" | "system";
+  content: string;
+  metadata?: Json;
+  created_at: string;
+}

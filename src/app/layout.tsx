@@ -16,6 +16,8 @@ const spaceGrotesk = Space_Grotesk({
   display: "swap",
 });
 
+import { Toaster } from "@/components/ui/sonner";
+
 export const metadata: Metadata = {
   title: "Finder | AI Career Intelligence",
   description: "Understand your career before applying.",
@@ -30,6 +32,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     >
       <body className="min-h-full flex flex-col bg-background font-body text-foreground">
         {children}
+        <Toaster position="top-right" richColors />
       </body>
     </html>
   );

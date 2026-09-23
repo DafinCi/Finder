@@ -19,6 +19,12 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now())
 );
 
+-- Safe patch jika tabel profiles sudah ada dari skema lama:
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS headline TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS sui_address TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS memwal_space_id TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now());
+
 -- ==============================================================================
 -- 2. TABEL: resumes
 -- ==============================================================================
@@ -33,6 +39,10 @@ CREATE TABLE IF NOT EXISTS public.resumes (
     walrus_status TEXT DEFAULT 'pending' CHECK (walrus_status IN ('pending', 'stored', 'failed')),
     uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now())
 );
+
+-- Safe patch jika tabel resumes sudah ada dari skema lama:
+ALTER TABLE public.resumes ADD COLUMN IF NOT EXISTS walrus_blob_id TEXT;
+ALTER TABLE public.resumes ADD COLUMN IF NOT EXISTS walrus_status TEXT DEFAULT 'pending';
 
 CREATE INDEX IF NOT EXISTS idx_resumes_profile_id ON public.resumes(profile_id);
 
@@ -63,6 +73,9 @@ CREATE TABLE IF NOT EXISTS public.companies (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now())
 );
 
+-- Safe patch jika tabel companies sudah ada dari skema lama:
+ALTER TABLE public.companies ADD COLUMN IF NOT EXISTS website TEXT;
+
 -- ==============================================================================
 -- 5. TABEL: jobs
 -- ==============================================================================
@@ -79,6 +92,10 @@ CREATE TABLE IF NOT EXISTS public.jobs (
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now())
 );
+
+-- Safe patch jika tabel jobs sudah ada dari skema lama:
+ALTER TABLE public.jobs ADD COLUMN IF NOT EXISTS job_type TEXT DEFAULT 'full-time';
+ALTER TABLE public.jobs ADD COLUMN IF NOT EXISTS salary_range TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_jobs_company_id ON public.jobs(company_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_is_active ON public.jobs(is_active);
@@ -101,7 +118,37 @@ CREATE INDEX IF NOT EXISTS idx_job_matches_analysis_id ON public.job_matches(ana
 CREATE INDEX IF NOT EXISTS idx_job_matches_job_id ON public.job_matches(job_id);
 
 -- ==============================================================================
--- 7. ROW LEVEL SECURITY (RLS) POLICIES
+-- 7. TABEL: chat_sessions (Sesi Percakapan Karir)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.chat_sessions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+    title TEXT NOT NULL DEFAULT 'Obrolan Karir Baru',
+    resume_id UUID REFERENCES public.resumes(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now())
+);
+
+CREATE INDEX IF NOT EXISTS idx_chat_sessions_user_id ON public.chat_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_chat_sessions_created_at ON public.chat_sessions(created_at DESC);
+
+-- ==============================================================================
+-- 8. TABEL: chat_messages (Pesan Percakapan Multi-turn & Widget Data)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.chat_messages (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    session_id UUID REFERENCES public.chat_sessions(id) ON DELETE CASCADE NOT NULL,
+    role TEXT NOT NULL CHECK (role IN ('user', 'assistant', 'system')),
+    content TEXT NOT NULL,
+    metadata JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now())
+);
+
+CREATE INDEX IF NOT EXISTS idx_chat_messages_session_id ON public.chat_messages(session_id);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_created_at ON public.chat_messages(created_at ASC);
+
+-- ==============================================================================
+-- 9. ROW LEVEL SECURITY (RLS) POLICIES
 -- ==============================================================================
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.resumes ENABLE ROW LEVEL SECURITY;
@@ -168,8 +215,46 @@ CREATE POLICY "Users can view own matches" ON public.job_matches
         )
     );
 
+-- Chat Sessions: User memiliki kontrol penuh atas sesi obrolannya
+ALTER TABLE public.chat_sessions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can manage own chat sessions" ON public.chat_sessions;
+CREATE POLICY "Users can manage own chat sessions" ON public.chat_sessions
+    FOR ALL USING (auth.uid() = user_id)
+    WITH CHECK (auth.uid() = user_id);
+
+-- Chat Messages: User memiliki akses ke pesan dalam sesi miliknya
+ALTER TABLE public.chat_messages ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can manage own chat messages" ON public.chat_messages;
+CREATE POLICY "Users can manage own chat messages" ON public.chat_messages
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM public.chat_sessions
+            WHERE public.chat_sessions.id = chat_messages.session_id
+            AND public.chat_sessions.user_id = auth.uid()
+        )
+    )
+    WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM public.chat_sessions
+            WHERE public.chat_sessions.id = chat_messages.session_id
+            AND public.chat_sessions.user_id = auth.uid()
+        )
+    );
+
 -- ==============================================================================
--- 8. TRIGGER AUTH: AUTO-CREATE PROFILE SAAT USER SIGN UP
+-- 10. GRANTS: BERIKAN AKSES LENGKAP KE ROLE SUPABASE
+-- ==============================================================================
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO anon, authenticated, service_role;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON ROUTINES TO anon, authenticated, service_role;
+
+-- ==============================================================================
+-- 11. TRIGGER AUTH: AUTO-CREATE PROFILE SAAT USER SIGN UP
 -- ==============================================================================
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger
@@ -180,7 +265,7 @@ BEGIN
   INSERT INTO public.profiles (id, full_name, avatar_url)
   VALUES (
     NEW.id,
-    COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name', 'Candidate'),
+    COALESCE(NEW.raw_user_meta_data->>'full_name', 'Developer'),
     NEW.raw_user_meta_data->>'avatar_url'
   )
   ON CONFLICT (id) DO UPDATE
@@ -196,7 +281,7 @@ CREATE TRIGGER on_auth_user_created
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- ==============================================================================
--- 9. SEED DATA DUMMY LOWONGAN KERJA (UNTUK TESTING & HACKATHON DEMO)
+-- 11. SEED DATA DUMMY LOWONGAN KERJA (UNTUK TESTING & HACKATHON DEMO)
 -- ==============================================================================
 DO $$
 DECLARE
@@ -205,23 +290,24 @@ DECLARE
     v_comp3_id UUID;
 BEGIN
     -- Masukkan dummy companies jika belum ada
-    INSERT INTO public.companies (name, logo_url, description, website)
-    VALUES ('Mysten Labs Ecosystem', 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100&auto=format&fit=crop&q=60', 'Leading decentralized infrastructure and Move ecosystem developers', 'https://mystenlabs.com')
-    RETURNING id INTO v_comp1_id;
+    IF NOT EXISTS (SELECT 1 FROM public.companies WHERE name = 'Mysten Labs Ecosystem') THEN
+        INSERT INTO public.companies (name, logo_url, description, website)
+        VALUES ('Mysten Labs Ecosystem', 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100&auto=format&fit=crop&q=60', 'Leading decentralized infrastructure and Move ecosystem developers', 'https://mystenlabs.com')
+        RETURNING id INTO v_comp1_id;
 
-    INSERT INTO public.companies (name, logo_url, description, website)
-    VALUES ('Walrus Data Guild', 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100&auto=format&fit=crop&q=60', 'Decentralized blob storage network and AI memory protocols', 'https://walrus.xyz')
-    RETURNING id INTO v_comp2_id;
+        INSERT INTO public.companies (name, logo_url, description, website)
+        VALUES ('Walrus Data Guild', 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100&auto=format&fit=crop&q=60', 'Decentralized blob storage network and AI memory protocols', 'https://walrus.xyz')
+        RETURNING id INTO v_comp2_id;
 
-    INSERT INTO public.companies (name, logo_url, description, website)
-    VALUES ('Nexus Web3 AI Labs', 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=100&auto=format&fit=crop&q=60', 'Building autonomous AI agents with decentralized memory on Sui', 'https://nexus.ai')
-    RETURNING id INTO v_comp3_id;
+        INSERT INTO public.companies (name, logo_url, description, website)
+        VALUES ('Nexus Web3 AI Labs', 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=100&auto=format&fit=crop&q=60', 'Building autonomous AI agents with decentralized memory on Sui', 'https://nexus.ai')
+        RETURNING id INTO v_comp3_id;
 
-    -- Lowongan Kerja Terkait
-    INSERT INTO public.jobs (company_id, title, description, requirements, location, job_type, salary_range, experience_level)
-    VALUES 
-    (v_comp1_id, 'Senior Frontend Engineer (React/Next.js)', 'Membangun antarmuka dApp web3 dengan performa tinggi menggunakan Next.js App Router dan Tailwind CSS.', ARRAY['React', 'Next.js', 'TypeScript', 'Tailwind CSS', 'Web3 / Sui SDK'], 'Remote', 'full-time', '$4,000 - $7,000 / bln', 'Senior'),
-    (v_comp2_id, 'Fullstack Web3 & AI Developer', 'Integrasi protokol penyimpanan Walrus dan Walrus Memory ke dalam aplikasi AI generasi berikutnya.', ARRAY['TypeScript', 'Node.js', 'Next.js', 'Walrus SDK', 'Vector Databases', 'Groq / OpenAI API'], 'Hybrid - Jakarta / Remote', 'full-time', '$3,500 - $6,000 / bln', 'Mid-Level'),
-    (v_comp3_id, 'AI Agent Systems Architect', 'Merancang arsitektur memory agent mandiri menggunakan Walrus Memory dan LLM reasoning.', ARRAY['Python', 'TypeScript', 'LangChain', 'Sui Move', 'pgvector', 'Prompt Engineering'], 'Remote', 'full-time', '$5,000 - $9,000 / bln', 'Lead / Staff');
+        -- Lowongan Kerja Terkait
+        INSERT INTO public.jobs (company_id, title, description, requirements, location, job_type, salary_range, experience_level)
+        VALUES 
+        (v_comp1_id, 'Senior Frontend Engineer (React/Next.js)', 'Membangun antarmuka dApp web3 dengan performa tinggi menggunakan Next.js App Router dan Tailwind CSS.', ARRAY['React', 'Next.js', 'TypeScript', 'Tailwind CSS', 'Web3 / Sui SDK'], 'Remote', 'full-time', '$4,000 - $7,000 / bln', 'Senior'),
+        (v_comp2_id, 'Fullstack Web3 & AI Developer', 'Integrasi protokol penyimpanan Walrus dan Walrus Memory ke dalam aplikasi AI generasi berikutnya.', ARRAY['TypeScript', 'Node.js', 'Next.js', 'Walrus SDK', 'Vector Databases', 'Groq / OpenAI API'], 'Hybrid - Jakarta / Remote', 'full-time', '$3,500 - $6,000 / bln', 'Mid-Level'),
+        (v_comp3_id, 'AI Agent Systems Architect', 'Merancang arsitektur memory agent mandiri menggunakan Walrus Memory dan LLM reasoning.', ARRAY['Python', 'TypeScript', 'LangChain', 'Sui Move', 'pgvector', 'Prompt Engineering'], 'Remote', 'full-time', '$5,000 - $9,000 / bln', 'Lead / Staff');
+    END IF;
 END $$;
-

@@ -1,50 +1,108 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { MenuItems } from "@/constants/menu";
-import SidebarItem, { SidebarItemData } from "./SidebarItem";
+import React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Plus, BriefcaseBusiness, User } from "lucide-react";
+import { useSessions } from "@/features/chat/hooks/useSessions";
+import SessionHistoryList from "./SessionHistoryList";
 
 export default function SidebarNavigation({
   collapsed,
 }: {
   collapsed: boolean;
 }) {
-  const [dynamicMenu, setDynamicMenu] = useState<SidebarItemData[]>(MenuItems);
+  const pathname = usePathname();
+  const { groupedSessions, isLoading, deleteSession } = useSessions();
 
-  useEffect(() => {
-    async function fetchBadgeData() {
-      try {
-        const response = await fetch("/api/dashboard/metrics");
-        if (!response.ok) return;
-
-        const data = await response.json();
-
-        if (
-          data.hasResume &&
-          data.resumeStatus === "completed" &&
-          data.metrics
-        ) {
-          const { totalMatches } = data.metrics;
-
-          setDynamicMenu((prevMenu) =>
-            prevMenu.map((item) =>
-              item.href === "/jobs" ? { ...item, badge: totalMatches } : item,
-            ),
-          );
-        }
-      } catch (error) {
-        console.error("Gagal memuat badge menu:", error);
-      }
-    }
-
-    fetchBadgeData();
-  }, []);
+  if (collapsed) {
+    return (
+      <nav className="flex-1 px-2 py-4 space-y-3 flex flex-col items-center">
+        <Link
+          href="/"
+          className={`p-2.5 rounded-xl border transition-all ${
+            pathname === "/"
+              ? "bg-primary text-primary-foreground border-primary"
+              : "bg-secondary/60 text-muted-foreground hover:text-foreground border-border"
+          }`}
+          title="New Chat"
+        >
+          <Plus className="w-4 h-4" />
+        </Link>
+        <Link
+          href="/jobs"
+          className={`p-2.5 rounded-xl border transition-all ${
+            pathname === "/jobs"
+              ? "bg-primary text-primary-foreground border-primary"
+              : "bg-secondary/60 text-muted-foreground hover:text-foreground border-border"
+          }`}
+          title="Explore Jobs"
+        >
+          <BriefcaseBusiness className="w-4 h-4" />
+        </Link>
+        <Link
+          href="/profile"
+          className={`p-2.5 rounded-xl border transition-all ${
+            pathname === "/profile"
+              ? "bg-primary text-primary-foreground border-primary"
+              : "bg-secondary/60 text-muted-foreground hover:text-foreground border-border"
+          }`}
+          title="My Profile"
+        >
+          <User className="w-4 h-4" />
+        </Link>
+      </nav>
+    );
+  }
 
   return (
-    <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto overflow-x-hidden scrollbar-none focus:outline-none">
-      {dynamicMenu.map((item) => (
-        <SidebarItem key={item.href} item={item} collapsed={collapsed} />
-      ))}
+    <nav className="flex-1 flex flex-col px-3 py-3 overflow-hidden">
+      {/* Primary Action Button: New Chat */}
+      <Link
+        href="/"
+        className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl bg-primary text-primary-foreground text-xs font-semibold shadow-xs hover:opacity-95 transition-all active:scale-[0.98] mb-3"
+      >
+        <Plus className="w-4 h-4" />
+        <span>New Chat</span>
+      </Link>
+
+      {/* Quick Nav Links */}
+      <div className="space-y-1 mb-3">
+        <Link
+          href="/jobs"
+          className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+            pathname === "/jobs"
+              ? "bg-secondary text-foreground font-semibold"
+              : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+          }`}
+        >
+          <BriefcaseBusiness className="w-3.5 h-3.5 text-primary" />
+          <span>Explore Jobs</span>
+        </Link>
+
+        <Link
+          href="/profile"
+          className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+            pathname === "/profile"
+              ? "bg-secondary text-foreground font-semibold"
+              : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+          }`}
+        >
+          <User className="w-3.5 h-3.5 text-primary" />
+          <span>My Profile</span>
+        </Link>
+      </div>
+
+      <hr className="border-border/60 my-1 mx-2" />
+
+      {/* Dynamic Session History */}
+      <div className="flex-1 overflow-hidden flex flex-col mt-2">
+        <SessionHistoryList
+          groupedSessions={groupedSessions}
+          isLoading={isLoading}
+          onDeleteSession={deleteSession}
+        />
+      </div>
     </nav>
   );
 }

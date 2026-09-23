@@ -2,20 +2,33 @@
 
 import React, { ReactNode } from "react";
 import Sidebar from "./sidebar/Sidebar";
-import Navbar from "./navbar/Navbar";
+import { useSidebar } from "@/contexts/SidebarContext";
+import { PanelLeftOpen } from "lucide-react";
 
 export default function AppShell({ children }: { children: ReactNode }) {
+  const { collapsed, toggleSidebar } = useSidebar();
+
   return (
     <div className="flex h-screen w-full bg-background text-foreground overflow-hidden">
       <Sidebar />
 
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Navbar />
+      <main className="flex-1 h-screen flex flex-col overflow-hidden p-0 w-full relative">
+        {/* Floating Open Sidebar Button when collapsed */}
+        {collapsed && (
+          <div className="absolute top-2.5 left-3 z-50 animate-in fade-in duration-200">
+            <button
+              type="button"
+              onClick={toggleSidebar}
+              title="Open sidebar"
+              className="p-2 rounded-lg bg-card/90 border border-border/80 text-muted-foreground hover:text-foreground hover:bg-secondary shadow-xs backdrop-blur-sm transition-colors cursor-pointer"
+            >
+              <PanelLeftOpen className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
-        <main className="flex-1 overflow-y-auto px-6 md:px-8 py-6 focus:outline-none custom-scrollbar">
-          <div className="max-w-5xl mx-auto w-full">{children}</div>
-        </main>
-      </div>
+        {children}
+      </main>
     </div>
   );
 }

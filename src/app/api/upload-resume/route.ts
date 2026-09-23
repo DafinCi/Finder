@@ -112,6 +112,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const sessionId = formData.get("sessionId") as string | null;
+    if (sessionId) {
+      await supabaseAdmin
+        .from("chat_sessions")
+        .update({ resume_id: resumeRecord.id })
+        .eq("id", sessionId)
+        .eq("user_id", userId);
+    }
+
     return NextResponse.json(
       {
         success: true,
