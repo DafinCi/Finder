@@ -5,8 +5,8 @@ interface JobSummaryProps {
   stats: {
     count: number;
     totalCount?: number;
-    highest: number;
-    average: number;
+    highest: number | null;
+    average: number | null;
   };
 }
 
@@ -41,9 +41,16 @@ export default function JobSummary({ stats }: JobSummaryProps) {
           <p className="text-[11px] text-muted-foreground uppercase font-semibold tracking-wider">
             Highest Match
           </p>
-          <h4 className="text-xl font-bold font-heading text-foreground">
-            {highest}%
-          </h4>
+          <div className="flex items-baseline gap-1.5">
+            <h4 className="text-xl font-bold font-heading text-foreground">
+              {highest !== null ? `${highest}%` : "—"}
+            </h4>
+            {highest === null && (
+              <span className="text-[11px] text-muted-foreground/70 font-normal">
+                (N/A)
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -55,9 +62,16 @@ export default function JobSummary({ stats }: JobSummaryProps) {
           <p className="text-[11px] text-muted-foreground uppercase font-semibold tracking-wider">
             Average Match
           </p>
-          <h4 className="text-xl font-bold font-heading text-foreground">
-            {average}%
-          </h4>
+          <div className="flex items-baseline gap-1.5">
+            <h4 className="text-xl font-bold font-heading text-foreground">
+              {average !== null ? `${average}%` : "—"}
+            </h4>
+            {average === null && (
+              <span className="text-[11px] text-muted-foreground/70 font-normal">
+                (N/A)
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </div>

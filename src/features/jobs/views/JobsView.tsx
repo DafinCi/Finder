@@ -68,13 +68,53 @@ export default function JobsView() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         handleCloseDrawer();
+        return;
+      }
+
+      if (e.key === "Tab") {
+        const container = drawerRef.current;
+        if (!container) return;
+
+        const focusableElements = container.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        );
+
+        if (focusableElements.length === 0) {
+          e.preventDefault();
+          return;
+        }
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey) {
+          if (
+            document.activeElement === firstElement ||
+            document.activeElement === container
+          ) {
+            e.preventDefault();
+            lastElement.focus();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
 
     requestAnimationFrame(() => {
-      drawerRef.current?.focus();
+      const firstFocusable = drawerRef.current?.querySelector<HTMLElement>(
+        'button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      if (firstFocusable) {
+        firstFocusable.focus();
+      } else {
+        drawerRef.current?.focus();
+      }
     });
 
     return () => {

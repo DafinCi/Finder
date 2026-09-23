@@ -38,7 +38,6 @@ export const jobsApi = {
           companies (
             id,
             name,
-            logo_url
             logo_url,
             website
           )

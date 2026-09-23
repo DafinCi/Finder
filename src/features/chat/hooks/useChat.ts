@@ -10,7 +10,10 @@ export function useChat(sessionId?: string) {
   const [isLoading, setIsLoading] = useState(false);
   const [thinkingStatus, setThinkingStatus] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
-  const [failedPrompt, setFailedPrompt] = useState<string | null>(null);
+  const [failedSubmission, setFailedSubmission] = useState<{
+    prompt: string;
+    file?: File;
+  } | null>(null);
 
   const fetchSessionData = useCallback(async () => {
     if (!sessionId) return;
@@ -145,12 +148,12 @@ export function useChat(sessionId?: string) {
           res.userMessage,
           res.assistantMessage,
         ]);
-        setFailedPrompt(null);
+        setFailedSubmission(null);
       }
     } catch (err) {
       const errorMsg = (err as Error).message;
       setError(errorMsg);
-      setFailedPrompt(prompt);
+      setFailedSubmission({ prompt, file: file || undefined });
       // Clean up unpersisted optimistic temp messages on error
       setMessages((prev) =>
         prev.filter(
@@ -164,8 +167,8 @@ export function useChat(sessionId?: string) {
   };
 
   const retryLastMessage = () => {
-    if (failedPrompt) {
-      sendMessage(failedPrompt);
+    if (failedSubmission) {
+      sendMessage(failedSubmission.prompt, failedSubmission.file);
     }
   };
 
@@ -175,7 +178,8 @@ export function useChat(sessionId?: string) {
     isLoading,
     thinkingStatus,
     error,
-    failedPrompt,
+    failedPrompt: failedSubmission?.prompt ?? null,
+    canRetry: failedSubmission !== null,
     sendMessage,
     retryLastMessage,
     refreshSession: fetchSessionData,

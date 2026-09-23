@@ -190,19 +190,25 @@ export const useJobs = (analysisId: string | null = null) => {
   }, []);
 
   const stats = useMemo(() => {
-    if (matches.length === 0)
-      return { count: 0, totalCount: 0, highest: 0, average: 0 };
-    const currentSet = filteredMatches.length > 0 ? filteredMatches : matches;
-    const scores = currentSet.map((m) => m.matchScore);
+    if (matches.length === 0 || filteredMatches.length === 0) {
+      return {
+        count: filteredMatches.length,
+        totalCount: matches.length,
+        highest: null,
+        average: null,
+      };
+    }
+
+    const scores = filteredMatches.map((m) => m.matchScore);
     const highest = Math.max(...scores);
     const average = Math.round(
-      scores.reduce((a, b) => a + b, 0) / currentSet.length,
+      scores.reduce((a, b) => a + b, 0) / filteredMatches.length,
     );
     return {
       count: filteredMatches.length,
       totalCount: matches.length,
-      highest: filteredMatches.length > 0 ? highest : 0,
-      average: filteredMatches.length > 0 ? average : 0,
+      highest,
+      average,
     };
   }, [matches, filteredMatches]);
 
