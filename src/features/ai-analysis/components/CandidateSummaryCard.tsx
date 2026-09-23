@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Sparkles, Briefcase, Award, CheckCircle2 } from "lucide-react";
+import { Sparkles, Briefcase, CheckCircle2 } from "lucide-react";
 import { CandidateAnalysis } from "@/types/candidate";
 
 interface CandidateSummaryCardProps {
@@ -11,10 +11,12 @@ interface CandidateSummaryCardProps {
 export default function CandidateSummaryCard({
   analysis,
 }: CandidateSummaryCardProps) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const candidate = (analysis as any).candidate || analysis;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const career = (analysis as any).career || analysis;
 
-  const name = candidate.name || "Kandidat Profesional";
+  const name = candidate.name || "Professional Candidate";
   const title = candidate.title || "Software Engineer";
   const years = candidate.years_of_experience || 0;
   const summary = candidate.summary || "";
@@ -35,7 +37,9 @@ export default function CandidateSummaryCard({
             </h3>
             <p className="text-xs text-primary font-medium flex items-center gap-1.5 mt-0.5">
               <Briefcase className="w-3.5 h-3.5" />
-              {title} • {years} Tahun Pengalaman
+              <span>
+                {title} • {years} {years === 1 ? "Year" : "Years"} of Experience
+              </span>
             </p>
           </div>
         </div>
@@ -74,9 +78,12 @@ export default function CandidateSummaryCard({
 
       {/* Strengths */}
       {strengths.length > 0 && (
-        <div className="pt-1 border-t border-border/40">
+        <div className="pt-2 border-t border-border/40 space-y-1.5">
+          <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+            Core Strengths
+          </span>
           <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
-            {strengths.slice(0, 3).map((st: string, idx: number) => (
+            {strengths.slice(0, 4).map((st: string, idx: number) => (
               <div
                 key={idx}
                 className="flex items-center gap-1.5 text-xs text-muted-foreground"

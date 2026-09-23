@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import {
   Briefcase,
   MapPin,
@@ -27,10 +28,10 @@ export default function JobMatchCarousel({
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-semibold font-heading text-foreground flex items-center gap-2">
           <Briefcase className="w-4 h-4 text-primary" />
-          Rekomendasi Lowongan Kerja Teratas
+          <span>Top Matching Opportunities</span>
         </h4>
         <span className="text-[11px] text-muted-foreground font-sans">
-          {jobs.length} Peluang Terkurasi
+          {jobs.length} Curated Matches
         </span>
       </div>
 
@@ -49,7 +50,7 @@ export default function JobMatchCarousel({
           return (
             <div
               key={job.id || job.job_id}
-              className="flex flex-col justify-between p-4 rounded-xl border border-border/80 bg-card/40 hover:bg-card/70 hover:border-border transition-all duration-200"
+              className="flex flex-col justify-between p-4 rounded-xl border border-border/80 bg-card/40 hover:bg-card/70 hover:border-border transition-all duration-200 shadow-2xs"
             >
               <div className="space-y-2.5">
                 {/* Header: Title & Match Badge */}
@@ -90,7 +91,7 @@ export default function JobMatchCarousel({
 
                 {/* AI Matching Reason */}
                 {job.reason && (
-                  <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed bg-secondary/30 p-2 rounded-md">
+                  <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed bg-secondary/30 p-2 rounded-lg font-sans">
                     {job.reason}
                   </p>
                 )}
@@ -100,8 +101,7 @@ export default function JobMatchCarousel({
                   <div className="flex items-center gap-1.5 text-[11px] text-amber-400/90 pt-1">
                     <AlertCircle className="w-3 h-3 shrink-0" />
                     <span className="truncate">
-                      Skill yang perlu ditingkatkan:{" "}
-                      {job.missing_skills.join(", ")}
+                      Skills to level up: {job.missing_skills.join(", ")}
                     </span>
                   </div>
                 )}
@@ -115,16 +115,16 @@ export default function JobMatchCarousel({
                   className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                 >
                   <MessageSquare className="w-3.5 h-3.5 text-primary" />
-                  Tanyakan ke AI
+                  <span>Ask Copilot</span>
                 </button>
 
-                <a
-                  href={`/jobs`}
+                <Link
+                  href="/jobs"
                   className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
                 >
-                  Lihat Detail
+                  <span>View Details</span>
                   <ArrowRight className="w-3 h-3" />
-                </a>
+                </Link>
               </div>
             </div>
           );

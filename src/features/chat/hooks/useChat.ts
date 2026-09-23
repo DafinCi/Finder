@@ -39,7 +39,7 @@ export function useChat(sessionId?: string) {
 
       // If file attached, upload and analyze
       if (file) {
-        setThinkingStatus("Mengunggah dan membaca berkas CV...");
+        setThinkingStatus("Uploading and parsing resume document...");
 
         // Optimistically add user message
         const tempUserMsg: ChatMessage = {
@@ -48,7 +48,7 @@ export function useChat(sessionId?: string) {
           role: "user",
           content:
             prompt ||
-            "Tolong analisis resume dan carikan lowongan pekerjaan yang cocok.",
+            "Please analyze my resume and find matching career opportunities.",
           metadata: {
             attachment: {
               name: file.name,
@@ -69,7 +69,7 @@ export function useChat(sessionId?: string) {
         setMessages(updatedData.messages);
       } else {
         // Text-only message
-        setThinkingStatus("Finder AI sedang menyusun jawaban...");
+        setThinkingStatus("Finder AI is drafting a response...");
 
         // Optimistically add user message
         const tempUserMsg: ChatMessage = {

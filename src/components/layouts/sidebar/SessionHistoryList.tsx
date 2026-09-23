@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MessageSquare, Trash2, Clock } from "lucide-react";
+import { Trash2, Clock } from "lucide-react";
 import { ChatSession } from "@/types/chat";
 import { GroupedSessions } from "@/features/chat/hooks/useSessions";
 
@@ -58,7 +58,6 @@ export default function SessionHistoryList({
                 className="flex items-center gap-2.5 min-w-0 flex-1"
                 title={session.title}
               >
-                <MessageSquare className="w-3.5 h-3.5 shrink-0 text-primary" />
                 <span className="truncate">{session.title}</span>
               </Link>
 
