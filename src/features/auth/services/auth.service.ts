@@ -44,10 +44,4 @@ export async function logout() {
   if (error) {
     throw new Error(error.message);
   }
-
-  // Force clean cookies darurat jika diperlukan
-  document.cookie =
-    "sb-access-token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
-  document.cookie =
-    "sb-refresh-token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
 }

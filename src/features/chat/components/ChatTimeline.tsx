@@ -19,9 +19,25 @@ export default function ChatTimeline({
   onAskAboutJob,
 }: ChatTimelineProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
+  const isNearBottomRef = useRef(true);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const scrollContainer = bottomRef.current?.closest(".overflow-y-auto");
+    if (!scrollContainer) return;
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
+      isNearBottomRef.current = scrollHeight - scrollTop - clientHeight < 150;
+    };
+
+    scrollContainer.addEventListener("scroll", handleScroll, { passive: true });
+    return () => scrollContainer.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    if (isNearBottomRef.current) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages, isLoading]);
 
   return (
@@ -34,7 +50,9 @@ export default function ChatTimeline({
         />
       ))}
 
-      {isLoading && <ChatThinking statusText={thinkingStatus} />}
+      {isLoading && thinkingStatus ? (
+        <ChatThinking statusText={thinkingStatus} />
+      ) : null}
 
       <div ref={bottomRef} className="h-4" />
     </div>

@@ -28,13 +28,58 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     resumeId = body.resumeId;
-    const { rawText } = body;
+    const { rawText, sessionId } = body;
 
     if (!resumeId || !rawText) {
       return NextResponse.json(
         { error: "resumeId dan rawText wajib dikirim" },
         { status: 400 },
       );
+    }
+
+    // Verify resume ownership to prevent IDOR attacks
+    const { data: resumeRecord, error: resumeFetchError } = await supabaseAdmin
+      .from("resumes")
+      .select("id, profile_id")
+      .eq("id", resumeId)
+      .single();
+
+    if (resumeFetchError || !resumeRecord) {
+      return NextResponse.json(
+        { error: "Dokumen resume tidak ditemukan" },
+        { status: 404 },
+      );
+    }
+
+    if (resumeRecord.profile_id !== user.id) {
+      return NextResponse.json(
+        { error: "Forbidden! Anda tidak memiliki izin untuk resume ini." },
+        { status: 403 },
+      );
+    }
+
+    // Verify session ownership if sessionId is provided
+    if (sessionId) {
+      const { data: sessionRecord, error: sessionFetchError } =
+        await supabaseAdmin
+          .from("chat_sessions")
+          .select("id, user_id")
+          .eq("id", sessionId)
+          .single();
+
+      if (
+        sessionFetchError ||
+        !sessionRecord ||
+        sessionRecord.user_id !== user.id
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              "Forbidden! Sesi percakapan tidak valid atau bukan milik Anda.",
+          },
+          { status: 403 },
+        );
+      }
     }
 
     await supabaseAdmin
@@ -59,23 +104,33 @@ export async function POST(req: NextRequest) {
     if (analysisError) throw analysisError;
     const analysisId = analysisData.id;
 
-    const { sessionId } = body;
+    // Sanitize skills to avoid PostgreSQL array parsing syntax errors
+    const sanitizedSkills = (aiCandidateData.extracted_skills || [])
+      .map((s) => s.replace(/["{},]/g, "").trim())
+      .filter(Boolean);
 
     // Pre-filtering jobs
-    let { data: topJobs, error: jobsError } = await supabaseAdmin
-      .from("jobs")
-      .select("id, title, description, requirements, company_id")
-      .filter(
-        "requirements",
-        "ov",
-        `{${aiCandidateData.extracted_skills.join(",")}}`,
-      )
-      .limit(TOP_JOB_LIMIT);
+    let topJobs: Array<{
+      id: string;
+      title: string;
+      description: string;
+      requirements: string[];
+      company_id: string;
+    }> = [];
 
-    if (jobsError) throw jobsError;
+    if (sanitizedSkills.length > 0) {
+      const { data: matchedSkillsJobs, error: jobsError } = await supabaseAdmin
+        .from("jobs")
+        .select("id, title, description, requirements, company_id")
+        .filter("requirements", "ov", `{${sanitizedSkills.join(",")}}`)
+        .limit(TOP_JOB_LIMIT);
+
+      if (jobsError) throw jobsError;
+      topJobs = matchedSkillsJobs || [];
+    }
 
     // Fallback to latest active jobs if no overlap found
-    if (!topJobs || topJobs.length === 0) {
+    if (topJobs.length === 0) {
       const { data: fallbackJobs } = await supabaseAdmin
         .from("jobs")
         .select("id, title, description, requirements, company_id")
@@ -84,7 +139,7 @@ export async function POST(req: NextRequest) {
       topJobs = fallbackJobs || [];
     }
 
-    let matchedJobsWithDetails: any[] = [];
+    let matchedJobsWithDetails: import("@/types/chat").MatchedJobItem[] = [];
 
     if (topJobs && topJobs.length > 0) {
       const matchResults = await analyzeJobMatches(
@@ -130,7 +185,28 @@ export async function POST(req: NextRequest) {
         .eq("analysis_id", analysisId)
         .order("match_score", { ascending: false });
 
-      matchedJobsWithDetails = (fullMatches || []).map((m: any) => ({
+      interface MatchQueryRow {
+        id: string;
+        job_id: string;
+        match_score: number;
+        reason: string | null;
+        missing_skills: string[];
+        jobs: {
+          id: string;
+          title: string;
+          location: string;
+          job_type: string;
+          salary_range: string | null;
+          companies: {
+            name: string;
+            logo_url: string | null;
+          } | null;
+        } | null;
+      }
+
+      matchedJobsWithDetails = (
+        (fullMatches as unknown as MatchQueryRow[]) || []
+      ).map((m) => ({
         id: m.id,
         job_id: m.job_id,
         match_score: m.match_score,
@@ -166,13 +242,35 @@ Berikut adalah ringkasan profil keahlian Anda dan kurasi **lowongan pekerjaan ya
         },
       });
 
+      // Only update title if current title is default or an analysis placeholder
+      const { data: currentSession } = await supabaseAdmin
+        .from("chat_sessions")
+        .select("title")
+        .eq("id", sessionId)
+        .single();
+
+      const shouldUpdateTitle =
+        !currentSession?.title ||
+        currentSession.title === "Obrolan Karir Baru" ||
+        currentSession.title.startsWith("Analisis:") ||
+        currentSession.title.startsWith("CV Analysis:");
+
+      const sessionUpdatePayload: {
+        resume_id: string;
+        updated_at: string;
+        title?: string;
+      } = {
+        resume_id: resumeId,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (shouldUpdateTitle) {
+        sessionUpdatePayload.title = `Analisis: ${candidateTitle}`;
+      }
+
       await supabaseAdmin
         .from("chat_sessions")
-        .update({
-          title: `Analisis: ${candidateTitle}`,
-          resume_id: resumeId,
-          updated_at: new Date().toISOString(),
-        })
+        .update(sessionUpdatePayload)
         .eq("id", sessionId);
     }
 

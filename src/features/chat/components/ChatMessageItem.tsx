@@ -91,7 +91,15 @@ export default function ChatMessageItem({
         </div>
 
         {/* Rich Markdown Text Content */}
-        {message.content && <ChatMarkdown content={message.content} />}
+        {message.content ? (
+          <ChatMarkdown content={message.content} />
+        ) : !analysis && (!jobMatches || jobMatches.length === 0) ? (
+          <div className="flex items-center gap-1.5 py-1 text-xs text-muted-foreground">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-primary/70 animate-pulse [animation-delay:150ms]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-primary/40 animate-pulse [animation-delay:300ms]" />
+          </div>
+        ) : null}
 
         {/* Embedded Candidate Summary Card */}
         {analysis && <CandidateSummaryCard analysis={analysis} />}

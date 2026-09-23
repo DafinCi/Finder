@@ -52,28 +52,84 @@ export const chatService = {
 
   async sendMessage(
     payload: SendMessagePayload,
+    onToken?: (token: string) => void,
   ): Promise<{ userMessage: ChatMessage; assistantMessage: ChatMessage }> {
     const res = await fetch("/api/chat/message", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
+
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.error || "Failed to process chat message.");
     }
-    return res.json();
+
+    if (!res.body) {
+      throw new Error("Response body is not readable for streaming.");
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let userMessage: ChatMessage | null = null;
+    let assistantMessage: ChatMessage | null = null;
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n\n");
+      buffer = lines.pop() || "";
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith("data: ")) continue;
+        const jsonStr = trimmed.slice(6);
+        try {
+          const parsed = JSON.parse(jsonStr);
+          if (parsed.token && onToken) {
+            onToken(parsed.token);
+          }
+          if (parsed.done) {
+            userMessage = parsed.userMessage;
+            assistantMessage = parsed.assistantMessage;
+          }
+          if (parsed.error) {
+            throw new Error(parsed.error);
+          }
+        } catch (e) {
+          if (
+            (e as Error).message &&
+            !(e as Error).message.includes("Unexpected end of JSON")
+          ) {
+            throw e;
+          }
+        }
+      }
+    }
+
+    if (!assistantMessage || !userMessage) {
+      throw new Error("Conversation stream finished unexpectedly.");
+    }
+
+    return { userMessage, assistantMessage };
   },
 
   async uploadAndAnalyzeResume(
     file: File,
     sessionId: string,
     onProgress?: (status: string) => void,
+    prompt?: string,
   ) {
     onProgress?.("Uploading and parsing document...");
     const formData = new FormData();
     formData.append("file", file);
     formData.append("sessionId", sessionId);
+    if (prompt) {
+      formData.append("prompt", prompt);
+    }
 
     const uploadRes = await fetch("/api/upload-resume", {
       method: "POST",

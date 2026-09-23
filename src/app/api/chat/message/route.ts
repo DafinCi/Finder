@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { groq, DEFAULT_GROQ_MODEL } from "@/lib/groq/client";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient();
@@ -53,7 +55,7 @@ export async function POST(req: NextRequest) {
 
     if (userMsgError) throw userMsgError;
 
-    // Load candidate profile context if available
+    // Load candidate profile context in compressed format to preserve Groq TPM budget
     let candidateContext = "";
     if (session.resume_id) {
       const { data: analysis } = await supabaseAdmin
@@ -65,21 +67,55 @@ export async function POST(req: NextRequest) {
         .maybeSingle();
 
       if (analysis?.candidate_data) {
-        candidateContext = `\n\n[DATA PROFIL KANDIDAT YANG SEDANG DIANALISIS]:\n${JSON.stringify(
-          analysis.candidate_data,
-          null,
-          2,
-        )}`;
+        interface CompressedCandidate {
+          name?: string;
+          title?: string;
+          years_of_experience?: number;
+          skills?: { core?: string[] };
+        }
+        interface CompressedCareer {
+          career_level?: string;
+          strengths?: string[];
+        }
+        interface RawData {
+          candidate?: CompressedCandidate;
+          career?: CompressedCareer;
+          name?: string;
+          title?: string;
+          years_of_experience?: number;
+          skills?: { core?: string[] };
+          career_level?: string;
+          strengths?: string[];
+        }
+
+        const raw = analysis.candidate_data as RawData;
+        const c = raw.candidate || raw;
+        const career = raw.career || raw;
+        const coreSkills = Array.isArray(c?.skills?.core)
+          ? c.skills.core.join(", ")
+          : (analysis.extracted_skills || []).slice(0, 15).join(", ");
+        const strengths = Array.isArray(career?.strengths)
+          ? career.strengths.slice(0, 3).join("; ")
+          : "";
+
+        candidateContext = `\n\n[RINGKASAN PROFIL KANDIDAT AKTIF]:
+- Nama & Title: ${c?.name || "Kandidat"} | ${c?.title || "Professional"}
+- Pengalaman: ${c?.years_of_experience ?? 0} tahun
+- Keahlian Utama: ${coreSkills || "General"}
+- Kekuatan: ${strengths || "Teknis & Adaptif"}
+- Level Karir: ${career?.career_level || "Mid-Level"}`;
       }
     }
 
-    // Load recent message history for context (up to 8 messages)
-    const { data: history } = await supabaseAdmin
+    // Load recent message history for context (up to 10 most recent messages, ordered chronologically)
+    const { data: recentHistory } = await supabaseAdmin
       .from("chat_messages")
       .select("role, content")
       .eq("session_id", session_id)
-      .order("created_at", { ascending: true })
+      .order("created_at", { ascending: false })
       .limit(10);
+
+    const chronologicalHistory = (recentHistory || []).reverse();
 
     const messagesForGroq: Array<{
       role: "system" | "user" | "assistant";
@@ -94,8 +130,8 @@ Gunakan format Markdown bersih (bullet points dengan '-' atau '*', teks tebal un
       },
     ];
 
-    if (history && history.length > 0) {
-      history.forEach((msg) => {
+    if (chronologicalHistory && chronologicalHistory.length > 0) {
+      chronologicalHistory.forEach((msg) => {
         if (msg.role === "user" || msg.role === "assistant") {
           messagesForGroq.push({
             role: msg.role,
@@ -110,39 +146,90 @@ Gunakan format Markdown bersih (bullet points dengan '-' atau '*', teks tebal un
       });
     }
 
-    const completion = await groq.chat.completions.create({
+    const maxTokensLimit = Number(process.env.GROQ_MAX_TOKENS) || 2500;
+
+    const stream = await groq.chat.completions.create({
       model: DEFAULT_GROQ_MODEL,
       messages: messagesForGroq,
       temperature: 0.6,
-      max_tokens: 1500,
+      max_tokens: maxTokensLimit,
+      stream: true,
     });
 
-    const assistantContent =
-      completion.choices[0]?.message?.content ||
-      "Maaf, saya tidak dapat memproses jawaban saat ini. Silakan coba kembali.";
+    const encoder = new TextEncoder();
 
-    // Save assistant response
-    const { data: assistantMsg, error: assistantMsgError } = await supabaseAdmin
-      .from("chat_messages")
-      .insert({
-        session_id,
-        role: "assistant",
-        content: assistantContent,
-      })
-      .select()
-      .single();
+    const readableStream = new ReadableStream({
+      async start(controller) {
+        let fullAssistantContent = "";
 
-    if (assistantMsgError) throw assistantMsgError;
+        try {
+          for await (const chunk of stream) {
+            const token = chunk.choices[0]?.delta?.content || "";
+            if (token) {
+              fullAssistantContent += token;
+              controller.enqueue(
+                encoder.encode(`data: ${JSON.stringify({ token })}\n\n`),
+              );
+            }
+          }
 
-    // Update session timestamp
-    await supabaseAdmin
-      .from("chat_sessions")
-      .update({ updated_at: new Date().toISOString() })
-      .eq("id", session_id);
+          const finalContent =
+            fullAssistantContent.trim() ||
+            "Maaf, saya tidak dapat memproses jawaban saat ini. Silakan coba kembali.";
 
-    return NextResponse.json({
-      userMessage: userMsg,
-      assistantMessage: assistantMsg,
+          // Save assistant response to database
+          const { data: assistantMsg } = await supabaseAdmin
+            .from("chat_messages")
+            .insert({
+              session_id,
+              role: "assistant",
+              content: finalContent,
+            })
+            .select()
+            .single();
+
+          // Update session timestamp
+          await supabaseAdmin
+            .from("chat_sessions")
+            .update({ updated_at: new Date().toISOString() })
+            .eq("id", session_id);
+
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({
+                done: true,
+                userMessage: userMsg,
+                assistantMessage: assistantMsg || {
+                  id: `asst-${Date.now()}`,
+                  session_id,
+                  role: "assistant",
+                  content: finalContent,
+                  created_at: new Date().toISOString(),
+                },
+              })}\n\n`,
+            ),
+          );
+        } catch (streamError) {
+          console.error("Groq Stream Error:", streamError);
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({
+                error: (streamError as Error).message,
+              })}\n\n`,
+            ),
+          );
+        } finally {
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(readableStream, {
+      headers: {
+        "Content-Type": "text/event-stream; charset=utf-8",
+        "Cache-Control": "no-cache, no-transform",
+        Connection: "keep-alive",
+      },
     });
   } catch (error) {
     console.error("POST /api/chat/message error:", error);

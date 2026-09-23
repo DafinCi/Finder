@@ -60,16 +60,21 @@ export function useChat(sessionId?: string) {
         };
         setMessages((prev) => [...prev, tempUserMsg]);
 
-        await chatService.uploadAndAnalyzeResume(file, sessionId, (status) => {
-          setThinkingStatus(status);
-        });
+        await chatService.uploadAndAnalyzeResume(
+          file,
+          sessionId,
+          (status) => {
+            setThinkingStatus(status);
+          },
+          prompt,
+        );
 
         // Refetch complete session messages to sync with database
         const updatedData = await chatService.getSessionDetail(sessionId);
         setMessages(updatedData.messages);
       } else {
-        // Text-only message
-        setThinkingStatus("Finder AI is drafting a response...");
+        // Text-only message: assistant message bubble provides the streaming placeholder, so keep thinkingStatus empty
+        setThinkingStatus("");
 
         // Optimistically add user message
         const tempUserMsg: ChatMessage = {
@@ -79,22 +84,52 @@ export function useChat(sessionId?: string) {
           content: prompt,
           created_at: new Date().toISOString(),
         };
-        setMessages((prev) => [...prev, tempUserMsg]);
 
-        const res = await chatService.sendMessage({
+        const tempAssistantId = `stream-${Date.now()}`;
+        const tempAssistantMsg: ChatMessage = {
+          id: tempAssistantId,
           session_id: sessionId,
-          content: prompt,
-        });
+          role: "assistant",
+          content: "",
+          created_at: new Date().toISOString(),
+        };
 
-        // Replace optimistic user message with persisted one and append assistant message
+        setMessages((prev) => [...prev, tempUserMsg, tempAssistantMsg]);
+
+        const res = await chatService.sendMessage(
+          {
+            session_id: sessionId,
+            content: prompt,
+          },
+          (token: string) => {
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === tempAssistantId
+                  ? { ...msg, content: msg.content + token }
+                  : msg,
+              ),
+            );
+          },
+        );
+
+        // Replace optimistic messages with persisted database records
         setMessages((prev) => [
-          ...prev.filter((m) => m.id !== tempUserMsg.id),
+          ...prev.filter(
+            (m) => m.id !== tempUserMsg.id && m.id !== tempAssistantId,
+          ),
           res.userMessage,
           res.assistantMessage,
         ]);
       }
     } catch (err) {
-      setError((err as Error).message);
+      const errorMsg = (err as Error).message;
+      setError(errorMsg);
+      // Clean up unpersisted optimistic temp messages on error
+      setMessages((prev) =>
+        prev.filter(
+          (m) => !m.id.startsWith("temp-") && !m.id.startsWith("stream-"),
+        ),
+      );
     } finally {
       setIsLoading(false);
       setThinkingStatus("");

@@ -37,21 +37,43 @@ export async function POST(req: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
+    // Magic bytes verification for PDF (%PDF- / 0x25 0x50 0x44 0x46)
+    if (
+      buffer.length < 4 ||
+      buffer[0] !== 0x25 ||
+      buffer[1] !== 0x50 ||
+      buffer[2] !== 0x44 ||
+      buffer[3] !== 0x46
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Format file tidak valid. Dokumen harus berupa file PDF murni.",
+        },
+        { status: 400 },
+      );
+    }
+
     let rawText = "";
 
     try {
       // Dynamic import to handle pdf-parse in ESM / Next.js server runtime
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const pdfModule = await import("pdf-parse");
-      // @ts-expect-error pdf-parse export variability
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pdfModule: any = await import("pdf-parse");
       const PDFParse = pdfModule.PDFParse || pdfModule.default || pdfModule;
-      if (typeof PDFParse === "function" && PDFParse.prototype?.getText) {
-        const parser = new PDFParse({ data: buffer });
+      if (
+        typeof PDFParse === "function" &&
+        PDFParse.prototype &&
+        "getText" in PDFParse.prototype
+      ) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const parser = new (PDFParse as any)({ data: buffer });
         const result = await parser.getText();
         rawText = result.text.trim();
         if (parser.destroy) await parser.destroy();
-      } else {
-        const data = await PDFParse(buffer);
+      } else if (typeof PDFParse === "function") {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const data = await (PDFParse as any)(buffer);
         rawText = data.text?.trim() || "";
       }
     } catch (parseError) {
@@ -113,12 +135,48 @@ export async function POST(req: NextRequest) {
     }
 
     const sessionId = formData.get("sessionId") as string | null;
+    const prompt = (formData.get("prompt") as string | null) || "";
     if (sessionId) {
       await supabaseAdmin
         .from("chat_sessions")
         .update({ resume_id: resumeRecord.id })
         .eq("id", sessionId)
         .eq("user_id", userId);
+
+      // Check if session already has this attachment message to avoid duplicate on initial creation
+      const { data: recentMsg } = await supabaseAdmin
+        .from("chat_messages")
+        .select("id, role, metadata")
+        .eq("session_id", sessionId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      interface AttachmentMeta {
+        attachment?: {
+          name?: string;
+        };
+      }
+      const lastMeta = recentMsg?.metadata as AttachmentMeta | undefined;
+      const lastAttachmentName = lastMeta?.attachment?.name;
+
+      if (!recentMsg || lastAttachmentName !== file.name) {
+        await supabaseAdmin.from("chat_messages").insert({
+          session_id: sessionId,
+          role: "user",
+          content:
+            prompt.trim() ||
+            "Please analyze my resume and find matching career opportunities.",
+          metadata: {
+            attachment: {
+              name: file.name,
+              size: file.size,
+              type: file.type,
+              resume_id: resumeRecord.id,
+            },
+          },
+        });
+      }
     }
 
     return NextResponse.json(

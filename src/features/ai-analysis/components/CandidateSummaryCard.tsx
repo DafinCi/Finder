@@ -11,17 +11,16 @@ interface CandidateSummaryCardProps {
 export default function CandidateSummaryCard({
   analysis,
 }: CandidateSummaryCardProps) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const candidate = (analysis as any).candidate || analysis;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const career = (analysis as any).career || analysis;
+  const candidate = analysis.candidate || analysis;
+  const career = analysis.career || analysis;
 
   const name = candidate.name || "Professional Candidate";
   const title = candidate.title || "Software Engineer";
   const years = candidate.years_of_experience || 0;
   const summary = candidate.summary || "";
   const coreSkills = candidate.skills?.core || [];
-  const strengths = career?.strengths || [];
+  const strengths =
+    analysis.career?.strengths || analysis.insights?.strengths || [];
 
   return (
     <div className="w-full my-4 rounded-xl border border-border/80 bg-card/60 p-5 shadow-sm space-y-4">
