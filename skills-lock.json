@@ -1,0 +1,263 @@
+{
+  "version": 1,
+  "skills": {
+    "accessing-data": {
+      "source": "mystenlabs/skills",
+      "sourceType": "github",
+      "skillPath": "accessing-data/SKILL.md",
+      "computedHash": "eba63045b721a4580cc9363019eef83b15fbb24283be4a335d87ee165277fbc3"
+    },
+    "composable-move-functions": {
+      "source": "mystenlabs/skills",
+      "sourceType": "github",
+      "skillPath": "composable-move-functions/SKILL.md",
+      "computedHash": "be82666084daa8af5f2fb233cf10b4c96ca121d52b36bde6e1aba51fb3cf7afa"
+    },
+    "deepbook-margin": {
+      "source": "mystenlabs/skills",
+      "sourceType": "github",
+      "skillPath": "deepbook-margin/SKILL.md",
+      "computedHash": "eafca12cb157fbdde5636daa693f990b3cdd74241f669d9d1f4fd608718d8210"
+    },
+    "deepbook-move": {
+      "source": "mystenlabs/skills",
+      "sourceType": "github",
+      "skillPath": "deepbook-move/SKILL.md",
+      "computedHash": "219898d85ee2b95ca65daa57ae8864f57ad9799c2866d06995f771fab6f06dfd"
+    },
+    "deepbook-overview": {
+      "source": "mystenlabs/skills",
+      "sourceType": "github",
+      "skillPath": "deepbook-overview/SKILL.md",
+      "computedHash": "c4b710ea7e211bf88ff202be193dfafefd9f61079b4d1492c6926cb931556cee"
+    },
+    "deepbook-predict": {
+      "source": "mystenlabs/skills",
+      "sourceType": "github",
+      "skillPath": "deepbook-predict/SKILL.md",
+      "computedHash": "25419a01945d32548581715b8132125ef7c95d750ddf7febad1619f944861369"
+    },
+    "deepbook-sdk": {
+      "source": "mystenlabs/skills",
+      "sourceType": "github",
+      "skillPath": "deepbook-sdk/SKILL.md",
+      "computedHash": "481c47d978d1ec994461abb6d2ca240baf603423fec0f886a6efbe03c8ccf29c"
+    },
+    "frontend-apps": {
+      "source": "mystenlabs/skills",
+      "sourceType": "github",
+      "skillPath": "frontend-apps/SKILL.md",
+      "computedHash": "c528604b6f70a12a9f1abad868dd296c728b8b414ab2fd4243f79088c953d522"
+    },
+    "generate-sui-agent-config": {
+      "source": "mystenlabs/skills",
+      "sourceType": "github",
+      "skillPath": "generate-sui-agent-config/SKILL.md",
+      "computedHash": "3abd00dfd7ca8fad94d61ab413a5a47a2e03410546049689f976f2ba0dbfdc6b"
+    },
+    "kiosk": {
+      "source": "mystenlabs/skills",
+      "sourceType": "github",
+      "skillPath": "kiosk/SKILL.md",
+      "computedHash": "fc449f12f91cf0a54acf4ee85fcb847bdc1f43a2e80d2a404ab5a6910bf3958c"
+    },
+    "modern-move-syntax": {
+      "source": "mystenlabs/skills",
+      "sourceType": "github",
+      "skillPath": "modern-move-syntax/SKILL.md",
+      "computedHash": "1c6ea39c4dc4e5e2d6a012eccd6f934ad0e68fb564df133b589976018e6de060"
+    },
+    "move-security": {
+      "source": "mystenlabs/skills",
+      "sourceType": "github",
+      "skillPath": "move-security/SKILL.md",
+      "computedHash": "b69905f7cccc7b2993d1239ea52d3a39e9d5e9f9487b747b43e27af5c57ee1d2"
+    },
+    "move-unit-testing": {
+      "source": "mystenlabs/skills",
+      "sourceType": "github",
+      "skillPath": "move-unit-testing/SKILL.md",
+      "computedHash": "89d21bf11ff02e4e7ad8c514b0329e8eab22c39f0e6e70fa10fa1703d0b312fb"
+    },
+    "naming-conventions": {
+      "source": "mystenlabs/skills",
+      "sourceType": "github",
+      "skillPath": "naming-conventions/SKILL.md",
+      "computedHash": "ef3d229301e8c7dc896d009f40079dbfe762ee5fd8a3851a13adbf552e29897f"
+    },
+    "onchain-randomness": {
+      "source": "mystenlabs/skills",
+      "sourceType": "github",
+      "skillPath": "onchain-randomness/SKILL.md",
+      "computedHash": "0b7506f0b6d17041a5fba25c6c6ebeaf78bcf0cbf9785d8c2d5f817d40a5c28b"
+    },
+    "ptbs": {
+      "source": "mystenlabs/skills",
+      "sourceType": "github",
+      "skillPath": "ptbs/SKILL.md",
+      "computedHash": "9cca9d36b2d10d84e28e0334b7da17890211a65b779e64e1cebaa7b12759c307"
+    },
+    "sui-bridge": {
+      "source": "mystenlabs/skills",
+      "sourceType": "github",
+      "skillPath": "sui-bridge/SKILL.md",
+      "computedHash": "ae4ec9656d0ab36cb212c374d7b645e8185164e411a208b19cbbf904b860bda0"
+    },
+    "sui-build": {
+      "source": "mystenlabs/skills",
+      "sourceType": "github",
+      "skillPath": "sui-build-test/SKILL.md",
+      "computedHash": "0ae6fd3c75942db7942a5178ceb38f794bf4a7097dc5f45440f659fa548acf16"
+    },
+    "sui-client": {
+      "source": "mystenlabs/skills",
+      "sourceType": "github",
+      "skillPath": "sui-client/SKILL.md",
+      "computedHash": "fbd527724d3c80e33c123fc0a0ea5f31c3d45ee532a320343e476965a48c3a82"
+    },
+    "sui-for-ethereum": {
+      "source": "mystenlabs/skills",
+      "sourceType": "github",
+      "skillPath": "sui-for-ethereum/SKILL.md",
+      "computedHash": "88a9aac9684191589defe1e7c509cbb307dec592f988b319b683489ae1f60701"
+    },
+    "sui-install": {
+      "source": "mystenlabs/skills",
+      "sourceType": "github",
+      "skillPath": "sui-install/SKILL.md",
+      "computedHash": "ce108f069b789338d114bb848a56de5f3288dc31d1ee13681e65e18b8948a520"
+    },
+    "sui-move": {
+      "source": "mystenlabs/skills",
+      "sourceType": "github",
+      "skillPath": "sui-move/SKILL.md",
+      "computedHash": "48ad8cc1930c9d648e11aba1d8f4555a79a19085e5426fff645fc5953abeb3fb"
+    },
+    "sui-move-project": {
+      "source": "mystenlabs/skills",
+      "sourceType": "github",
+      "skillPath": "sui-move-project/SKILL.md",
+      "computedHash": "1f820f52f9325edacb3a3f02ccd2415bec53278b1cfae628a1b12657b26967e8"
+    },
+    "sui-networks-gas": {
+      "source": "mystenlabs/skills",
+      "sourceType": "github",
+      "skillPath": "sui-networks-gas/SKILL.md",
+      "computedHash": "3ccf924197ffdb9f4c921536c5e452bfc8cc7c0c882f05d0d120f81bc9180430"
+    },
+    "sui-object-model": {
+      "source": "mystenlabs/skills",
+      "sourceType": "github",
+      "skillPath": "object-model/SKILL.md",
+      "computedHash": "ff1772e4804f66311b57b0189c81a08b6135b939072286b26b60f5cea447b27a"
+    },
+    "sui-overview": {
+      "source": "mystenlabs/skills",
+      "sourceType": "github",
+      "skillPath": "sui-overview/SKILL.md",
+      "computedHash": "e8d8181541f6fdac9dfbe18409d40ec036cc50aa4e6c074fb28b99852c05a14a"
+    },
+    "sui-publish": {
+      "source": "mystenlabs/skills",
+      "sourceType": "github",
+      "skillPath": "sui-publish/SKILL.md",
+      "computedHash": "e15b90a9f3defadf82864076916bd8fe43e13e0024cbf8b7e5b014e7805e8d9a"
+    },
+    "sui-sdks": {
+      "source": "mystenlabs/skills",
+      "sourceType": "github",
+      "skillPath": "sui-sdks/SKILL.md",
+      "computedHash": "dc6b7ad916a283bfb76d04c88186bebc56a895800634f4b36f86cf9671578e07"
+    },
+    "sui-ts-sdk-backend": {
+      "source": "mystenlabs/skills",
+      "sourceType": "github",
+      "skillPath": "sui-ts-sdk-backend/SKILL.md",
+      "computedHash": "d996f78241aa66c7df4a8eb48cf4757dcb37ebfcbc74cffc1f8acf0df5d89d5f"
+    },
+    "walrus-blob-lifecycle": {
+      "source": "mystenlabs/walrus-skills",
+      "sourceType": "github",
+      "skillPath": "walrus-blob-lifecycle/SKILL.md",
+      "computedHash": "1b87af1841d35a609641a700f75a44e07291695943ed3b7c333aa92ca47984ed"
+    },
+    "walrus-cli": {
+      "source": "mystenlabs/walrus-skills",
+      "sourceType": "github",
+      "skillPath": "walrus-cli/SKILL.md",
+      "computedHash": "393f96de3628fc5d30c10580c904be004b0fb998ea7191335b3085f98c0c3fc6"
+    },
+    "walrus-data-security": {
+      "source": "mystenlabs/walrus-skills",
+      "sourceType": "github",
+      "skillPath": "walrus-data-security/SKILL.md",
+      "computedHash": "88fabc6bbb434ed8582ce65270015ed29a699c7243b87eda82e2b14fec8da3e7"
+    },
+    "walrus-http-api": {
+      "source": "mystenlabs/walrus-skills",
+      "sourceType": "github",
+      "skillPath": "walrus-http-api/SKILL.md",
+      "computedHash": "829e0cc1cea83b4629d34a2265781454af055d967798e29803b6bf46ce4cfc6b"
+    },
+    "walrus-memory": {
+      "source": "mystenlabs/walrus-skills",
+      "sourceType": "github",
+      "skillPath": "walrus-memory/SKILL.md",
+      "computedHash": "4399a1c581fbd29b45db5f146fe061612a216d6143722c4f8a09b305af4e7788"
+    },
+    "walrus-move-integration": {
+      "source": "mystenlabs/walrus-skills",
+      "sourceType": "github",
+      "skillPath": "walrus-move-integration/SKILL.md",
+      "computedHash": "4f0ac8312f619323a848374add54e4e9562800ed85fb69205a06c51cd2ad3683"
+    },
+    "walrus-overview": {
+      "source": "mystenlabs/walrus-skills",
+      "sourceType": "github",
+      "skillPath": "walrus-overview/SKILL.md",
+      "computedHash": "184523f58ab2985a5af52718584228472a910ca5bcdd7225ca5ac6cf16ad1c05"
+    },
+    "walrus-quilts": {
+      "source": "mystenlabs/walrus-skills",
+      "sourceType": "github",
+      "skillPath": "walrus-quilts/SKILL.md",
+      "computedHash": "04fe3bad4c49f36e22bd143533a415c582294952caa4be8ba641a694cc913a26"
+    },
+    "walrus-sites": {
+      "source": "mystenlabs/walrus-skills",
+      "sourceType": "github",
+      "skillPath": "walrus-sites/SKILL.md",
+      "computedHash": "98e213f7a4b908bd2bfb4a401193a7b59c16316ca8a61fa29d5068a655e3cfcc"
+    },
+    "walrus-storage-costs": {
+      "source": "mystenlabs/walrus-skills",
+      "sourceType": "github",
+      "skillPath": "walrus-storage-costs/SKILL.md",
+      "computedHash": "6377fd3244d2a0d31968bdf68ef5ce37341acbffdc4315dd0307d29ec992ac1f"
+    },
+    "walrus-troubleshooting": {
+      "source": "mystenlabs/walrus-skills",
+      "sourceType": "github",
+      "skillPath": "walrus-troubleshooting/SKILL.md",
+      "computedHash": "1ed3f1bdb1956a7926965f30a914a14e6b5860a857946ddac39726c0a90f795d"
+    },
+    "walrus-ts-sdk": {
+      "source": "mystenlabs/walrus-skills",
+      "sourceType": "github",
+      "skillPath": "walrus-ts-sdk/SKILL.md",
+      "computedHash": "43bed8e997c6309c74e773232a2e2f3fca12c15a08d285f1525eaeedb9e41c38"
+    },
+    "your-skill-name": {
+      "source": "mystenlabs/walrus-skills",
+      "sourceType": "github",
+      "skillPath": "template/SKILL.md",
+      "computedHash": "18c65d44bb1f894b759479d4363476d4d095e2c52796f8e2067cc3ac46553529"
+    },
+    "zklogin": {
+      "source": "mystenlabs/skills",
+      "sourceType": "github",
+      "skillPath": "zklogin/SKILL.md",
+      "computedHash": "d99d8be964009154ae1f3034075a541e14dd83c704883b5e2c96c919e17e42c4"
+    }
+  }
+}
