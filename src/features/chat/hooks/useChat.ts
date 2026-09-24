@@ -8,6 +8,19 @@ export function useChat(sessionId?: string) {
   const [session, setSession] = useState<ChatSession | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentSessionId, setCurrentSessionId] = useState<string | undefined>(
+    sessionId,
+  );
+  const [isInitialLoading, setIsInitialLoading] = useState<boolean>(
+    Boolean(sessionId),
+  );
+
+  // Synchronize initial loading when sessionId changes across route navigation
+  if (currentSessionId !== sessionId) {
+    setCurrentSessionId(sessionId);
+    setIsInitialLoading(Boolean(sessionId));
+  }
+
   const [thinkingStatus, setThinkingStatus] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [failedSubmission, setFailedSubmission] = useState<{
@@ -18,7 +31,7 @@ export function useChat(sessionId?: string) {
   const fetchSessionData = useCallback(async () => {
     if (!sessionId) return;
     try {
-      setIsLoading(true);
+      setIsInitialLoading(true);
       setError(null);
       const data = await chatService.getSessionDetail(sessionId);
       setSession(data.session);
@@ -26,7 +39,7 @@ export function useChat(sessionId?: string) {
     } catch (err) {
       setError((err as Error).message);
     } finally {
-      setIsLoading(false);
+      setIsInitialLoading(false);
     }
   }, [sessionId]);
 
@@ -49,7 +62,7 @@ export function useChat(sessionId?: string) {
       })
       .finally(() => {
         if (!cancelled) {
-          setIsLoading(false);
+          setIsInitialLoading(false);
         }
       });
 
@@ -176,6 +189,7 @@ export function useChat(sessionId?: string) {
     session,
     messages,
     isLoading,
+    isInitialLoading,
     thinkingStatus,
     error,
     failedPrompt: failedSubmission?.prompt ?? null,

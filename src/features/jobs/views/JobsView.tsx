@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { FormattedJobMatch } from "../services/jobs.api";
+import CompanyLogo from "@/components/common/CompanyLogo";
 
 export default function JobsView() {
   const {
@@ -349,33 +350,42 @@ export default function JobsView() {
 
             {/* Drawer Body */}
             <div className="flex-1 overflow-y-auto py-5 space-y-5 pr-1 custom-scrollbar">
-              <div className="space-y-2">
-                <div className="flex items-start justify-between gap-3">
-                  <h2
-                    id="job-drawer-title"
-                    className="text-lg font-bold font-heading text-foreground leading-tight"
-                  >
-                    {selectedJob.title}
-                  </h2>
-                  <span className="text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-lg shrink-0">
-                    {selectedJob.matchScore}% Match
-                  </span>
+              <div className="space-y-3">
+                <div className="flex items-start gap-3.5">
+                  <CompanyLogo
+                    src={selectedJob.companyLogo}
+                    name={selectedJob.companyName}
+                    size="md"
+                  />
+                  <div className="flex-1 space-y-1 min-w-0">
+                    <div className="flex items-start justify-between gap-3">
+                      <h2
+                        id="job-drawer-title"
+                        className="text-lg font-bold font-heading text-foreground leading-tight"
+                      >
+                        {selectedJob.title}
+                      </h2>
+                      <span className="text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-lg shrink-0">
+                        {selectedJob.matchScore}% Match
+                      </span>
+                    </div>
+                    <p
+                      id="job-drawer-desc"
+                      className="text-sm font-medium text-muted-foreground truncate"
+                    >
+                      {selectedJob.companyName}
+                    </p>
+                  </div>
                 </div>
-                <p
-                  id="job-drawer-desc"
-                  className="text-sm font-medium text-muted-foreground"
-                >
-                  {selectedJob.companyName}
-                </p>
 
                 <div className="flex flex-wrap gap-3 text-xs text-muted-foreground pt-1">
                   <span className="flex items-center gap-1">
                     <MapPin className="w-3.5 h-3.5" />
-                    {selectedJob.location || "Remote"}
+                    <span>{selectedJob.location || "Remote"}</span>
                   </span>
                   <span className="flex items-center gap-1">
                     <Briefcase className="w-3.5 h-3.5" />
-                    {selectedJob.experienceLevel || "Mid Level"}
+                    <span>{selectedJob.experienceLevel || "Mid Level"}</span>
                   </span>
                 </div>
               </div>

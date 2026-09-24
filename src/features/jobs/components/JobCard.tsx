@@ -1,5 +1,4 @@
 import React from "react";
-import Image from "next/image";
 import {
   MapPin,
   Briefcase,
@@ -8,6 +7,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import MatchBadge from "./MatchBadge";
+import CompanyLogo from "@/components/common/CompanyLogo";
 import { FormattedJobMatch } from "../services/jobs.api";
 
 interface JobCardProps {
@@ -32,21 +32,7 @@ export default function JobCard({ match, onSelect }: JobCardProps) {
       <div className="space-y-3.5 flex-1 w-full">
         {/* Company & Title Header */}
         <div className="flex gap-3.5 items-start">
-          <div className="w-11 h-11 rounded-lg border border-border/80 bg-secondary/50 flex items-center justify-center shrink-0 overflow-hidden relative shadow-2xs">
-            {companyLogo ? (
-              <Image
-                src={companyLogo}
-                alt={companyName || "Company"}
-                fill
-                unoptimized={true}
-                sizes="44px"
-                className="object-cover"
-                priority={false}
-              />
-            ) : (
-              <Briefcase className="w-5 h-5 text-muted-foreground" />
-            )}
-          </div>
+          <CompanyLogo src={companyLogo} name={companyName} size="md" />
           <div className="space-y-0.5">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-base font-semibold font-heading text-foreground group-hover:text-primary transition-colors">

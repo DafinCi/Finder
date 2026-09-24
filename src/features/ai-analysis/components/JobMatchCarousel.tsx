@@ -10,6 +10,7 @@ import {
   MessageSquare,
   AlertCircle,
 } from "lucide-react";
+import CompanyLogo from "@/components/common/CompanyLogo";
 import { MatchedJobItem } from "@/types/chat";
 
 interface JobMatchCarouselProps {
@@ -54,14 +55,21 @@ export default function JobMatchCarousel({
             >
               <div className="space-y-2.5">
                 {/* Header: Title & Match Badge */}
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h5 className="text-sm font-semibold text-foreground line-clamp-1">
-                      {job.title}
-                    </h5>
-                    <p className="text-xs text-primary font-medium mt-0.5">
-                      {job.company}
-                    </p>
+                <div className="flex items-start justify-between gap-2.5">
+                  <div className="flex items-start gap-2.5 min-w-0">
+                    <CompanyLogo
+                      src={job.logo_url}
+                      name={job.company}
+                      size="sm"
+                    />
+                    <div className="min-w-0">
+                      <h5 className="text-sm font-semibold text-foreground line-clamp-1">
+                        {job.title}
+                      </h5>
+                      <p className="text-xs text-primary font-medium mt-0.5 truncate">
+                        {job.company}
+                      </p>
+                    </div>
                   </div>
                   <span
                     className={`px-2 py-0.5 rounded-md text-[11px] font-bold border shrink-0 ${badgeColor}`}

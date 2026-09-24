@@ -7,6 +7,7 @@ import { useSidebar } from "@/contexts/SidebarContext";
 import { useChat } from "@/features/chat/hooks/useChat";
 import ChatTimeline from "@/features/chat/components/ChatTimeline";
 import OmniPromptInput from "@/features/chat/components/OmniPromptInput";
+import ChatTimelineSkeleton from "@/features/chat/skeletons/ChatTimelineSkeleton";
 
 export default function ChatSessionPage({
   params,
@@ -19,6 +20,7 @@ export default function ChatSessionPage({
     session,
     messages,
     isLoading,
+    isInitialLoading,
     thinkingStatus,
     error,
     sendMessage,
@@ -66,22 +68,11 @@ export default function ChatSessionPage({
         {/* Chat Content Body */}
         <div className="min-h-[calc(100%-3.5rem)] flex flex-col justify-between">
           {/* Initial Loading Skeleton */}
-          {isLoading && messages.length === 0 && (
-            <div className="w-full max-w-3xl mx-auto px-4 py-8 space-y-6 animate-pulse">
-              <div className="flex justify-end">
-                <div className="w-56 h-10 bg-secondary/60 rounded-xl" />
-              </div>
-              <div className="space-y-3">
-                <div className="w-20 h-4 bg-secondary/60 rounded" />
-                <div className="w-full h-16 bg-secondary/40 rounded-xl" />
-                <div className="w-4/5 h-12 bg-secondary/30 rounded-xl" />
-              </div>
-            </div>
-          )}
-
-          {/* Empty State */}
-          {messages.length === 0 && !isLoading && (
-            <div className="flex-1 flex flex-col items-center justify-center text-center p-8 my-auto text-muted-foreground space-y-3 min-h-[50vh]">
+          {isInitialLoading ? (
+            <ChatTimelineSkeleton />
+          ) : messages.length === 0 ? (
+            /* Empty State: Only shown if definitely not loading and no messages */
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-8 my-auto text-muted-foreground space-y-3 min-h-[50vh] animate-in fade-in duration-200">
               <Bot className="w-8 h-8 opacity-40" />
               <p className="text-sm font-medium">
                 No messages in this session yet.
@@ -91,16 +82,18 @@ export default function ChatSessionPage({
                 job opportunities.
               </p>
             </div>
+          ) : (
+            <div className="animate-in fade-in duration-200 flex-1 flex flex-col justify-between">
+              <ChatTimeline
+                messages={messages}
+                isLoading={isLoading}
+                thinkingStatus={thinkingStatus}
+                error={error}
+                onRetry={retryLastMessage}
+                onAskAboutJob={handleAskAboutJob}
+              />
+            </div>
           )}
-
-          <ChatTimeline
-            messages={messages}
-            isLoading={isLoading}
-            thinkingStatus={thinkingStatus}
-            error={error}
-            onRetry={retryLastMessage}
-            onAskAboutJob={handleAskAboutJob}
-          />
         </div>
       </div>
 
