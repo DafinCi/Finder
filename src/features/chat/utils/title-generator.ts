@@ -15,17 +15,27 @@ export function generateSmartSessionTitle(prompt: string): string {
     .replace(/\s+/g, " ")
     .trim();
 
-  // 2. Strip common conversational filler prefixes (both Indonesian & English)
+  // 2. Strip conversational filler prefixes (both Indonesian & English) iteratively
   const fillerPrefixes = [
     /^(halo|hai|hey|hi|hello)\s*(min|kak|bang|admin|copilot|ai)?[,.!]?\s*/i,
-    /^(selamat\s+(pagi|siang|sore|malam))[,.!]?\s*/i,
-    /^(tolong|bantu\s+saya|mohon|bisakah\s+anda|bisa\s+bantu|saya\s+mau|saya\s+ingin|mau\s+tanya|tanya\s+dong|tanya)\s*/i,
-    /^(can\s+you|could\s+you|please|help\s+me|i\s+want\s+to|i\s+need|i'd\s+like\s+to)\s*/i,
+    /^(selamat\s+(pagi|siang|sore|malam))\s*(kak|min|bang|pak|bu)?[,.!]?\s*/i,
+    /^(tolong\s+bantu\s+saya|bantu\s+saya|tolong|mohon|bisakah\s+anda|bisa\s+bantu|saya\s+mau|saya\s+ingin|mau\s+tanya|tanya\s+dong|tanya)\s*/i,
+    /^(can\s+you\s+please|could\s+you\s+please|can\s+you|could\s+you|please\s+help\s+me|please|help\s+me|i\s+want\s+to|i\s+need|i'd\s+like\s+to)\s*/i,
     /^(bagaimana\s+cara|gimana\s+cara|cara\s+untuk|how\s+to)\s*/i,
+    /^(kak|min|bang|admin|pak|bu|gan)[,.!]?\s*/i,
   ];
 
-  for (const prefix of fillerPrefixes) {
-    cleaned = cleaned.replace(prefix, "").trim();
+  let matched = true;
+  let iterations = 0;
+  while (matched && iterations < 5) {
+    matched = false;
+    iterations++;
+    for (const prefix of fillerPrefixes) {
+      if (prefix.test(cleaned)) {
+        cleaned = cleaned.replace(prefix, "").trim();
+        matched = true;
+      }
+    }
   }
 
   // If after stripping prefixes there's nothing left, or it was just a greeting
