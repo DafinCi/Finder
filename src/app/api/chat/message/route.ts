@@ -11,6 +11,7 @@ import {
   buildCareerCopilotSystemPrompt,
   CAREER_COPILOT_PROMPT_VERSION,
 } from "@/lib/groq/prompts/career-copilot.prompt";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,27 @@ export async function POST(req: NextRequest) {
 
     if (authError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Rate Limit Guard: max 12 messages per minute per user to protect Groq TPM/RPM
+    const rateLimit = checkRateLimit({
+      key: `chat:${user.id}`,
+      limit: 12,
+      windowMs: 60 * 1000,
+    });
+
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        {
+          error: `Terlalu banyak pesan dalam waktu singkat. Mohon tunggu ${rateLimit.resetInSeconds} detik sebelum mengirim lagi.`,
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(rateLimit.resetInSeconds),
+          },
+        },
+      );
     }
 
     const body = await req.json();
@@ -305,19 +327,35 @@ export async function POST(req: NextRequest) {
 
     const maxTokensLimit = Number(process.env.GROQ_MAX_TOKENS) || 2500;
 
+    interface TokenUsageStats {
+      prompt_tokens?: number;
+      completion_tokens?: number;
+      total_tokens?: number;
+    }
+
+    interface ChatCompletionChunk {
+      choices: Array<{
+        delta?: {
+          content?: string | null;
+        };
+      }>;
+      usage?: TokenUsageStats;
+    }
+
     // Resilient stream initialization with model fallback
-    let stream;
+    let stream: AsyncIterable<ChatCompletionChunk>;
     let modelUsed = DEFAULT_GROQ_MODEL;
     const startTime = Date.now();
 
     try {
-      stream = await groq.chat.completions.create({
+      stream = (await groq.chat.completions.create({
         model: modelUsed,
         messages: messagesForGroq,
         temperature: 0.6,
         max_tokens: maxTokensLimit,
         stream: true,
-      });
+        stream_options: { include_usage: true },
+      } as any)) as unknown as AsyncIterable<ChatCompletionChunk>;
     } catch (primaryError) {
       const errStr = (primaryError as Error).message || "";
       const isRecoverable =
@@ -333,13 +371,14 @@ export async function POST(req: NextRequest) {
           `[AI:ChatStream] Primary model ${DEFAULT_GROQ_MODEL} failed (${errStr}). Falling back to ${FALLBACK_GROQ_MODEL}...`,
         );
         modelUsed = FALLBACK_GROQ_MODEL;
-        stream = await groq.chat.completions.create({
+        stream = (await groq.chat.completions.create({
           model: modelUsed,
           messages: messagesForGroq,
           temperature: 0.6,
           max_tokens: maxTokensLimit,
           stream: true,
-        });
+          stream_options: { include_usage: true },
+        } as any)) as unknown as AsyncIterable<ChatCompletionChunk>;
       } else {
         throw primaryError;
       }
@@ -350,6 +389,7 @@ export async function POST(req: NextRequest) {
     const readableStream = new ReadableStream({
       async start(controller) {
         let fullAssistantContent = "";
+        let tokenUsage: TokenUsageStats | null = null;
 
         try {
           for await (const chunk of stream) {
@@ -360,11 +400,17 @@ export async function POST(req: NextRequest) {
                 encoder.encode(`data: ${JSON.stringify({ token })}\n\n`),
               );
             }
+            const chunkWithUsage = chunk as unknown as {
+              usage?: TokenUsageStats;
+            };
+            if (chunkWithUsage.usage) {
+              tokenUsage = chunkWithUsage.usage;
+            }
           }
 
           const durationMs = Date.now() - startTime;
           console.log(
-            `[AI:Telemetry] op=ChatStream model=${modelUsed} status=success duration=${durationMs}ms chars=${fullAssistantContent.length}`,
+            `[AI:Telemetry] op=ChatStream model=${modelUsed} status=success duration=${durationMs}ms chars=${fullAssistantContent.length} prompt_tokens=${tokenUsage?.prompt_tokens ?? "N/A"} completion_tokens=${tokenUsage?.completion_tokens ?? "N/A"} total_tokens=${tokenUsage?.total_tokens ?? "N/A"}`,
           );
 
           const finalContent =
@@ -383,6 +429,7 @@ export async function POST(req: NextRequest) {
                 duration_ms: durationMs,
                 prompt_version: CAREER_COPILOT_PROMPT_VERSION,
                 total_chars: finalContent.length,
+                token_usage: tokenUsage,
               },
             })
             .select()

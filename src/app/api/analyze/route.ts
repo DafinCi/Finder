@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { runResumeAnalysisWorkflow } from "@/features/ai-analysis/services/analysis-orchestrator.service";
 import { normalizeGroqError } from "@/lib/groq/client";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: "Unauthorized! Silakan login kembali." },
         { status: 401 },
+      );
+    }
+
+    // Rate Limit Guard: max 5 resume analyses per minute per user
+    const rateLimit = checkRateLimit({
+      key: `analyze:${user.id}`,
+      limit: 5,
+      windowMs: 60 * 1000,
+    });
+
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        {
+          error: `Terlalu banyak permintaan analisis dalam waktu singkat. Silakan tunggu ${rateLimit.resetInSeconds} detik sebelum mencoba lagi.`,
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(rateLimit.resetInSeconds),
+          },
+        },
       );
     }
 

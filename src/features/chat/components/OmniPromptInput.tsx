@@ -13,6 +13,7 @@ import { Paperclip, ArrowUp, X, FileText, UploadCloud } from "lucide-react";
 import { toast } from "sonner";
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+const MAX_PROMPT_CHARS = 2000;
 
 interface OmniPromptInputProps {
   onSubmit: (prompt: string, file?: File | null) => void;
@@ -172,6 +173,7 @@ export default function OmniPromptInput({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           rows={1}
+          maxLength={MAX_PROMPT_CHARS}
           disabled={isLoading}
           aria-label="Career goal or prompt"
           className="w-full resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none leading-relaxed py-1 min-h-[38px] max-h-[160px] overflow-y-auto custom-scrollbar"
@@ -193,30 +195,44 @@ export default function OmniPromptInput({
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isLoading}
-              aria-label="Attach CV in PDF format up to 10MB"
+              aria-label="Attach CV in PDF format up to 5MB"
               className="min-h-[36px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors cursor-pointer disabled:opacity-50"
             >
               <Paperclip className="w-3.5 h-3.5" />
               <span>Attach CV</span>
             </button>
             <span className="hidden sm:inline text-[11px] text-muted-foreground/60">
-              PDF up to 10MB
+              PDF up to 5MB
             </span>
           </div>
 
-          {/* Send Button */}
-          <button
-            type="submit"
-            disabled={!canSubmit}
-            aria-label="Send message"
-            className={`w-9 h-9 rounded-lg transition-all duration-150 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 focus-visible:ring-offset-card ${
-              canSubmit
-                ? "bg-primary text-primary-foreground hover:opacity-90 shadow-2xs cursor-pointer active:scale-95"
-                : "bg-secondary text-muted-foreground cursor-not-allowed opacity-50"
-            }`}
-          >
-            <ArrowUp className="w-4 h-4" />
-          </button>
+          {/* Right Controls: Character counter & Submit */}
+          <div className="flex items-center gap-2.5">
+            {prompt.length > 1500 && (
+              <span
+                className={`text-[11px] font-mono transition-colors ${
+                  prompt.length >= MAX_PROMPT_CHARS
+                    ? "text-destructive font-semibold"
+                    : "text-muted-foreground"
+                }`}
+              >
+                {prompt.length}/{MAX_PROMPT_CHARS}
+              </span>
+            )}
+
+            <button
+              type="submit"
+              disabled={!canSubmit}
+              aria-label="Send message"
+              className={`w-9 h-9 rounded-lg transition-all duration-150 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 focus-visible:ring-offset-card ${
+                canSubmit
+                  ? "bg-primary text-primary-foreground hover:opacity-90 shadow-2xs cursor-pointer active:scale-95"
+                  : "bg-secondary text-muted-foreground cursor-not-allowed opacity-50"
+              }`}
+            >
+              <ArrowUp className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </form>
     </div>

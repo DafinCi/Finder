@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,6 +19,27 @@ export async function POST(req: NextRequest) {
     }
 
     const userId = user.id;
+
+    // Rate Limit Guard: max 6 PDF uploads per minute per user
+    const rateLimit = checkRateLimit({
+      key: `upload:${userId}`,
+      limit: 6,
+      windowMs: 60 * 1000,
+    });
+
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        {
+          error: `Terlalu banyak upload dokumen dalam waktu singkat. Silakan tunggu ${rateLimit.resetInSeconds} detik sebelum mencoba lagi.`,
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(rateLimit.resetInSeconds),
+          },
+        },
+      );
+    }
 
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
