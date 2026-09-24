@@ -153,6 +153,31 @@ export async function POST(req: NextRequest) {
     const sessionId = formData.get("sessionId") as string | null;
     const prompt = (formData.get("prompt") as string | null) || "";
     if (sessionId) {
+      // Security P0: Explicitly verify session exists and belongs to the authenticated user
+      const { data: sessionRecord, error: sessionFetchError } =
+        await supabaseAdmin
+          .from("chat_sessions")
+          .select("id, user_id")
+          .eq("id", sessionId)
+          .maybeSingle();
+
+      if (sessionFetchError || !sessionRecord) {
+        return NextResponse.json(
+          { error: "Sesi percakapan tidak ditemukan." },
+          { status: 404 },
+        );
+      }
+
+      if (sessionRecord.user_id !== userId) {
+        console.warn(
+          `[SECURITY ALERT] User ${userId} attempted to attach resume to unauthorized session ${sessionId} (owned by ${sessionRecord.user_id})`,
+        );
+        return NextResponse.json(
+          { error: "Forbidden! Sesi percakapan ini bukan milik Anda." },
+          { status: 403 },
+        );
+      }
+
       await supabaseAdmin
         .from("chat_sessions")
         .update({ resume_id: resumeRecord.id })
@@ -200,7 +225,7 @@ export async function POST(req: NextRequest) {
         success: true,
         message: "Upload dan ekstraksi teks berhasil",
         resumeId: resumeRecord.id,
-        rawText: rawText,
+        fileName: file.name,
       },
       { status: 200 },
     );

@@ -147,7 +147,6 @@ export const chatService = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         resumeId: uploadData.resumeId,
-        rawText: uploadData.rawText,
         sessionId,
       }),
     });

@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { resumeId, rawText, sessionId } = body;
+    const { resumeId, sessionId } = body;
 
     if (!resumeId) {
       return NextResponse.json(
@@ -52,16 +52,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Security P1: Always prioritize canonical database raw_text (fallback to client only if db was empty)
-    const canonicalRawText =
-      resumeRecord.raw_text?.trim() ||
-      (typeof rawText === "string" ? rawText.trim() : "");
+    // Security P1: Strictly use canonical database raw_text to eliminate synthetic injection via request payload
+    const canonicalRawText = resumeRecord.raw_text?.trim() || "";
 
     if (!canonicalRawText || canonicalRawText.length < 50) {
       return NextResponse.json(
         {
           error:
-            "Teks resume kosong atau tidak mencukupi untuk dianalisis oleh AI.",
+            "Dokumen resume tidak memiliki teks yang valid di server. Silakan unggah ulang dokumen Anda.",
         },
         { status: 400 },
       );

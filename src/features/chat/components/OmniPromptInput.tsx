@@ -12,7 +12,7 @@ import React, {
 import { Paperclip, ArrowUp, X, FileText, UploadCloud } from "lucide-react";
 import { toast } from "sonner";
 
-const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
+const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 
 interface OmniPromptInputProps {
   onSubmit: (prompt: string, file?: File | null) => void;
@@ -56,7 +56,7 @@ export default function OmniPromptInput({
     if (file.size > MAX_FILE_SIZE_BYTES) {
       const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
       toast.error("File size exceeded", {
-        description: `Your file is ${sizeMB} MB. Maximum allowed size is 10 MB.`,
+        description: `Your file is ${sizeMB} MB. Maximum allowed size is 5 MB.`,
       });
       return;
     }
