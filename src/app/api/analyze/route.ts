@@ -103,8 +103,11 @@ export async function POST(req: NextRequest) {
       ...result,
     });
   } catch (error: unknown) {
-    const err = error as Error;
+    const err = error as Error & { statusCode?: number };
     console.error("API Analyze Controller Error:", err);
+    if (err.statusCode === 409) {
+      return NextResponse.json({ error: err.message }, { status: 409 });
+    }
     const friendlyMessage = normalizeGroqError(err);
     return NextResponse.json({ error: friendlyMessage }, { status: 500 });
   }

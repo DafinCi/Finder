@@ -1,13 +1,13 @@
 import { supabase } from "@/lib/supabase/client";
 
-export async function startAnalysis(resumeId: string, rawText: string) {
+export async function startAnalysis(resumeId: string, _rawText?: string) {
   try {
     const response = await fetch("/api/analyze", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ resumeId, rawText }),
+      body: JSON.stringify({ resumeId }),
     });
 
     const data = await response.json();
@@ -43,15 +43,17 @@ export async function fetchAnalysisData(analysisId: string) {
         match_score,
         reason,
         missing_skills,
-        jobs (
+        jobs!inner (
           id,
           title,
           requirements,
-          company_id
+          company_id,
+          is_active
         )
       `,
       )
       .eq("analysis_id", analysisId)
+      .eq("jobs.is_active", true)
       .order("match_score", { ascending: false });
 
     if (matchesError) throw matchesError;

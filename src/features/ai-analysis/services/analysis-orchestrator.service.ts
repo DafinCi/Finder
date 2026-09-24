@@ -43,10 +43,72 @@ interface MatchQueryRow {
   } | null;
 }
 
+async function getCachedCompletedAnalysis(
+  resumeId: string,
+): Promise<RunResumeAnalysisResult | null> {
+  const { data: existingAnalysis } = await supabaseAdmin
+    .from("resume_analysis")
+    .select("id, candidate_data, extracted_skills")
+    .eq("resume_id", resumeId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!existingAnalysis?.candidate_data) return null;
+
+  const { data: fullMatches } = await supabaseAdmin
+    .from("job_matches")
+    .select(
+      `
+      id,
+      job_id,
+      match_score,
+      reason,
+      missing_skills,
+      jobs:job_id (
+        id,
+        title,
+        location,
+        job_type,
+        salary_range,
+        companies:company_id (
+          name,
+          logo_url
+        )
+      )
+    `,
+    )
+    .eq("analysis_id", existingAnalysis.id)
+    .order("match_score", { ascending: false });
+
+  const cachedMatchedJobs: MatchedJobItem[] = (
+    (fullMatches as unknown as MatchQueryRow[]) || []
+  ).map((m) => ({
+    id: m.id,
+    job_id: m.job_id,
+    match_score: m.match_score,
+    reason: m.reason,
+    missing_skills: m.missing_skills,
+    title: m.jobs?.title || "Position",
+    company: m.jobs?.companies?.name || "Company",
+    logo_url: m.jobs?.companies?.logo_url,
+    location: m.jobs?.location || "Remote",
+    job_type: m.jobs?.job_type || "Full-time",
+    salary_range: m.jobs?.salary_range,
+  }));
+
+  return {
+    analysisId: existingAnalysis.id,
+    analysis:
+      existingAnalysis.candidate_data as ExtractedProfileResult["json_profile"],
+    jobMatches: cachedMatchedJobs,
+  };
+}
+
 /**
  * Domain Service: Executes the end-to-end resume analysis and matching workflow.
  * Encapsulates AI model execution, database transaction tracking, skill matching,
- * foreign key integrity guarantees, idempotency caching, and graceful degradation.
+ * foreign key integrity guarantees, idempotency caching, concurrency locks, and graceful degradation.
  */
 export async function runResumeAnalysisWorkflow({
   resumeId,
@@ -61,74 +123,83 @@ export async function runResumeAnalysisWorkflow({
     .single();
 
   if (currentResume?.status === "completed") {
-    const { data: existingAnalysis } = await supabaseAdmin
-      .from("resume_analysis")
-      .select("id, candidate_data, extracted_skills")
-      .eq("resume_id", resumeId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (existingAnalysis?.candidate_data) {
+    const cached = await getCachedCompletedAnalysis(resumeId);
+    if (cached) {
       console.log(
-        `[ANALYSIS:IDEMPOTENT] Reusing cached completed analysis ${existingAnalysis.id} for resume ${resumeId}`,
+        `[ANALYSIS:IDEMPOTENT] Reusing cached completed analysis ${cached.analysisId} for resume ${resumeId}`,
       );
-
-      const { data: fullMatches } = await supabaseAdmin
-        .from("job_matches")
-        .select(
-          `
-          id,
-          job_id,
-          match_score,
-          reason,
-          missing_skills,
-          jobs:job_id (
-            id,
-            title,
-            location,
-            job_type,
-            salary_range,
-            companies:company_id (
-              name,
-              logo_url
-            )
-          )
-        `,
-        )
-        .eq("analysis_id", existingAnalysis.id)
-        .order("match_score", { ascending: false });
-
-      const cachedMatchedJobs: MatchedJobItem[] = (
-        (fullMatches as unknown as MatchQueryRow[]) || []
-      ).map((m) => ({
-        id: m.id,
-        job_id: m.job_id,
-        match_score: m.match_score,
-        reason: m.reason,
-        missing_skills: m.missing_skills,
-        title: m.jobs?.title || "Position",
-        company: m.jobs?.companies?.name || "Company",
-        logo_url: m.jobs?.companies?.logo_url,
-        location: m.jobs?.location || "Remote",
-        job_type: m.jobs?.job_type || "Full-time",
-        salary_range: m.jobs?.salary_range,
-      }));
-
-      return {
-        analysisId: existingAnalysis.id,
-        analysis:
-          existingAnalysis.candidate_data as ExtractedProfileResult["json_profile"],
-        jobMatches: cachedMatchedJobs,
-      };
+      return cached;
     }
   }
 
-  // 2. Mark resume processing
-  await supabaseAdmin
+  // Concurrency Guard: If resume is already processing, wait for concurrent worker to avoid duplicate LLM calls
+  if (currentResume?.status === "processing") {
+    console.log(
+      `[ANALYSIS:CONCURRENCY] Resume ${resumeId} is already processing. Awaiting completion from active worker...`,
+    );
+    for (let attempt = 0; attempt < 8; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const { data: pollResume } = await supabaseAdmin
+        .from("resumes")
+        .select("status")
+        .eq("id", resumeId)
+        .maybeSingle();
+
+      if (pollResume?.status === "completed") {
+        const cached = await getCachedCompletedAnalysis(resumeId);
+        if (cached) {
+          console.log(
+            `[ANALYSIS:CONCURRENCY] Recovered completed analysis for resume ${resumeId}`,
+          );
+          return cached;
+        }
+      }
+      if (pollResume?.status === "failed") {
+        throw new Error(
+          "Proses analisis resume sebelumnya gagal. Silakan coba kembali.",
+        );
+      }
+    }
+
+    const conflictErr = new Error(
+      "Analisis resume sedang berjalan pada proses lain. Mohon tunggu beberapa detik.",
+    );
+    (conflictErr as unknown as { statusCode: number }).statusCode = 409;
+    throw conflictErr;
+  }
+
+  // 2. Atomic Lock Acquisition: Transition status to 'processing' only if status is NOT 'processing'
+  const { data: lockAcquired, error: lockError } = await supabaseAdmin
     .from("resumes")
     .update({ status: "processing" })
-    .eq("id", resumeId);
+    .eq("id", resumeId)
+    .neq("status", "processing")
+    .select("id")
+    .maybeSingle();
+
+  if (lockError || !lockAcquired) {
+    console.log(
+      `[ANALYSIS:LOCK_CONTENTION] Lock acquisition contended for resume ${resumeId}. Waiting for concurrent execution...`,
+    );
+    for (let attempt = 0; attempt < 6; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const { data: pollResume } = await supabaseAdmin
+        .from("resumes")
+        .select("status")
+        .eq("id", resumeId)
+        .maybeSingle();
+
+      if (pollResume?.status === "completed") {
+        const cached = await getCachedCompletedAnalysis(resumeId);
+        if (cached) return cached;
+      }
+    }
+    const conflictErr = new Error(
+      "Analisis resume sedang diproses secara paralel. Mohon tunggu sejenak.",
+    );
+    (conflictErr as unknown as { statusCode: number }).statusCode = 409;
+    throw conflictErr;
+  }
 
   try {
     // 3. Extract profile using AI model with fallback resilience

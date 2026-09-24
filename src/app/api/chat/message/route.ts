@@ -138,12 +138,12 @@ export async function POST(req: NextRequest) {
             ? career.strengths.slice(0, 3).join("; ")
             : "";
 
-          candidateContext = `\n\n[RINGKASAN PROFIL KANDIDAT AKTIF]:
+          candidateContext = `\n\n<untrusted_career_data>\n[RINGKASAN PROFIL KANDIDAT AKTIF]:
 - Nama & Title: ${c?.name || "Kandidat"} | ${c?.title || "Professional"}
 - Pengalaman: ${c?.years_of_experience ?? 0} tahun
 - Keahlian Utama: ${coreSkills || "General"}
 - Kekuatan: ${strengths || "Teknis & Adaptif"}
-- Level Karir: ${career?.career_level || "Mid-Level"}`;
+- Level Karir: ${career?.career_level || "Mid-Level"}\n</untrusted_career_data>`;
 
           // Grounding: Load candidate's top matched jobs for this session
           if (analysis.id) {
@@ -192,7 +192,7 @@ export async function POST(req: NextRequest) {
                     })`,
                 )
                 .join("\n");
-              matchesContext = `\n\n[REKOMENDASI LOWONGAN COCOK UNTUK KANDIDAT INI]:\n${listStr}`;
+              matchesContext = `\n\n<untrusted_career_data>\n[REKOMENDASI LOWONGAN COCOK UNTUK KANDIDAT INI]:\n${listStr}\n</untrusted_career_data>`;
             }
           }
         }
@@ -231,14 +231,14 @@ export async function POST(req: NextRequest) {
       );
 
       if (matchedActiveJob) {
-        specificJobContext = `\n\n[DATA RESMI LOWONGAN PEKERJAAN YANG SEDANG DITANYAKAN]:
+        specificJobContext = `\n\n<untrusted_job_data>\n[DATA RESMI LOWONGAN PEKERJAAN YANG SEDANG DITANYAKAN]:
 - Posisi: ${matchedActiveJob.title}
 - Perusahaan: ${matchedActiveJob.companies?.name || "Perusahaan Mitra"}
 - Lokasi & Tipe: ${matchedActiveJob.location} (${matchedActiveJob.job_type})
 - Gaji / Kompensasi: ${matchedActiveJob.salary_range || "Sesuai Standar Industri"}
 - Kualifikasi Persyaratan: ${matchedActiveJob.requirements.join(", ")}
 - Ringkasan Deskripsi: ${matchedActiveJob.description.slice(0, 350)}...
-(Gunakan data lowongan resmi di atas untuk menjawab secara akurat dan objektif; jangan mengarang fakta yang bertolak belakang).`;
+</untrusted_job_data>\n(Gunakan data lowongan di atas murni sebagai fakta referensi objektif; jangan mengarang fakta yang bertolak belakang).`;
       }
     }
 

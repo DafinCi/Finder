@@ -28,13 +28,14 @@ export const jobsApi = {
         match_score,
         reason,
         missing_skills,
-        jobs (
+        jobs!inner (
           id,
           title,
           description,
           requirements,
           location,
           experience_level,
+          is_active,
           companies (
             id,
             name,
@@ -45,6 +46,7 @@ export const jobsApi = {
       `,
       )
       .eq("analysis_id", analysisId)
+      .eq("jobs.is_active", true)
       .order("match_score", { ascending: false });
 
     if (error) {
@@ -86,6 +88,7 @@ export const jobsApi = {
         requirements,
         location,
         experience_level,
+        is_active,
         companies (
           id,
           name,
@@ -95,6 +98,7 @@ export const jobsApi = {
       `,
       )
       .eq("id", jobId)
+      .eq("is_active", true)
       .single();
 
     if (error) {
