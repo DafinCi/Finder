@@ -71,6 +71,65 @@ export function useChat(sessionId?: string) {
     };
   }, [sessionId]);
 
+  // Synchronize session details in real-time when title is updated or refreshed
+  useEffect(() => {
+    if (!sessionId) return;
+
+    const handleSessionsChanged = (e: Event) => {
+      const customEvent = e as CustomEvent<{
+        action?: "create" | "update" | "delete" | "refresh";
+        session?: ChatSession;
+        sessionId?: string;
+      }>;
+
+      if (!customEvent.detail) return;
+
+      const { action, session: updatedSession } = customEvent.detail;
+
+      if (
+        action === "update" &&
+        updatedSession &&
+        updatedSession.id === sessionId
+      ) {
+        setSession(updatedSession);
+      } else if (action === "refresh") {
+        chatService
+          .getSessionDetail(sessionId)
+          .then((data) => {
+            setSession(data.session);
+          })
+          .catch(() => {});
+      }
+    };
+
+    window.addEventListener("chat-sessions-changed", handleSessionsChanged);
+    return () => {
+      window.removeEventListener(
+        "chat-sessions-changed",
+        handleSessionsChanged,
+      );
+    };
+  }, [sessionId]);
+
+  const updateTitle = async (newTitle: string) => {
+    if (!sessionId) return;
+    const trimmed = newTitle.trim();
+    if (!trimmed) return;
+
+    const previous = session;
+    if (session) {
+      setSession({ ...session, title: trimmed });
+    }
+
+    try {
+      const updated = await chatService.updateSessionTitle(sessionId, trimmed);
+      setSession(updated);
+    } catch (err) {
+      setSession(previous);
+      throw err;
+    }
+  };
+
   const sendMessage = async (prompt: string, file?: File | null) => {
     if (!sessionId) return;
 
@@ -196,6 +255,7 @@ export function useChat(sessionId?: string) {
     canRetry: failedSubmission !== null,
     sendMessage,
     retryLastMessage,
+    updateTitle,
     refreshSession: fetchSessionData,
   };
 }

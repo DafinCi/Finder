@@ -1,8 +1,9 @@
 "use client";
 
-import React, { use } from "react";
+import React, { use, useState } from "react";
 import Link from "next/link";
-import { Plus, Bot } from "lucide-react";
+import { Plus, Bot, Pencil, Check, X, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { useChat } from "@/features/chat/hooks/useChat";
 import ChatTimeline from "@/features/chat/components/ChatTimeline";
@@ -25,7 +26,32 @@ export default function ChatSessionPage({
     error,
     sendMessage,
     retryLastMessage,
+    updateTitle,
   } = useChat(id);
+
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [isSavingTitle, setIsSavingTitle] = useState(false);
+
+  const handleSaveTitle = async () => {
+    const trimmed = newTitle.trim();
+    if (!trimmed || trimmed === session?.title) {
+      setIsEditingTitle(false);
+      return;
+    }
+    try {
+      setIsSavingTitle(true);
+      await updateTitle(trimmed);
+      toast.success("Nama sesi berhasil diperbarui");
+      setIsEditingTitle(false);
+    } catch (err) {
+      toast.error("Gagal memperbarui nama sesi", {
+        description: (err as Error).message,
+      });
+    } finally {
+      setIsSavingTitle(false);
+    }
+  };
 
   const handleAskAboutJob = (jobTitle: string, company: string) => {
     sendMessage(
@@ -45,14 +71,74 @@ export default function ChatSessionPage({
           }`}
         >
           {/* Session Title */}
-          <div className="flex items-center gap-3 min-w-0">
-            <h2 className="text-sm font-semibold text-foreground truncate">
-              {session?.title || "Career Workspace"}
-            </h2>
-            <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-secondary text-muted-foreground border border-border">
-              Career Copilot
-            </span>
-          </div>
+          {isEditingTitle ? (
+            <div className="flex items-center gap-1.5 min-w-0 max-w-sm">
+              <input
+                type="text"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSaveTitle();
+                  if (e.key === "Escape") setIsEditingTitle(false);
+                }}
+                autoFocus
+                maxLength={100}
+                disabled={isSavingTitle}
+                className="bg-secondary text-foreground text-xs px-2.5 py-1 rounded-md border border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary w-full"
+                aria-label="Edit chat session title"
+              />
+              <button
+                type="button"
+                disabled={isSavingTitle}
+                onClick={handleSaveTitle}
+                className="p-1 hover:text-primary rounded hover:bg-secondary text-primary cursor-pointer disabled:opacity-40"
+                title="Simpan"
+              >
+                {isSavingTitle ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Check className="w-3.5 h-3.5" />
+                )}
+              </button>
+              <button
+                type="button"
+                disabled={isSavingTitle}
+                onClick={() => setIsEditingTitle(false)}
+                className="p-1 hover:text-muted-foreground rounded hover:bg-secondary text-muted-foreground cursor-pointer disabled:opacity-40"
+                title="Batal"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 min-w-0 max-w-md group">
+              <h2
+                className="text-sm font-semibold text-foreground truncate cursor-pointer hover:underline decoration-muted-foreground/40 underline-offset-4"
+                onClick={() => {
+                  setIsEditingTitle(true);
+                  setNewTitle(session?.title || "");
+                }}
+                title="Klik untuk mengubah nama sesi"
+              >
+                {session?.title || "Career Workspace"}
+              </h2>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsEditingTitle(true);
+                  setNewTitle(session?.title || "");
+                }}
+                aria-label="Ubah nama sesi"
+                className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-foreground hover:bg-secondary rounded transition-opacity cursor-pointer"
+                title="Ubah nama sesi"
+              >
+                <Pencil className="w-3 h-3" />
+              </button>
+              <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-secondary text-muted-foreground border border-border shrink-0">
+                Career Copilot
+              </span>
+            </div>
+          )}
 
           {/* Quick New Chat Button */}
           <Link

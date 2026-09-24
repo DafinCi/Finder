@@ -22,7 +22,7 @@ export function useSessions() {
   const router = useRouter();
   const pathname = usePathname();
 
-  const fetchSessions = useCallback(async () => {
+  const refreshSessions = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -35,6 +35,7 @@ export function useSessions() {
     }
   }, []);
 
+  // Fetch sessions on mount and silently re-sync on route navigation
   useEffect(() => {
     let cancelled = false;
 
@@ -43,6 +44,7 @@ export function useSessions() {
       .then((data) => {
         if (!cancelled) {
           setSessions(data);
+          setError(null);
           setIsLoading(false);
         }
       })
@@ -56,7 +58,78 @@ export function useSessions() {
     return () => {
       cancelled = true;
     };
+  }, [pathname]);
+
+  // Real-time synchronization via custom event bus
+  useEffect(() => {
+    const handleSessionsChanged = (e: Event) => {
+      const customEvent = e as CustomEvent<{
+        action?: "create" | "update" | "delete" | "refresh";
+        session?: ChatSession;
+        sessionId?: string;
+      }>;
+
+      if (!customEvent.detail) return;
+
+      const { action, session, sessionId } = customEvent.detail;
+
+      if (action === "create" && session) {
+        setSessions((prev) => {
+          if (prev.some((s) => s.id === session.id)) return prev;
+          return [session, ...prev];
+        });
+        chatService
+          .getSessions()
+          .then((data) => setSessions(data))
+          .catch(() => {});
+      } else if (action === "update" && session) {
+        setSessions((prev) =>
+          prev.map((s) => (s.id === session.id ? session : s)),
+        );
+        chatService
+          .getSessions()
+          .then((data) => setSessions(data))
+          .catch(() => {});
+      } else if (action === "delete" && sessionId) {
+        setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+      } else if (action === "refresh") {
+        chatService
+          .getSessions()
+          .then((data) => setSessions(data))
+          .catch(() => {});
+      }
+    };
+
+    window.addEventListener("chat-sessions-changed", handleSessionsChanged);
+    return () => {
+      window.removeEventListener(
+        "chat-sessions-changed",
+        handleSessionsChanged,
+      );
+    };
   }, []);
+
+  const renameSession = async (id: string, newTitle: string) => {
+    const trimmed = newTitle.trim();
+    if (!trimmed) return;
+
+    // Optimistically update local session list
+    const previous = [...sessions];
+    setSessions((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, title: trimmed } : s)),
+    );
+
+    try {
+      await chatService.updateSessionTitle(id, trimmed);
+      toast.success("Judul sesi berhasil diperbarui");
+    } catch (err) {
+      console.error("Failed to rename session:", err);
+      setSessions(previous);
+      toast.error("Gagal memperbarui judul sesi", {
+        description: (err as Error).message,
+      });
+    }
+  };
 
   const deleteSession = async (id: string) => {
     if (deletingId) return; // Prevent concurrent multiple clicks
@@ -117,7 +190,8 @@ export function useSessions() {
     isLoading,
     error,
     deletingId,
-    refreshSessions: fetchSessions,
+    refreshSessions,
+    renameSession,
     deleteSession,
   };
 }

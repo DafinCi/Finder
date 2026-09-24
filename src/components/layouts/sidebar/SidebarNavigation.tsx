@@ -19,6 +19,7 @@ export default function SidebarNavigation({
     error,
     deletingId,
     refreshSessions,
+    renameSession,
     deleteSession,
   } = useSessions();
 
@@ -87,6 +88,7 @@ export default function SidebarNavigation({
           error={error}
           deletingId={deletingId}
           onRetry={refreshSessions}
+          onRenameSession={renameSession}
           onDeleteSession={deleteSession}
         />
       </div>

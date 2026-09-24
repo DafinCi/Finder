@@ -36,13 +36,11 @@ export default function JobCard({ match, onSelect }: JobCardProps) {
           <div className="space-y-0.5">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-base font-semibold font-heading text-foreground group-hover:text-primary transition-colors">
-                {title}
+                {companyName}
               </h3>
               <MatchBadge score={matchScore} />
             </div>
-            <p className="text-xs text-muted-foreground font-medium">
-              {companyName}
-            </p>
+            <p className="text-xs text-muted-foreground font-medium">{title}</p>
           </div>
         </div>
 

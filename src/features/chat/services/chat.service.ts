@@ -27,6 +27,34 @@ export const chatService = {
       throw new Error(err.error || "Failed to initialize career chat session.");
     }
     const data = await res.json();
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("chat-sessions-changed", {
+          detail: { action: "create", session: data.session },
+        }),
+      );
+    }
+    return data.session;
+  },
+
+  async updateSessionTitle(id: string, title: string): Promise<ChatSession> {
+    const res = await fetch(`/api/chat/session/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || "Gagal memperbarui judul sesi.");
+    }
+    const data = await res.json();
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("chat-sessions-changed", {
+          detail: { action: "update", session: data.session },
+        }),
+      );
+    }
     return data.session;
   },
 
@@ -46,6 +74,13 @@ export const chatService = {
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.error || "Failed to delete session.");
+    }
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("chat-sessions-changed", {
+          detail: { action: "delete", sessionId: id },
+        }),
+      );
     }
     return true;
   },
@@ -154,6 +189,14 @@ export const chatService = {
       const err = await analyzeRes.json().catch(() => ({}));
       throw new Error(err.error || "Failed to evaluate candidate profile.");
     }
-    return analyzeRes.json();
+    const result = await analyzeRes.json();
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("chat-sessions-changed", {
+          detail: { action: "refresh" },
+        }),
+      );
+    }
+    return result;
   },
 };

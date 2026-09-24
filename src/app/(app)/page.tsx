@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import OmniPromptInput from "@/features/chat/components/OmniPromptInput";
 import ChatActionPills from "@/features/chat/components/ChatActionPills";
 import { chatService } from "@/features/chat/services/chat.service";
+import { generateSmartSessionTitle } from "@/features/chat/utils/title-generator";
 
 export default function HomePage() {
   const router = useRouter();
@@ -20,7 +21,7 @@ export default function HomePage() {
       if (file) {
         setStatusText("Initializing career session...");
         const session = await chatService.createSession({
-          title: `CV Analysis: ${file.name.replace(/\.pdf$/i, "")}`,
+          title: `Analisis CV: ${file.name.replace(/\.pdf$/i, "")}`,
           attachment: {
             name: file.name,
             size: file.size,
@@ -43,9 +44,10 @@ export default function HomePage() {
         router.push(`/c/${session.id}`);
       } else {
         setStatusText("Starting conversation...");
-        // Create session without initial_message to prevent duplicate user messages
+        // Create session with clean AI-smart generated title
+        const smartTitle = generateSmartSessionTitle(prompt);
         const session = await chatService.createSession({
-          title: prompt.slice(0, 35) + (prompt.length > 35 ? "..." : ""),
+          title: smartTitle,
         });
 
         // Trigger first AI response (this inserts the single user message and creates the assistant response)
