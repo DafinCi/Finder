@@ -46,7 +46,7 @@ export interface UserAuthContext {
 /**
  * Abstract check: Does the user have an alternative authentication method
  * besides their currently linked Sui wallet?
- * 
+ *
  * Invariant (Guardrail 8):
  * Do not hardcode future architecture around "has email".
  * An alternative authentication method can be:
@@ -54,7 +54,7 @@ export interface UserAuthContext {
  * - Future zkLogin / Google OAuth provider
  * - Future Passkey / WebAuthn factor
  * - Future alternative linked wallet
- * 
+ *
  * If a user only has their Sui wallet as their login mechanism, disconnecting
  * it would orphan their account and lock them out permanently.
  */
@@ -63,16 +63,20 @@ export function hasAlternativeAuthenticationMethod(
 ): boolean {
   if (!user) return false;
 
+  const isSynthetic = isSyntheticSuiEmail(user.email);
+
   // 1. Check if user has a verified real email (not our synthetic domain)
-  if (user.email && !isSyntheticSuiEmail(user.email)) {
+  if (user.email && !isSynthetic) {
     return true;
   }
 
   // 2. Check if user has multiple OAuth/Identity providers linked in Supabase
   if (Array.isArray(user.identities) && user.identities.length > 0) {
-    const nonSuiIdentities = user.identities.filter(
-      (id) => id.provider !== "sui" && id.provider !== "custom_sui",
-    );
+    const nonSuiIdentities = user.identities.filter((id) => {
+      if (id.provider === "sui" || id.provider === "custom_sui") return false;
+      if (isSynthetic && id.provider === "email") return false;
+      return true;
+    });
     if (nonSuiIdentities.length > 0) {
       return true;
     }
@@ -80,9 +84,11 @@ export function hasAlternativeAuthenticationMethod(
 
   // 3. Check app_metadata.providers array
   if (Array.isArray(user.app_metadata?.providers)) {
-    const otherProviders = user.app_metadata.providers.filter(
-      (p) => p !== "sui" && p !== "custom_sui",
-    );
+    const otherProviders = user.app_metadata.providers.filter((p) => {
+      if (p === "sui" || p === "custom_sui") return false;
+      if (isSynthetic && p === "email") return false;
+      return true;
+    });
     if (otherProviders.length > 0) {
       return true;
     }
