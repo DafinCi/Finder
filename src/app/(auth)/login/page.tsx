@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { AlertCircle, ArrowRight } from "lucide-react";
 import { login } from "@/features/auth/services/auth.service";
 import { Button } from "@/components/ui/button";
+import { SuiSignInButton } from "@/features/sui/components/SuiSignInButton";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -123,6 +124,17 @@ export default function LoginPage() {
             <ArrowRight className="w-3.5 h-3.5 ml-1" />
           </Button>
         </form>
+
+        {/* Auth Divider */}
+        <div className="relative flex items-center justify-center my-4">
+          <div className="w-full border-t border-border/80" />
+          <span className="bg-card px-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground absolute font-sans">
+            Or continue with
+          </span>
+        </div>
+
+        {/* Sui Wallet SIWS Login */}
+        <SuiSignInButton />
 
         {/* Footer Navigation */}
         <p className="text-center text-xs text-muted-foreground font-sans pt-2 border-t border-border/60">

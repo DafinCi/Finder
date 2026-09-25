@@ -17,6 +17,7 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 import { Toaster } from "@/components/ui/sonner";
+import { AppProviders } from "@/components/providers/AppProviders";
 
 export const metadata: Metadata = {
   title: "Finder | AI Career Intelligence",
@@ -31,7 +32,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       style={{ colorScheme: "dark" }}
     >
       <body className="min-h-full flex flex-col bg-background font-body text-foreground">
-        {children}
+        <AppProviders>{children}</AppProviders>
         <Toaster position="top-right" richColors />
       </body>
     </html>
