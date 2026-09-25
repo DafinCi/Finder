@@ -83,4 +83,9 @@ describe("Integration: Database Schema & Query Contract Verification", () => {
     expect(schemaSql).toContain("uq_jobs_source_job_id");
     expect(schemaSql).toContain("UNIQUE (source, source_job_id)");
   });
+
+  it("should define a table-level unique constraint on profiles.sui_address to prevent wallet duplication", () => {
+    expect(schemaSql).toContain("uq_profiles_sui_address");
+    expect(schemaSql).toContain("UNIQUE (sui_address)");
+  });
 });

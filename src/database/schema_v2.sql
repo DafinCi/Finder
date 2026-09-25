@@ -25,6 +25,16 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS sui_address TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS memwal_space_id TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now());
 
+-- Enforce uniqueness on sui_address (nullable: allows multiple NULLs, disallows duplicate non-nulls)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'uq_profiles_sui_address'
+  ) THEN
+    ALTER TABLE public.profiles ADD CONSTRAINT uq_profiles_sui_address UNIQUE (sui_address);
+  END IF;
+END $$;
+
 -- ==============================================================================
 -- 2. TABEL: resumes
 -- ==============================================================================
