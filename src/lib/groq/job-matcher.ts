@@ -57,6 +57,12 @@ export async function analyzeJobMatches(
         max_tokens: 2500,
       });
 
+      if (completion.usage) {
+        console.log(
+          `[AI:Telemetry] op=JobMatcherTokens model=${model} prompt_tokens=${completion.usage.prompt_tokens} completion_tokens=${completion.usage.completion_tokens} total_tokens=${completion.usage.total_tokens}`,
+        );
+      }
+
       const content = completion.choices[0]?.message?.content;
       if (!content) {
         throw new Error("Tidak menerima respon teks dari model Groq.");

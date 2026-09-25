@@ -8,8 +8,15 @@ import { DEFAULT_GROQ_MODEL } from "@/lib/groq/client";
 import { PROFILE_EXTRACTOR_PROMPT_VERSION } from "@/lib/groq/prompts/profile-extractor.prompt";
 import { MatchedJobItem } from "@/types/chat";
 
+import {
+  toJobMatchingContext,
+  toCandidateMatchingContext,
+  RawJobInput,
+} from "@/features/jobs/domain/job-matching-context";
+
 const MODEL_NAME = process.env.GROQ_MODEL || DEFAULT_GROQ_MODEL;
-const TOP_JOB_LIMIT = 10;
+const DB_CANDIDATE_POOL_LIMIT = 25;
+const AI_MATCHING_POOL_LIMIT = 5;
 
 export interface RunResumeAnalysisParams {
   userId: string;
@@ -36,6 +43,8 @@ interface MatchQueryRow {
     location: string;
     job_type: string;
     salary_range: string | null;
+    company_name?: string | null;
+    company_logo?: string | null;
     companies: {
       name: string;
       logo_url: string | null;
@@ -71,6 +80,8 @@ async function getCachedCompletedAnalysis(
         location,
         job_type,
         salary_range,
+        company_name,
+        company_logo,
         companies:company_id (
           name,
           logo_url
@@ -90,8 +101,8 @@ async function getCachedCompletedAnalysis(
     reason: m.reason,
     missing_skills: m.missing_skills,
     title: m.jobs?.title || "Position",
-    company: m.jobs?.companies?.name || "Company",
-    logo_url: m.jobs?.companies?.logo_url,
+    company: m.jobs?.companies?.name || m.jobs?.company_name || "Company",
+    logo_url: m.jobs?.companies?.logo_url || m.jobs?.company_logo,
     location: m.jobs?.location || "Remote",
     job_type: m.jobs?.job_type || "Full-time",
     salary_range: m.jobs?.salary_range,
@@ -222,40 +233,83 @@ export async function runResumeAnalysisWorkflow({
     if (analysisError) throw analysisError;
     const analysisId = analysisData.id;
 
-    // 5. Sanitize skills and retrieve relevant job opportunities (strictly active roles)
+    // 5. Sanitize skills and retrieve candidate job opportunities (strictly active roles)
     const sanitizedSkills = (aiCandidateData.extracted_skills || [])
       .map((s) => s.replace(/["{},]/g, "").trim())
       .filter(Boolean);
 
-    let topJobs: Array<{
-      id: string;
-      title: string;
-      description: string;
-      requirements: string[];
-      company_id: string;
-    }> = [];
+    let candidateJobs: RawJobInput[] = [];
 
     if (sanitizedSkills.length > 0) {
       const { data: matchedSkillsJobs, error: jobsError } = await supabaseAdmin
         .from("jobs")
-        .select("id, title, description, requirements, company_id")
+        .select(
+          "id, title, description, requirements, location, job_type, salary_range, experience_level, company_name, company_id, companies(name)",
+        )
         .eq("is_active", true) // Reliability P1: Only query currently active opportunities
         .filter("requirements", "ov", `{${sanitizedSkills.join(",")}}`)
-        .limit(TOP_JOB_LIMIT);
+        .limit(DB_CANDIDATE_POOL_LIMIT);
 
       if (jobsError) throw jobsError;
-      topJobs = matchedSkillsJobs || [];
+      candidateJobs = (matchedSkillsJobs || []) as unknown as RawJobInput[];
     }
 
     // Fallback to latest active jobs if no skill overlap found
-    if (topJobs.length === 0) {
+    if (candidateJobs.length === 0) {
       const { data: fallbackJobs } = await supabaseAdmin
         .from("jobs")
-        .select("id, title, description, requirements, company_id")
+        .select(
+          "id, title, description, requirements, location, job_type, salary_range, experience_level, company_name, company_id, companies(name)",
+        )
         .eq("is_active", true)
-        .limit(TOP_JOB_LIMIT);
-      topJobs = fallbackJobs || [];
+        .limit(DB_CANDIDATE_POOL_LIMIT);
+      candidateJobs = (fallbackJobs || []) as unknown as RawJobInput[];
     }
+
+    // Deterministic pre-ranking based on candidate core and supporting skill alignment
+    const coreSkills = (
+      aiCandidateData.json_profile?.candidate?.skills?.core || []
+    ).map((s) => s.toLowerCase().trim());
+    const supportingSkills = (
+      aiCandidateData.json_profile?.candidate?.skills?.supporting || []
+    ).map((s) => s.toLowerCase().trim());
+    const allCandidateSkills = (aiCandidateData.extracted_skills || []).map(
+      (s) => s.toLowerCase().trim(),
+    );
+
+    const coreSet = new Set(coreSkills);
+    const supportingSet = new Set(supportingSkills);
+    const allSet = new Set(allCandidateSkills);
+
+    const scoredCandidates = candidateJobs.map((job) => {
+      const reqs = (job.requirements || []).map((r) => r.toLowerCase().trim());
+      let coreCount = 0;
+      let supportingCount = 0;
+      let generalCount = 0;
+
+      for (const r of reqs) {
+        if (coreSet.has(r)) {
+          coreCount++;
+        } else if (supportingSet.has(r)) {
+          supportingCount++;
+        } else if (allSet.has(r)) {
+          generalCount++;
+        }
+      }
+
+      const totalReqs = Math.max(1, reqs.length);
+      // Core skills carry 2.0x weight, supporting carry 1.2x weight, general carry 1.0x weight
+      const preRankingScore =
+        (coreCount * 2.0 + supportingCount * 1.2 + generalCount * 1.0) /
+        totalReqs;
+
+      return { job, preRankingScore };
+    });
+
+    scoredCandidates.sort((a, b) => b.preRankingScore - a.preRankingScore);
+    const topJobs = scoredCandidates
+      .slice(0, AI_MATCHING_POOL_LIMIT)
+      .map((item) => item.job);
 
     // 6. Perform Job Matching with Graceful Degradation fallback
     let matchedJobsWithDetails: MatchedJobItem[] = [];
@@ -263,10 +317,17 @@ export async function runResumeAnalysisWorkflow({
     if (topJobs && topJobs.length > 0) {
       let matchResults;
 
+      const compactCandidateContext = toCandidateMatchingContext(
+        aiCandidateData.json_profile,
+      );
+      const compactJobContexts = topJobs.map((job) =>
+        toJobMatchingContext(job),
+      );
+
       try {
         matchResults = await analyzeJobMatches(
-          aiCandidateData.json_profile,
-          topJobs,
+          compactCandidateContext,
+          compactJobContexts,
         );
       } catch (matchingError) {
         console.warn(
@@ -343,6 +404,8 @@ export async function runResumeAnalysisWorkflow({
             location,
             job_type,
             salary_range,
+            company_name,
+            company_logo,
             companies:company_id (
               name,
               logo_url
@@ -362,8 +425,8 @@ export async function runResumeAnalysisWorkflow({
         reason: m.reason,
         missing_skills: m.missing_skills,
         title: m.jobs?.title || "Position",
-        company: m.jobs?.companies?.name || "Company",
-        logo_url: m.jobs?.companies?.logo_url,
+        company: m.jobs?.companies?.name || m.jobs?.company_name || "Company",
+        logo_url: m.jobs?.companies?.logo_url || m.jobs?.company_logo,
         location: m.jobs?.location || "Remote",
         job_type: m.jobs?.job_type || "Full-time",
         salary_range: m.jobs?.salary_range,

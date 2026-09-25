@@ -39,6 +39,11 @@ export default function JobCard({ match, onSelect }: JobCardProps) {
                 {companyName}
               </h3>
               <MatchBadge score={matchScore} />
+              {match.source === "remotive" && (
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/90 bg-secondary/80 border border-border/70 px-1.5 py-0.5 rounded">
+                  via Remotive
+                </span>
+              )}
             </div>
             <p className="text-xs text-muted-foreground font-medium">{title}</p>
           </div>

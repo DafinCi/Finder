@@ -388,6 +388,29 @@ export default function JobsView() {
                     <span>{selectedJob.experienceLevel || "Mid Level"}</span>
                   </span>
                 </div>
+
+                {/* Remotive Attribution */}
+                {selectedJob.source === "remotive" && (
+                  <div className="p-2.5 bg-secondary/40 border border-border/70 rounded-lg flex items-center justify-between text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1.5">
+                      <span>Source:</span>
+                      <span className="font-semibold text-foreground">
+                        Remotive
+                      </span>
+                    </div>
+                    {selectedJob.sourceUrl && (
+                      <a
+                        href={selectedJob.sourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-primary hover:underline font-medium text-[11px]"
+                      >
+                        <span>View original listing</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Fit Insights */}

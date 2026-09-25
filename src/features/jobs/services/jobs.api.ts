@@ -16,6 +16,8 @@ export interface FormattedJobMatch {
   companyLogo?: string | null;
   companyWebsite?: string | null;
   applyUrl?: string | null;
+  sourceUrl?: string | null;
+  source?: string;
 }
 
 export const jobsApi = {
@@ -36,6 +38,11 @@ export const jobsApi = {
           location,
           experience_level,
           is_active,
+          apply_url,
+          source_url,
+          source,
+          company_name,
+          company_logo,
           companies (
             id,
             name,
@@ -70,10 +77,14 @@ export const jobsApi = {
       location: match.jobs?.location,
       experienceLevel: match.jobs?.experience_level,
       companyId: match.jobs?.companies?.id,
-      companyName: match.jobs?.companies?.name,
-      companyLogo: match.jobs?.companies?.logo_url,
+      companyName:
+        match.jobs?.companies?.name || match.jobs?.company_name || "Company",
+      companyLogo:
+        match.jobs?.companies?.logo_url || match.jobs?.company_logo || null,
       companyWebsite: match.jobs?.companies?.website || null,
-      applyUrl: match.jobs?.companies?.website || null,
+      applyUrl: match.jobs?.apply_url || match.jobs?.companies?.website || null,
+      sourceUrl: match.jobs?.source_url || null,
+      source: match.jobs?.source || "manual",
     }));
   },
 
@@ -89,6 +100,11 @@ export const jobsApi = {
         location,
         experience_level,
         is_active,
+        apply_url,
+        source_url,
+        source,
+        company_name,
+        company_logo,
         companies (
           id,
           name,
@@ -106,6 +122,14 @@ export const jobsApi = {
       throw new Error("Gagal mengambil detail pekerjaan.");
     }
 
-    return data;
+    const rawCompany: any = Array.isArray(data.companies)
+      ? data.companies[0]
+      : data.companies;
+
+    return {
+      ...data,
+      company_name: rawCompany?.name || data.company_name || "Company",
+      company_logo: rawCompany?.logo_url || data.company_logo || null,
+    };
   },
 };

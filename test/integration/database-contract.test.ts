@@ -35,6 +35,14 @@ describe("Integration: Database Schema & Query Contract Verification", () => {
       // jobs table
       "is_active BOOLEAN",
       "salary_range TEXT",
+      "source TEXT",
+      "source_job_id TEXT",
+      "source_url TEXT",
+      "apply_url TEXT",
+      "company_name TEXT",
+      "company_logo TEXT",
+      "posted_at TIMESTAMP WITH TIME ZONE",
+      "last_synced_at TIMESTAMP WITH TIME ZONE",
       // job_matches table
       "match_score INTEGER",
       "missing_skills JSONB",
@@ -63,5 +71,16 @@ describe("Integration: Database Schema & Query Contract Verification", () => {
     expect(schemaSql).toContain(
       "CHECK (role IN ('user', 'assistant', 'system'))",
     );
+  });
+
+  it("should enforce check constraints on job sources aligned with supported providers", () => {
+    expect(schemaSql).toContain(
+      "CHECK (source IN ('manual', 'remotive', 'remoteok', 'jobicy', 'arbeitnow'))",
+    );
+  });
+
+  it("should define a table-level unique constraint for external job deduplication and PostgREST upsert", () => {
+    expect(schemaSql).toContain("uq_jobs_source_job_id");
+    expect(schemaSql).toContain("UNIQUE (source, source_job_id)");
   });
 });

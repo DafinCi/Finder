@@ -81,7 +81,13 @@ ALTER TABLE public.companies ADD COLUMN IF NOT EXISTS website TEXT;
 -- ==============================================================================
 CREATE TABLE IF NOT EXISTS public.jobs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    company_id UUID REFERENCES public.companies(id) ON DELETE CASCADE NOT NULL,
+    company_id UUID REFERENCES public.companies(id) ON DELETE CASCADE,
+    company_name TEXT,
+    company_logo TEXT,
+    source TEXT NOT NULL DEFAULT 'manual' CHECK (source IN ('manual', 'remotive', 'remoteok', 'jobicy', 'arbeitnow')),
+    source_job_id TEXT,
+    source_url TEXT,
+    apply_url TEXT,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
     requirements TEXT[] DEFAULT '{}',
@@ -90,15 +96,56 @@ CREATE TABLE IF NOT EXISTS public.jobs (
     salary_range TEXT,
     experience_level TEXT DEFAULT 'Mid-Level',
     is_active BOOLEAN DEFAULT TRUE,
+    posted_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()),
+    last_synced_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now())
 );
 
 -- Safe patch jika tabel jobs sudah ada dari skema lama:
+ALTER TABLE public.jobs ALTER COLUMN company_id DROP NOT NULL;
+ALTER TABLE public.jobs ADD COLUMN IF NOT EXISTS company_name TEXT;
+ALTER TABLE public.jobs ADD COLUMN IF NOT EXISTS company_logo TEXT;
+ALTER TABLE public.jobs ADD COLUMN IF NOT EXISTS source TEXT DEFAULT 'manual';
+ALTER TABLE public.jobs ADD COLUMN IF NOT EXISTS source_job_id TEXT;
+ALTER TABLE public.jobs ADD COLUMN IF NOT EXISTS source_url TEXT;
+ALTER TABLE public.jobs ADD COLUMN IF NOT EXISTS apply_url TEXT;
 ALTER TABLE public.jobs ADD COLUMN IF NOT EXISTS job_type TEXT DEFAULT 'full-time';
 ALTER TABLE public.jobs ADD COLUMN IF NOT EXISTS salary_range TEXT;
+ALTER TABLE public.jobs ADD COLUMN IF NOT EXISTS posted_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now());
+ALTER TABLE public.jobs ADD COLUMN IF NOT EXISTS last_synced_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now());
+
+-- Backfill company metadata for existing internal rows
+UPDATE public.jobs j
+SET company_name = c.name,
+    company_logo = c.logo_url
+FROM public.companies c
+WHERE j.company_id = c.id
+  AND j.company_name IS NULL;
+
+-- Source constraint check
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'chk_jobs_source'
+  ) THEN
+    ALTER TABLE public.jobs ADD CONSTRAINT chk_jobs_source 
+      CHECK (source IN ('manual', 'remotive', 'remoteok', 'jobicy', 'arbeitnow'));
+  END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_jobs_company_id ON public.jobs(company_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_is_active ON public.jobs(is_active);
+CREATE INDEX IF NOT EXISTS idx_jobs_source ON public.jobs(source);
+DROP INDEX IF EXISTS public.idx_jobs_source_job_id;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'uq_jobs_source_job_id'
+  ) THEN
+    ALTER TABLE public.jobs ADD CONSTRAINT uq_jobs_source_job_id 
+      UNIQUE (source, source_job_id);
+  END IF;
+END $$;
 
 -- ==============================================================================
 -- 6. TABEL: job_matches
