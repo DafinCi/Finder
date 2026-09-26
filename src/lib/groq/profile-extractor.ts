@@ -119,6 +119,6 @@ export async function extractCandidateProfile(
   } catch (error) {
     console.error("Groq Profile Extraction Error:", error);
     const friendlyMessage = normalizeGroqError(error);
-    throw new Error(`Gagal mengekstrak profil kandidat: ${friendlyMessage}`);
+    throw new Error(`Profile extraction failed: ${friendlyMessage}`);
   }
 }

@@ -42,10 +42,10 @@ export default function ChatSessionPage({
     try {
       setIsSavingTitle(true);
       await updateTitle(trimmed);
-      toast.success("Nama sesi berhasil diperbarui");
+      toast.success("Session renamed");
       setIsEditingTitle(false);
     } catch (err) {
-      toast.error("Gagal memperbarui nama sesi", {
+      toast.error("Couldn't rename session", {
         description: (err as Error).message,
       });
     } finally {
@@ -92,7 +92,7 @@ export default function ChatSessionPage({
                 disabled={isSavingTitle}
                 onClick={handleSaveTitle}
                 className="p-1 hover:text-primary rounded hover:bg-secondary text-primary cursor-pointer disabled:opacity-40"
-                title="Simpan"
+                title="Save"
               >
                 {isSavingTitle ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -105,7 +105,7 @@ export default function ChatSessionPage({
                 disabled={isSavingTitle}
                 onClick={() => setIsEditingTitle(false)}
                 className="p-1 hover:text-muted-foreground rounded hover:bg-secondary text-muted-foreground cursor-pointer disabled:opacity-40"
-                title="Batal"
+                title="Cancel"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -118,9 +118,9 @@ export default function ChatSessionPage({
                   setIsEditingTitle(true);
                   setNewTitle(session?.title || "");
                 }}
-                title="Klik untuk mengubah nama sesi"
+                title="Rename session"
               >
-                {session?.title || "Career Workspace"}
+                {session?.title || "Chat session"}
               </h2>
               <button
                 type="button"
@@ -128,9 +128,9 @@ export default function ChatSessionPage({
                   setIsEditingTitle(true);
                   setNewTitle(session?.title || "");
                 }}
-                aria-label="Ubah nama sesi"
+                aria-label="Rename session"
                 className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-foreground hover:bg-secondary rounded transition-opacity cursor-pointer"
-                title="Ubah nama sesi"
+                title="Rename session"
               >
                 <Pencil className="w-3 h-3" />
               </button>
@@ -190,7 +190,7 @@ export default function ChatSessionPage({
             isSticky={true}
             onSubmit={(prompt, file) => sendMessage(prompt, file)}
             isLoading={isLoading}
-            placeholder="Ask follow-up career questions or attach another document..."
+            placeholder="Ask a follow-up question or attach another CV..."
           />
         </div>
       </div>

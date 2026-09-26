@@ -45,7 +45,7 @@ export default function LoginPage() {
             Welcome to Finder
           </h1>
           <p className="text-xs text-muted-foreground font-sans">
-            Sign in to access your sovereign career workspace and AI matches.
+            Sign in to find AI-matched jobs and manage your career.
           </p>
         </div>
 
@@ -120,7 +120,7 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full h-10 text-xs font-semibold"
           >
-            <span>{loading ? "Signing In..." : "Sign In"}</span>
+            <span>{loading ? "Signing in..." : "Sign in"}</span>
             <ArrowRight className="w-3.5 h-3.5 ml-1" />
           </Button>
         </form>

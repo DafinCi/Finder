@@ -442,7 +442,7 @@ export async function POST(req: NextRequest) {
             );
             throw new Error(
               insertError?.message ||
-                "Gagal menyimpan respon asisten ke database.",
+                "Couldn't save the response. Please try again.",
             );
           }
 

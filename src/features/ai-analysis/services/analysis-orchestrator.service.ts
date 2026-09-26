@@ -166,14 +166,12 @@ export async function runResumeAnalysisWorkflow({
         }
       }
       if (pollResume?.status === "failed") {
-        throw new Error(
-          "Proses analisis resume sebelumnya gagal. Silakan coba kembali.",
-        );
+        throw new Error("Previous analysis failed. Please try again.");
       }
     }
 
     const conflictErr = new Error(
-      "Analisis resume sedang berjalan pada proses lain. Mohon tunggu beberapa detik.",
+      "Analysis is already running. Please wait a moment.",
     );
     (conflictErr as unknown as { statusCode: number }).statusCode = 409;
     throw conflictErr;
@@ -206,7 +204,7 @@ export async function runResumeAnalysisWorkflow({
       }
     }
     const conflictErr = new Error(
-      "Analisis resume sedang diproses secara paralel. Mohon tunggu sejenak.",
+      "Analysis is in progress. Please wait a moment.",
     );
     (conflictErr as unknown as { statusCode: number }).statusCode = 409;
     throw conflictErr;
@@ -438,11 +436,11 @@ export async function runResumeAnalysisWorkflow({
       const candidateName = aiCandidateData.json_profile.candidate.name;
       const candidateTitle = aiCandidateData.json_profile.candidate.title;
 
-      const assistantMessageContent = `Halo ${
+      const assistantMessageContent = `Hi ${
         candidateName !== "Anonim" ? candidateName : ""
-      }! Saya telah menganalisis CV Anda sebagai **${candidateTitle}**.
+      }! I've analyzed your CV as **${candidateTitle}**.
 
-Berikut adalah ringkasan profil keahlian Anda dan kurasi **lowongan pekerjaan yang paling cocok** berdasarkan tech stack dan pengalaman Anda. Silakan klik lowongan yang menarik atau tanyakan apa saja kepada saya untuk persiapan karir Anda!`;
+Here is a summary of your skills profile and a curation of **the best matching jobs** based on your tech stack and experience. Feel free to click on any job that interests you or ask me anything for your career preparation!`;
 
       await supabaseAdmin.from("chat_messages").insert({
         session_id: sessionId,
@@ -465,7 +463,7 @@ Berikut adalah ringkasan profil keahlian Anda dan kurasi **lowongan pekerjaan ya
       const shouldUpdateTitle =
         !currentSession?.title ||
         currentSession.title === "Obrolan Karir Baru" ||
-        currentSession.title.startsWith("Analisis:") ||
+        currentSession.title.startsWith("CV analysis:") ||
         currentSession.title.startsWith("CV Analysis:");
 
       const sessionUpdatePayload: {
@@ -478,7 +476,7 @@ Berikut adalah ringkasan profil keahlian Anda dan kurasi **lowongan pekerjaan ya
       };
 
       if (shouldUpdateTitle) {
-        sessionUpdatePayload.title = `Analisis: ${candidateTitle}`;
+        sessionUpdatePayload.title = `CV analysis: ${candidateTitle}`;
       }
 
       await supabaseAdmin

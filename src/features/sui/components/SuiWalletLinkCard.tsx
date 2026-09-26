@@ -141,7 +141,7 @@ export function SuiWalletLinkCard() {
               Sui Wallet
             </h3>
             <p className="text-xs text-muted-foreground font-sans">
-              Cryptographic identity linking on Sui Testnet
+              Linked Sui wallet
             </p>
           </div>
         </div>
@@ -244,7 +244,7 @@ export function SuiWalletLinkCard() {
                       <span>Unlinking...</span>
                     </>
                   ) : (
-                    <span>Confirm Unlink</span>
+                    <span>Confirm unlink</span>
                   )}
                 </Button>
               </div>
@@ -258,7 +258,7 @@ export function SuiWalletLinkCard() {
                 className="h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20"
               >
                 <Unlink className="w-3.5 h-3.5 mr-1.5" />
-                <span>Unlink Wallet</span>
+                <span>Unlink wallet</span>
               </Button>
             )}
           </div>
@@ -323,7 +323,7 @@ export function SuiWalletLinkCard() {
                 ) : (
                   <>
                     <LinkIcon className="w-3.5 h-3.5 mr-1.5" />
-                    <span>Link Connected Wallet</span>
+                    <span>Link connected wallet</span>
                   </>
                 )}
               </Button>

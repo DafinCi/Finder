@@ -129,9 +129,9 @@ export default function SessionHistoryList({
                     e.stopPropagation();
                     handleSaveRename(session.id);
                   }}
-                  aria-label="Simpan perubahan"
+                  aria-label="Save changes"
                   className="p-1 hover:text-primary rounded hover:bg-secondary cursor-pointer disabled:opacity-40"
-                  title="Simpan"
+                  title="Save"
                 >
                   {isSavingRename ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
@@ -147,9 +147,9 @@ export default function SessionHistoryList({
                     e.stopPropagation();
                     setEditingId(null);
                   }}
-                  aria-label="Batal ubah"
+                  aria-label="Cancel editing"
                   className="p-1 hover:text-muted-foreground rounded hover:bg-secondary cursor-pointer disabled:opacity-40"
-                  title="Batal"
+                  title="Cancel"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -184,9 +184,9 @@ export default function SessionHistoryList({
                       setEditingId(session.id);
                       setEditTitle(session.title);
                     }}
-                    aria-label={`Ubah nama ${session.title}`}
+                    aria-label={`Rename ${session.title}`}
                     className="opacity-70 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 min-w-[28px] min-h-[28px] flex items-center justify-center hover:text-foreground hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 rounded-md transition-all cursor-pointer"
-                    title="Ubah nama"
+                    title="Rename"
                   >
                     <Pencil className="w-3 h-3 text-muted-foreground hover:text-foreground" />
                   </button>

@@ -45,11 +45,6 @@ export default function JobSummary({ stats }: JobSummaryProps) {
             <h4 className="text-xl font-bold font-heading text-foreground">
               {highest !== null ? `${highest}%` : "—"}
             </h4>
-            {highest === null && (
-              <span className="text-[11px] text-muted-foreground/70 font-normal">
-                (N/A)
-              </span>
-            )}
           </div>
         </div>
       </div>
@@ -66,11 +61,6 @@ export default function JobSummary({ stats }: JobSummaryProps) {
             <h4 className="text-xl font-bold font-heading text-foreground">
               {average !== null ? `${average}%` : "—"}
             </h4>
-            {average === null && (
-              <span className="text-[11px] text-muted-foreground/70 font-normal">
-                (N/A)
-              </span>
-            )}
           </div>
         </div>
       </div>

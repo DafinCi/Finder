@@ -48,8 +48,7 @@ export default function RegisterPage() {
             Create Your Account
           </h1>
           <p className="text-xs text-muted-foreground font-sans">
-            Start your AI-powered career journey and discover tailored
-            opportunities.
+            Create an account to get started.
           </p>
         </div>
 
@@ -62,7 +61,7 @@ export default function RegisterPage() {
             >
               <div className="flex items-center justify-center gap-1.5 font-semibold text-sm">
                 <CheckCircle2 className="w-4 h-4" />
-                <span>Registration Successful</span>
+                <span>Account created</span>
               </div>
               <p className="text-muted-foreground leading-relaxed">
                 Please check your inbox to confirm your account before signing
@@ -73,7 +72,7 @@ export default function RegisterPage() {
               onClick={() => router.push("/login")}
               className="w-full h-10 text-xs font-semibold"
             >
-              Proceed to Sign In
+              Go to sign in
             </Button>
           </div>
         ) : (
@@ -170,7 +169,7 @@ export default function RegisterPage() {
               disabled={loading}
               className="w-full h-10 text-xs font-semibold"
             >
-              <span>{loading ? "Creating Account..." : "Create Account"}</span>
+              <span>{loading ? "Creating account..." : "Create account"}</span>
               <ArrowRight className="w-3.5 h-3.5 ml-1" />
             </Button>
           </form>

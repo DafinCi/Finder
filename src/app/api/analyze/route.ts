@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     if (!rateLimit.success) {
       return NextResponse.json(
         {
-          error: `Terlalu banyak permintaan analisis dalam waktu singkat. Silakan tunggu ${rateLimit.resetInSeconds} detik sebelum mencoba lagi.`,
+          error: `Too many requests. Please wait ${rateLimit.resetInSeconds} seconds before trying again.`,
         },
         {
           status: 429,
@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: "Analisis selesai",
+      message: "Analysis complete",
       ...result,
     });
   } catch (error: unknown) {

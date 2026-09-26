@@ -10,25 +10,25 @@ interface ChatActionPillsProps {
 const suggestions = [
   {
     icon: Sparkles,
-    label: "Analyze CV & Match Jobs",
+    label: "Analyze my CV",
     prompt:
       "Please analyze my uploaded resume and match it against top technical positions.",
   },
   {
     icon: Code,
-    label: "Audit Tech Stack & Skill Gap",
+    label: "Find skill gaps",
     prompt:
       "Perform a detailed audit of my tech stack and identify high-priority skills to improve.",
   },
   {
     icon: Briefcase,
-    label: "High-Compensation Career Paths",
+    label: "Find high-paying roles",
     prompt:
       "Recommend relevant high-yield career paths and roles aligned with my background.",
   },
   {
     icon: HelpCircle,
-    label: "Simulate Technical Interview",
+    label: "Practice interview questions",
     prompt:
       "Simulate a technical recruiter screening with 3 deep-dive questions based on my experience.",
   },

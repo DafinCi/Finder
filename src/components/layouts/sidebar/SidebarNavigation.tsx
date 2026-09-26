@@ -44,7 +44,7 @@ export default function SidebarNavigation({
               ? "bg-primary text-primary-foreground border-primary"
               : "bg-secondary/60 text-muted-foreground hover:text-foreground border-border"
           }`}
-          title="Explore Jobs"
+          title="Jobs"
         >
           <BriefcaseBusiness className="w-4 h-4" />
         </Link>
@@ -55,7 +55,7 @@ export default function SidebarNavigation({
               ? "bg-primary text-primary-foreground border-primary"
               : "bg-secondary/60 text-muted-foreground hover:text-foreground border-border"
           }`}
-          title="Settings & Wallet"
+          title="Settings"
         >
           <Settings className="w-4 h-4" />
         </Link>
@@ -85,7 +85,7 @@ export default function SidebarNavigation({
           }`}
         >
           <BriefcaseBusiness className="w-3.5 h-3.5 text-primary" />
-          <span>Explore Jobs</span>
+          <span>Jobs</span>
         </Link>
         <Link
           href="/settings"
@@ -96,7 +96,7 @@ export default function SidebarNavigation({
           }`}
         >
           <Settings className="w-3.5 h-3.5 text-primary" />
-          <span>Settings & Wallet</span>
+          <span>Settings</span>
         </Link>
       </div>
 

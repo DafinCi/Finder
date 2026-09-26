@@ -139,8 +139,8 @@ export function SuiWalletModal({
 
         {/* Notice */}
         <p className="text-[10px] text-muted-foreground text-center pt-2 border-t border-border/50">
-          Finder uses Sign-In with Sui (SIWS) for secure, cryptographic
-          authentication on Sui Testnet.
+          You&apos;ll sign a message with your wallet to verify ownership. No
+          transaction fees.
         </p>
       </div>
     </div>

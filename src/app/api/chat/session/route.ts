@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
     const sessionTitle =
       title ||
       (attachment?.name
-        ? `Analisis CV: ${attachment.name}`
+        ? `CV analysis: ${attachment.name}`
         : "Obrolan Karir Baru");
 
     let { data: session, error: sessionError } = await supabase

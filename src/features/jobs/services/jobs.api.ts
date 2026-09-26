@@ -58,7 +58,7 @@ export const jobsApi = {
 
     if (error) {
       console.error("Error fetching job matches:", error);
-      throw new Error("Gagal mengambil rekomendasi lowongan kerja.");
+      throw new Error("Couldn't load job recommendations.");
     }
 
     return (data || []).map((match: any) => ({
@@ -119,7 +119,7 @@ export const jobsApi = {
 
     if (error) {
       console.error("Error fetching job detail:", error);
-      throw new Error("Gagal mengambil detail pekerjaan.");
+      throw new Error("Couldn't load job details.");
     }
 
     const rawCompany: any = Array.isArray(data.companies)

@@ -40,13 +40,13 @@ export const SUI_ERROR_MESSAGES: Record<SuiClientErrorCode, string> = {
   WALLET_ALREADY_LINKED:
     "This Sui wallet is already linked to an existing account.",
   NO_ALTERNATIVE_AUTH_METHOD:
-    "Cannot unlink wallet. You must have an alternative authentication method (such as an email and password) before disconnecting your only login mechanism.",
+    "Can't unlink your wallet — it's your only way to sign in. Add an email and password first.",
   RATE_LIMITED: "Too many requests. Please wait a moment before trying again.",
   USER_REJECTED: "Signature request was rejected in your wallet.",
   NO_WALLET_CONNECTED:
     "No wallet connected. Please connect a Sui wallet to continue.",
   WRONG_NETWORK:
-    "Unsupported network detected. Finder currently runs on Sui Testnet.",
+    "Please switch your wallet to Sui Testnet.",
   GENERIC_ERROR: "An unexpected error occurred during wallet authentication.",
 };
 

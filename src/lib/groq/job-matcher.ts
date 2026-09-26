@@ -77,7 +77,7 @@ export async function analyzeJobMatches(
     console.error("Groq Job Matching Error:", error);
     const friendlyMessage = normalizeGroqError(error);
     throw new Error(
-      `Gagal melakukan kalkulasi kecocokan pekerjaan: ${friendlyMessage}`,
+      `Job matching failed: ${friendlyMessage}`,
     );
   }
 }

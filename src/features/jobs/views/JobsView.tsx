@@ -182,11 +182,10 @@ export default function JobsView() {
         {/* Page Header */}
         <div className="space-y-1">
           <h1 className="text-2xl sm:text-3xl font-bold font-heading text-foreground tracking-tight">
-            Recommended Roles
+            Recommended jobs
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground font-sans">
-            AI-driven career opportunities custom-matched to your resume
-            profile.
+            Jobs matched to your CV by AI.
           </p>
         </div>
 
@@ -276,11 +275,10 @@ export default function JobsView() {
           ) : allMatches.length > 0 ? (
             <div className="border border-border bg-card/60 rounded-xl p-10 text-center space-y-3.5">
               <p className="text-base font-semibold text-foreground">
-                No roles match your active filters
+                No jobs match your filters
               </p>
               <p className="text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed">
-                Try loosening your experience level, match score, or search
-                query to see more recommended opportunities.
+                Try adjusting your filters to see more results.
               </p>
               <button
                 type="button"
@@ -294,18 +292,17 @@ export default function JobsView() {
           ) : (
             <div className="border border-border bg-card/60 rounded-xl p-12 text-center space-y-4">
               <p className="text-base font-semibold text-foreground">
-                No personalized opportunities yet
+                No matched jobs yet
               </p>
               <p className="text-xs sm:text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
-                Upload your CV in the AI Career Copilot to unlock real-time
-                match scores and tailored job recommendations.
+                Upload your CV in a chat session to get matched with jobs.
               </p>
               <Link
                 href="/"
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-semibold shadow-xs hover:opacity-90 transition-opacity"
               >
                 <MessageSquare className="w-3.5 h-3.5" />
-                <span>Go to Career Copilot</span>
+                <span>Start a chat</span>
               </Link>
             </div>
           )}
@@ -336,7 +333,7 @@ export default function JobsView() {
             {/* Drawer Header */}
             <div className="flex items-center justify-between border-b border-border/80 pb-4">
               <div className="flex items-center gap-2 text-primary font-semibold text-xs tracking-tight">
-                <span>AI Deep Matching Analysis</span>
+                <span>Match details</span>
               </div>
               <button
                 type="button"
@@ -416,7 +413,7 @@ export default function JobsView() {
               {/* Fit Insights */}
               <div className="border border-border/80 bg-secondary/30 rounded-xl p-4 space-y-2">
                 <h4 className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                  <span>Why This Job Fits:</span>
+                  <span>Why this job fits</span>
                 </h4>
                 <p className="text-xs leading-relaxed text-muted-foreground font-sans">
                   {selectedJob.reason}
@@ -429,15 +426,14 @@ export default function JobsView() {
                   <div className="border border-amber-500/20 bg-amber-500/5 rounded-xl p-4 space-y-2">
                     <h4 className="text-xs font-semibold text-amber-500 flex items-center gap-1.5">
                       <AlertCircle className="w-3.5 h-3.5" />
-                      <span>Identified Skills Gap:</span>
+                      <span>Skills to develop</span>
                     </h4>
                     <p className="text-xs leading-relaxed text-muted-foreground font-sans">
-                      Target requirements mention{" "}
+                      This role mentions{" "}
                       <span className="font-semibold text-foreground">
                         {selectedJob.missingSkills.join(", ")}
                       </span>
-                      . Preparing these areas will boost your interview
-                      readiness.
+                      . Brushing up on these will help in interviews.
                     </p>
                   </div>
                 )}
@@ -449,7 +445,7 @@ export default function JobsView() {
                     Job Description
                   </h4>
                   <p className="text-xs leading-relaxed text-muted-foreground whitespace-pre-line font-sans">
-                    {selectedJob.description || "No description provided."}
+                    {selectedJob.description || "No description available."}
                   </p>
                 </div>
 

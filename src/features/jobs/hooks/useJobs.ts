@@ -33,7 +33,7 @@ export const useJobs = (analysisId: string | null = null) => {
     } catch (err: unknown) {
       const errorObj = err as Error;
       console.error("useJobs Fetch Error:", errorObj);
-      setError(errorObj.message || "Gagal memuat rekomendasi lowongan kerja.");
+      setError(errorObj.message || "Couldn't load job recommendations.");
     } finally {
       setIsLoading(false);
     }
@@ -70,7 +70,7 @@ export const useJobs = (analysisId: string | null = null) => {
           const errorObj = err as Error;
           console.error("useJobs Fetch Error:", errorObj);
           setError(
-            errorObj.message || "Gagal memuat rekomendasi lowongan kerja.",
+            errorObj.message || "Couldn't load job recommendations.",
           );
         }
       } finally {

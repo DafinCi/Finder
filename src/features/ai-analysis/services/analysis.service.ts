@@ -14,7 +14,7 @@ export async function startAnalysis(resumeId: string, _rawText?: string) {
 
     if (!response.ok) {
       throw new Error(
-        data.error || "Terjadi kesalahan saat menganalisis resume.",
+        data.error || "Something went wrong while analyzing your CV.",
       );
     }
 
@@ -66,7 +66,7 @@ export async function fetchAnalysisData(analysisId: string) {
     };
   } catch (error) {
     console.error("Client Service Fetch Data Error:", error);
-    throw new Error("Gagal mengambil data analisis dari database.");
+    throw new Error("Couldn't load analysis data.");
   }
 }
 

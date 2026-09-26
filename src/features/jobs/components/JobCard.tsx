@@ -65,7 +65,7 @@ export default function JobCard({ match, onSelect }: JobCardProps) {
         <div className="p-3 bg-secondary/30 border border-border/60 rounded-lg space-y-1.5 text-xs">
           <div className="flex items-center gap-1.5 text-primary font-semibold">
             <Brain className="w-3.5 h-3.5" />
-            <span>AI Match Insights</span>
+            <span>Why this job fits</span>
           </div>
           <p className="leading-relaxed text-muted-foreground font-sans">
             {reason || "Analyzing fit..."}
@@ -76,13 +76,13 @@ export default function JobCard({ match, onSelect }: JobCardProps) {
               <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
               <div>
                 <span className="font-semibold text-amber-500">
-                  AI Recommendation:
+                  Suggested skills:
                 </span>{" "}
-                Familiarize yourself with{" "}
+                Consider learning{" "}
                 <span className="font-semibold text-foreground">
                   {missingSkills.join(", ")}
                 </span>{" "}
-                to maximize interview performance.
+                before applying.
               </div>
             </div>
           )}

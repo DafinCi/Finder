@@ -19,8 +19,7 @@ export default function SettingsPage() {
           Account Settings
         </h1>
         <p className="text-xs text-muted-foreground mt-1">
-          Manage your account credentials, security preferences, and linked Sui
-          Web3 identities.
+          Manage your account, security, and linked wallet.
         </p>
       </div>
 
@@ -66,13 +65,13 @@ export default function SettingsPage() {
             <div className="p-3 rounded-lg bg-secondary/30 border border-border/60 space-y-1">
               <span className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider flex items-center gap-1.5">
                 <Shield className="w-3 h-3 text-primary" />
-                Canonical User ID
+                Account ID
               </span>
               <p className="font-mono text-foreground font-medium truncate">
                 {user?.id || "N/A"}
               </p>
               <span className="text-[10px] text-muted-foreground block">
-                Primary Supabase auth.users identifier
+                Your unique account identifier
               </span>
             </div>
           </div>

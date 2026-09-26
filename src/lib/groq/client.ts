@@ -49,7 +49,7 @@ export function parseAndValidateJson<T>(text: string, schema: z.ZodType<T>): T {
   } catch (parseError) {
     console.error("Malformed JSON received from LLM:", cleaned);
     throw new Error(
-      `Gagal memproses respons AI: format JSON tidak valid (${(parseError as Error).message})`,
+      `Couldn't process AI response: invalid JSON format (${(parseError as Error).message})`,
     );
   }
 

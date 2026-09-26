@@ -59,7 +59,7 @@ export default function CandidateSummaryCard({
       {coreSkills.length > 0 && (
         <div className="space-y-1.5">
           <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-            Verified Tech Stack
+            Technical skills
           </span>
           <div className="flex flex-wrap gap-1.5">
             {coreSkills.map((skill: string, i: number) => (

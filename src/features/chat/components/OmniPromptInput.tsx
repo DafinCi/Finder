@@ -129,7 +129,7 @@ export default function OmniPromptInput({
     >
       <form
         onSubmit={handleSubmit}
-        aria-label="Career prompt and resume input form"
+        aria-label="Message and CV upload"
         className={`relative rounded-xl border bg-card/95 shadow-md backdrop-blur-md p-3 transition-all ${
           isDragging
             ? "border-primary ring-2 ring-primary/20 bg-primary/5"
@@ -175,7 +175,7 @@ export default function OmniPromptInput({
           rows={1}
           maxLength={MAX_PROMPT_CHARS}
           disabled={isLoading}
-          aria-label="Career goal or prompt"
+          aria-label="Message"
           className="w-full resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none leading-relaxed py-1 min-h-[38px] max-h-[160px] overflow-y-auto custom-scrollbar"
         />
 

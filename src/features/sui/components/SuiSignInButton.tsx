@@ -154,13 +154,13 @@ export function SuiSignInButton() {
         ) : account ? (
           <>
             <Wallet className="w-3.5 h-3.5 mr-2 text-primary" />
-            <span>Sign In with Connected Wallet</span>
+            <span>Sign in with connected wallet</span>
             <ArrowRight className="w-3.5 h-3.5 ml-auto text-muted-foreground" />
           </>
         ) : (
           <>
             <Wallet className="w-3.5 h-3.5 mr-2 text-primary" />
-            <span>Sign in with Sui Wallet</span>
+            <span>Sign in with Sui wallet</span>
           </>
         )}
       </Button>

@@ -45,7 +45,7 @@ export const chatService = {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || "Gagal memperbarui judul sesi.");
+      throw new Error(err.error || "Couldn't rename session.");
     }
     const data = await res.json();
     if (typeof window !== "undefined") {

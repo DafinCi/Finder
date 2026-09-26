@@ -109,7 +109,10 @@ export async function POST(req: NextRequest) {
     } catch (parseError) {
       console.error("PDF Parse Error:", parseError);
       return NextResponse.json(
-        { error: "Gagal membaca teks dari PDF. File corrupt atau dipasword." },
+        {
+          error:
+            "Couldn't read the PDF. The file may be corrupted or password-protected.",
+        },
         { status: 400 },
       );
     }
@@ -146,7 +149,7 @@ export async function POST(req: NextRequest) {
     if (storageError) {
       console.error("Storage Upload Error:", storageError);
       return NextResponse.json(
-        { error: "Gagal mengunggah file ke Supabase Storage." },
+        { error: "Couldn't upload the file. Please try again." },
         { status: 500 },
       );
     }
@@ -167,7 +170,7 @@ export async function POST(req: NextRequest) {
       console.error("Database Insert Error:", dbError);
       await supabaseAdmin.storage.from("resumes").remove([storagePath]);
       return NextResponse.json(
-        { error: "Gagal menyimpan metadata ke database." },
+        { error: "Couldn't save file data. Please try again." },
         { status: 500 },
       );
     }
@@ -245,7 +248,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        message: "Upload dan ekstraksi teks berhasil",
+        message: "File uploaded and text extracted",
         resumeId: resumeRecord.id,
         fileName: file.name,
       },

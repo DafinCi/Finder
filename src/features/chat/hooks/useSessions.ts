@@ -121,11 +121,11 @@ export function useSessions() {
 
     try {
       await chatService.updateSessionTitle(id, trimmed);
-      toast.success("Judul sesi berhasil diperbarui");
+      toast.success("Session renamed");
     } catch (err) {
       console.error("Failed to rename session:", err);
       setSessions(previous);
-      toast.error("Gagal memperbarui judul sesi", {
+      toast.error("Couldn't rename session", {
         description: (err as Error).message,
       });
     }
