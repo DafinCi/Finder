@@ -4,8 +4,8 @@ import path from "path";
 
 describe("Integration: Database Schema & Query Contract Verification", () => {
   const schemaPath = path.resolve(
-    import.meta.dirname,
-    "../../src/database/schema_v2.sql",
+    process.cwd(),
+    "src/database/schema_v2.sql",
   );
   const schemaSql = fs.readFileSync(schemaPath, "utf-8");
 

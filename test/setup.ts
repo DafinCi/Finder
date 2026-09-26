@@ -22,6 +22,17 @@ if (fs.existsSync(envLocalPath)) {
   }
 }
 
+// Map dedicated SUPABASE_TEST_* variables if provided
+if (process.env.SUPABASE_TEST_URL) {
+  process.env.NEXT_PUBLIC_SUPABASE_URL = process.env.SUPABASE_TEST_URL;
+}
+if (process.env.SUPABASE_TEST_ANON_KEY) {
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = process.env.SUPABASE_TEST_ANON_KEY;
+}
+if (process.env.SUPABASE_TEST_SERVICE_ROLE_KEY) {
+  process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_TEST_SERVICE_ROLE_KEY;
+}
+
 process.env.NEXT_PUBLIC_SUPABASE_URL =
   process.env.NEXT_PUBLIC_SUPABASE_URL ||
   "https://mock-test-project.supabase.co";

@@ -14,9 +14,9 @@ import { GET as nonceRoute } from "@/app/api/auth/sui/nonce/route";
 import { POST as verifyRoute } from "@/app/api/auth/sui/verify/route";
 import { NextRequest } from "next/server";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+import { requireLiveTestCredentials } from "./setup-live-credentials";
+
+const { supabaseUrl, serviceRoleKey, anonKey } = requireLiveTestCredentials();
 
 const admin = createClient(supabaseUrl, serviceRoleKey);
 
