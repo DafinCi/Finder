@@ -1,7 +1,7 @@
 /**
  * Helper to ensure live Supabase integration tests only execute
  * against a real, properly configured dedicated Supabase environment.
- * 
+ *
  * Never silently skips: if credentials are missing or mock, throws a clear
  * actionable error as mandated by Phase 6.2 test failure semantics.
  */
@@ -9,7 +9,8 @@ export function requireLiveTestCredentials() {
   const url =
     process.env.SUPABASE_TEST_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anon =
-    process.env.SUPABASE_TEST_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    process.env.SUPABASE_TEST_ANON_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const service =
     process.env.SUPABASE_TEST_SERVICE_ROLE_KEY ||
     process.env.SUPABASE_SERVICE_ROLE_KEY;

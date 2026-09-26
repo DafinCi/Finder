@@ -3,10 +3,7 @@ import fs from "fs";
 import path from "path";
 
 describe("Integration: Database Schema & Query Contract Verification", () => {
-  const schemaPath = path.resolve(
-    process.cwd(),
-    "src/database/schema_v2.sql",
-  );
+  const schemaPath = path.resolve(process.cwd(), "src/database/schema_v2.sql");
   const schemaSql = fs.readFileSync(schemaPath, "utf-8");
 
   it("should contain all canonical table definitions used in application code", () => {
