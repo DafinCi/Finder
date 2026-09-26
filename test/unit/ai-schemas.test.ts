@@ -106,7 +106,7 @@ describe("Unit: AI Schemas & JSON Parsers", () => {
 
     it("should throw on malformed non-JSON text", () => {
       expect(() => parseAndValidateJson("NOT_A_JSON", SimpleSchema)).toThrow(
-        /Gagal memproses respons AI/,
+        /Couldn't process AI response/,
       );
     });
 

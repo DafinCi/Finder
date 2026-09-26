@@ -426,6 +426,7 @@ describe("Phase 6: Frontend Sui Wallet Authentication UX & Integration Tests", (
           {
             id: "sui_only_id",
             user_id: "sui_only_id",
+            identity_id: "sui_only_id",
             identity_data: { email: syntheticEmail },
             provider: "email",
             last_sign_in_at: new Date().toISOString(),
