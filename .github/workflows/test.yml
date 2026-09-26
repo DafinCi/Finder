@@ -1,0 +1,106 @@
+name: Automated Tests & Quality Gates
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-checks:
+    name: Lint, Typecheck, and Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: ESLint Code Quality
+        run: npm run lint
+
+      - name: TypeScript Static Typecheck
+        run: npx tsc --noEmit
+
+      - name: Verify Production Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://mock-test-project.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.mock-anon-key
+          SUPABASE_SERVICE_ROLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.mock-service-role-key
+
+  unit-and-mocked-tests:
+    name: Unit and Hermetic Mocked Tests
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      NEXT_PUBLIC_SUPABASE_URL: https://mock-test-project.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.mock-anon-key
+      SUPABASE_SERVICE_ROLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.mock-service-role-key
+      GROQ_API_KEY: gsk_mock_test_ci_key
+      GROQ_MODEL: openai/gpt-oss-120b
+      GROQ_FALLBACK_MODEL: openai/gpt-oss-20b
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Automated Unit Tests
+        run: npm run test:unit
+
+      - name: Hermetic Mocked Integration Tests
+        run: npm run test:integration:mocked
+
+  live-integration-tests:
+    name: Live Supabase Integration Tests
+    needs: [static-checks, unit-and-mocked-tests]
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      SUPABASE_TEST_URL: ${{ secrets.SUPABASE_TEST_URL }}
+      SUPABASE_TEST_ANON_KEY: ${{ secrets.SUPABASE_TEST_ANON_KEY }}
+      SUPABASE_TEST_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_TEST_SERVICE_ROLE_KEY }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_TEST_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_TEST_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_TEST_SERVICE_ROLE_KEY }}
+      GROQ_API_KEY: gsk_mock_test_ci_key
+      GROQ_MODEL: openai/gpt-oss-120b
+      GROQ_FALLBACK_MODEL: openai/gpt-oss-20b
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Live Supabase Integration Tests
+        run: npm run test:integration:live

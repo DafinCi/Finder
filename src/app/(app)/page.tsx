@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import { Bot, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import OmniPromptInput from "@/features/chat/components/OmniPromptInput";
+import ChatActionPills from "@/features/chat/components/ChatActionPills";
 import { chatService } from "@/features/chat/services/chat.service";
+import { generateSmartSessionTitle } from "@/features/chat/utils/title-generator";
 
 export default function HomePage() {
   const router = useRouter();
@@ -19,7 +21,7 @@ export default function HomePage() {
       if (file) {
         setStatusText("Initializing career session...");
         const session = await chatService.createSession({
-          title: `CV Analysis: ${file.name.replace(/\.pdf$/i, "")}`,
+          title: `CV analysis: ${file.name.replace(/\.pdf$/i, "")}`,
           attachment: {
             name: file.name,
             size: file.size,
@@ -30,21 +32,22 @@ export default function HomePage() {
             "Please analyze my resume and recommend matching career opportunities.",
         });
 
-        setStatusText("Extracting profile & matching curated jobs via Groq...");
+        setStatusText("Analyzing your profile and finding matching jobs...");
         await chatService.uploadAndAnalyzeResume(file, session.id, (status) => {
           setStatusText(status);
         });
 
-        toast.success("Resume processed successfully!", {
-          description: "Redirecting to your interactive career workspace...",
+        toast.success("CV analyzed", {
+          description: "Opening your results...",
         });
 
         router.push(`/c/${session.id}`);
       } else {
         setStatusText("Starting conversation...");
-        // Create session without initial_message to prevent duplicate user messages
+        // Create session with clean AI-smart generated title
+        const smartTitle = generateSmartSessionTitle(prompt);
         const session = await chatService.createSession({
-          title: prompt.slice(0, 35) + (prompt.length > 35 ? "..." : ""),
+          title: smartTitle,
         });
 
         // Trigger first AI response (this inserts the single user message and creates the assistant response)
@@ -58,10 +61,10 @@ export default function HomePage() {
     } catch (error) {
       console.error("Session initialization failed:", error);
       const err = error as Error;
-      toast.error("Unable to start career session", {
+      toast.error("Something went wrong", {
         description:
           err.message ||
-          "Please ensure your Supabase database permissions are updated and try again.",
+          "Try again, or contact support if the problem continues.",
       });
       setIsLoading(false);
       setStatusText("");
@@ -69,7 +72,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center h-full px-4 py-8 animate-in fade-in duration-300 relative">
+    <div className="flex-1 flex flex-col items-center justify-center h-full px-4 py-8 animate-in fade-in duration-300 relative overflow-y-auto custom-scrollbar">
       <div className="w-full max-w-2xl text-center space-y-7 my-auto">
         {/* Hero Title */}
         <div className="space-y-2">
@@ -83,9 +86,16 @@ export default function HomePage() {
           <OmniPromptInput
             onSubmit={handleSubmit}
             isLoading={isLoading}
-            placeholder="Ask a career question or drag & drop your CV (PDF) here..."
+            placeholder="Ask a question or drag & drop your CV (PDF)..."
           />
         </div>
+
+        {/* Quick Action Suggestions */}
+        {!isLoading && (
+          <ChatActionPills
+            onSelectPrompt={(promptText) => handleSubmit(promptText)}
+          />
+        )}
 
         {/* Loading / Status State */}
         {isLoading && (
@@ -96,10 +106,10 @@ export default function HomePage() {
         )}
 
         {/* Trust & Privacy Footnote */}
-        <div className="pt-4 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground/60">
+        <div className="pt-2 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground/60">
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-500/70" />
           <span>
-            Clean text-based PDF supported. Powered by Groq gpt-oss-120b.
+            Text-based PDF only. Your data stays private.
           </span>
         </div>
       </div>

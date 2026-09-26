@@ -14,6 +14,10 @@ export interface FormattedJobMatch {
   companyId?: string;
   companyName?: string;
   companyLogo?: string | null;
+  companyWebsite?: string | null;
+  applyUrl?: string | null;
+  sourceUrl?: string | null;
+  source?: string;
 }
 
 export const jobsApi = {
@@ -26,30 +30,37 @@ export const jobsApi = {
         match_score,
         reason,
         missing_skills,
-        jobs (
+        jobs!inner (
           id,
           title,
           description,
           requirements,
           location,
           experience_level,
+          is_active,
+          apply_url,
+          source_url,
+          source,
+          company_name,
+          company_logo,
           companies (
             id,
             name,
-            logo_url
+            logo_url,
+            website
           )
         )
       `,
       )
       .eq("analysis_id", analysisId)
+      .eq("jobs.is_active", true)
       .order("match_score", { ascending: false });
 
     if (error) {
       console.error("Error fetching job matches:", error);
-      throw new Error("Gagal mengambil rekomendasi lowongan kerja.");
+      throw new Error("Couldn't load job recommendations.");
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (data || []).map((match: any) => ({
       matchId: match.id,
       matchScore: match.match_score,
@@ -66,8 +77,14 @@ export const jobsApi = {
       location: match.jobs?.location,
       experienceLevel: match.jobs?.experience_level,
       companyId: match.jobs?.companies?.id,
-      companyName: match.jobs?.companies?.name,
-      companyLogo: match.jobs?.companies?.logo_url,
+      companyName:
+        match.jobs?.companies?.name || match.jobs?.company_name || "Company",
+      companyLogo:
+        match.jobs?.companies?.logo_url || match.jobs?.company_logo || null,
+      companyWebsite: match.jobs?.companies?.website || null,
+      applyUrl: match.jobs?.apply_url || match.jobs?.companies?.website || null,
+      sourceUrl: match.jobs?.source_url || null,
+      source: match.jobs?.source || "manual",
     }));
   },
 
@@ -82,6 +99,12 @@ export const jobsApi = {
         requirements,
         location,
         experience_level,
+        is_active,
+        apply_url,
+        source_url,
+        source,
+        company_name,
+        company_logo,
         companies (
           id,
           name,
@@ -91,13 +114,22 @@ export const jobsApi = {
       `,
       )
       .eq("id", jobId)
+      .eq("is_active", true)
       .single();
 
     if (error) {
       console.error("Error fetching job detail:", error);
-      throw new Error("Gagal mengambil detail pekerjaan.");
+      throw new Error("Couldn't load job details.");
     }
 
-    return data;
+    const rawCompany: any = Array.isArray(data.companies)
+      ? data.companies[0]
+      : data.companies;
+
+    return {
+      ...data,
+      company_name: rawCompany?.name || data.company_name || "Company",
+      company_logo: rawCompany?.logo_url || data.company_logo || null,
+    };
   },
 };

@@ -1,5 +1,4 @@
 import React from "react";
-import Image from "next/image";
 import {
   MapPin,
   Briefcase,
@@ -8,6 +7,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import MatchBadge from "./MatchBadge";
+import CompanyLogo from "@/components/common/CompanyLogo";
 import { FormattedJobMatch } from "../services/jobs.api";
 
 interface JobCardProps {
@@ -32,31 +32,20 @@ export default function JobCard({ match, onSelect }: JobCardProps) {
       <div className="space-y-3.5 flex-1 w-full">
         {/* Company & Title Header */}
         <div className="flex gap-3.5 items-start">
-          <div className="w-11 h-11 rounded-lg border border-border/80 bg-secondary/50 flex items-center justify-center shrink-0 overflow-hidden relative shadow-2xs">
-            {companyLogo ? (
-              <Image
-                src={companyLogo}
-                alt={companyName || "Company"}
-                fill
-                unoptimized={true}
-                sizes="44px"
-                className="object-cover"
-                priority={false}
-              />
-            ) : (
-              <Briefcase className="w-5 h-5 text-muted-foreground" />
-            )}
-          </div>
+          <CompanyLogo src={companyLogo} name={companyName} size="md" />
           <div className="space-y-0.5">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-base font-semibold font-heading text-foreground group-hover:text-primary transition-colors">
-                {title}
+                {companyName}
               </h3>
               <MatchBadge score={matchScore} />
+              {match.source === "remotive" && (
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/90 bg-secondary/80 border border-border/70 px-1.5 py-0.5 rounded">
+                  via Remotive
+                </span>
+              )}
             </div>
-            <p className="text-xs text-muted-foreground font-medium">
-              {companyName}
-            </p>
+            <p className="text-xs text-muted-foreground font-medium">{title}</p>
           </div>
         </div>
 
@@ -76,7 +65,7 @@ export default function JobCard({ match, onSelect }: JobCardProps) {
         <div className="p-3 bg-secondary/30 border border-border/60 rounded-lg space-y-1.5 text-xs">
           <div className="flex items-center gap-1.5 text-primary font-semibold">
             <Brain className="w-3.5 h-3.5" />
-            <span>AI Match Insights</span>
+            <span>Why this job fits</span>
           </div>
           <p className="leading-relaxed text-muted-foreground font-sans">
             {reason || "Analyzing fit..."}
@@ -87,13 +76,13 @@ export default function JobCard({ match, onSelect }: JobCardProps) {
               <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
               <div>
                 <span className="font-semibold text-amber-500">
-                  AI Recommendation:
+                  Suggested skills:
                 </span>{" "}
-                Familiarize yourself with{" "}
+                Consider learning{" "}
                 <span className="font-semibold text-foreground">
                   {missingSkills.join(", ")}
                 </span>{" "}
-                to maximize interview performance.
+                before applying.
               </div>
             </div>
           )}
@@ -104,7 +93,8 @@ export default function JobCard({ match, onSelect }: JobCardProps) {
       <button
         type="button"
         onClick={() => onSelect(match)}
-        className="w-full md:w-auto mt-2 md:mt-0 flex items-center justify-center gap-1 px-3.5 py-2 border border-border/80 bg-secondary/60 hover:bg-primary hover:border-primary hover:text-primary-foreground rounded-lg text-xs font-semibold transition-all whitespace-nowrap self-stretch md:self-center cursor-pointer shadow-2xs"
+        aria-label={`View match details for ${title} at ${companyName}`}
+        className="w-full md:w-auto mt-2 md:mt-0 min-h-[38px] flex items-center justify-center gap-1.5 px-4 py-2 border border-border/80 bg-secondary/60 hover:bg-primary hover:border-primary hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-lg text-xs font-semibold transition-all whitespace-nowrap self-stretch md:self-center cursor-pointer shadow-2xs"
       >
         <span>View Details</span>
         <ChevronRight className="w-3.5 h-3.5 ml-0.5" />

@@ -1,13 +1,8 @@
 "use client";
 
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  ReactNode,
-} from "react";
+import React, { createContext, useContext, useState, ReactNode } from "react";
 import { usePathname } from "next/navigation";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 interface SidebarContextType {
   collapsed: boolean;
@@ -20,22 +15,27 @@ interface SidebarContextType {
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
-  const [collapsed, setCollapsed] = useState(false);
+  const isMobile = useMediaQuery("(max-width: 767px)");
   const pathname = usePathname();
 
-  // On initial mount, collapse by default on mobile screens
-  useEffect(() => {
-    if (typeof window !== "undefined" && window.innerWidth < 768) {
-      setCollapsed(true);
-    }
-  }, []);
+  const [collapsed, setCollapsed] = useState(false);
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  const [prevIsMobile, setPrevIsMobile] = useState(isMobile);
 
-  // Automatically close sidebar on mobile when route changes
-  useEffect(() => {
-    if (typeof window !== "undefined" && window.innerWidth < 768) {
+  // Synchronize state on navigation or breakpoint shift during render (no effect cascade)
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
+    if (isMobile) {
       setCollapsed(true);
     }
-  }, [pathname]);
+  }
+
+  if (isMobile !== prevIsMobile) {
+    setPrevIsMobile(isMobile);
+    if (isMobile) {
+      setCollapsed(true);
+    }
+  }
 
   const toggleSidebar = () => {
     setCollapsed((prev) => !prev);
@@ -64,7 +64,7 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useSidebar(): SidebarContextType {
+export function useSidebar() {
   const context = useContext(SidebarContext);
   if (!context) {
     throw new Error("useSidebar must be used within a SidebarProvider");

@@ -10,25 +10,25 @@ interface ChatActionPillsProps {
 const suggestions = [
   {
     icon: Sparkles,
-    label: "Analyze CV & Match Jobs",
+    label: "Analyze my CV",
     prompt:
       "Please analyze my uploaded resume and match it against top technical positions.",
   },
   {
     icon: Code,
-    label: "Audit Tech Stack & Skill Gap",
+    label: "Find skill gaps",
     prompt:
       "Perform a detailed audit of my tech stack and identify high-priority skills to improve.",
   },
   {
     icon: Briefcase,
-    label: "High-Compensation Career Paths",
+    label: "Find high-paying roles",
     prompt:
       "Recommend relevant high-yield career paths and roles aligned with my background.",
   },
   {
     icon: HelpCircle,
-    label: "Simulate Technical Interview",
+    label: "Practice interview questions",
     prompt:
       "Simulate a technical recruiter screening with 3 deep-dive questions based on my experience.",
   },
@@ -46,9 +46,9 @@ export default function ChatActionPills({
             key={idx}
             type="button"
             onClick={() => onSelectPrompt(item.prompt)}
-            className="flex items-center gap-2.5 p-3 rounded-xl border border-border/70 bg-card/40 hover:bg-secondary/60 hover:border-border text-left transition-all duration-150 group cursor-pointer"
+            className="flex items-center gap-2.5 p-3 rounded-lg border border-border bg-card/60 hover:bg-secondary/60 hover:border-border text-left transition-all duration-150 group cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring/30"
           >
-            <div className="p-2 rounded-lg bg-secondary/80 text-primary border border-border/40 group-hover:bg-primary group-hover:text-primary-foreground transition-colors shrink-0">
+            <div className="p-2 rounded-md bg-secondary text-primary border border-border/60 group-hover:bg-primary group-hover:text-primary-foreground transition-colors shrink-0">
               <Icon className="w-4 h-4" />
             </div>
             <div className="overflow-hidden">

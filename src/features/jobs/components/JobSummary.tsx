@@ -4,13 +4,15 @@ import { Award, Briefcase, TrendingUp } from "lucide-react";
 interface JobSummaryProps {
   stats: {
     count: number;
-    highest: number;
-    average: number;
+    totalCount?: number;
+    highest: number | null;
+    average: number | null;
   };
 }
 
 export default function JobSummary({ stats }: JobSummaryProps) {
-  const { count, highest, average } = stats;
+  const { count, totalCount, highest, average } = stats;
+  const isFiltered = totalCount !== undefined && totalCount > count;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
@@ -20,12 +22,12 @@ export default function JobSummary({ stats }: JobSummaryProps) {
         </div>
         <div>
           <p className="text-[11px] text-muted-foreground uppercase font-semibold tracking-wider">
-            Total Matches
+            {isFiltered ? "Showing Matches" : "Total Matches"}
           </p>
           <h4 className="text-xl font-bold font-heading text-foreground">
             {count}{" "}
             <span className="text-xs text-muted-foreground font-normal">
-              Roles
+              {isFiltered ? `of ${totalCount} Roles` : "Roles"}
             </span>
           </h4>
         </div>
@@ -39,9 +41,11 @@ export default function JobSummary({ stats }: JobSummaryProps) {
           <p className="text-[11px] text-muted-foreground uppercase font-semibold tracking-wider">
             Highest Match
           </p>
-          <h4 className="text-xl font-bold font-heading text-foreground">
-            {highest}%
-          </h4>
+          <div className="flex items-baseline gap-1.5">
+            <h4 className="text-xl font-bold font-heading text-foreground">
+              {highest !== null ? `${highest}%` : "—"}
+            </h4>
+          </div>
         </div>
       </div>
 
@@ -53,9 +57,11 @@ export default function JobSummary({ stats }: JobSummaryProps) {
           <p className="text-[11px] text-muted-foreground uppercase font-semibold tracking-wider">
             Average Match
           </p>
-          <h4 className="text-xl font-bold font-heading text-foreground">
-            {average}%
-          </h4>
+          <div className="flex items-baseline gap-1.5">
+            <h4 className="text-xl font-bold font-heading text-foreground">
+              {average !== null ? `${average}%` : "—"}
+            </h4>
+          </div>
         </div>
       </div>
     </div>

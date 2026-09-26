@@ -7,9 +7,13 @@ import React, {
   ChangeEvent,
   KeyboardEvent,
   DragEvent,
+  FormEvent,
 } from "react";
 import { Paperclip, ArrowUp, X, FileText, UploadCloud } from "lucide-react";
 import { toast } from "sonner";
+
+const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+const MAX_PROMPT_CHARS = 2000;
 
 interface OmniPromptInputProps {
   onSubmit: (prompt: string, file?: File | null) => void;
@@ -42,16 +46,28 @@ export default function OmniPromptInput({
     }
   }, [prompt, isSticky]);
 
+  const validateAndAttachFile = (file: File) => {
+    if (file.type !== "application/pdf") {
+      toast.error("Invalid file format", {
+        description: "Please upload your resume in PDF format.",
+      });
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+      toast.error("File size exceeded", {
+        description: `Your file is ${sizeMB} MB. Maximum allowed size is 5 MB.`,
+      });
+      return;
+    }
+
+    setAttachedFile(file);
+  };
+
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      if (file.type === "application/pdf") {
-        setAttachedFile(file);
-      } else {
-        toast.error("Invalid file format", {
-          description: "Please upload your resume in PDF format.",
-        });
-      }
+      validateAndAttachFile(e.target.files[0]);
     }
   };
 
@@ -69,14 +85,7 @@ export default function OmniPromptInput({
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const file = e.dataTransfer.files[0];
-      if (file.type === "application/pdf") {
-        setAttachedFile(file);
-      } else {
-        toast.error("Invalid file format", {
-          description: "Please upload your resume in PDF format.",
-        });
-      }
+      validateAndAttachFile(e.dataTransfer.files[0]);
     }
   };
 
@@ -87,7 +96,8 @@ export default function OmniPromptInput({
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = (e?: FormEvent) => {
+    if (e) e.preventDefault();
     if ((!prompt.trim() && !attachedFile) || isLoading) return;
     onSubmit(prompt.trim(), attachedFile);
     setPrompt("");
@@ -117,8 +127,10 @@ export default function OmniPromptInput({
         isSticky ? "max-w-3xl mx-auto px-4" : "max-w-2xl mx-auto"
       }`}
     >
-      <div
-        className={`relative rounded-2xl border bg-card/95 shadow-md backdrop-blur-md p-3 transition-all ${
+      <form
+        onSubmit={handleSubmit}
+        aria-label="Message and CV upload"
+        className={`relative rounded-xl border bg-card/95 shadow-md backdrop-blur-md p-3 transition-all ${
           isDragging
             ? "border-primary ring-2 ring-primary/20 bg-primary/5"
             : "border-border/80 focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20"
@@ -126,7 +138,7 @@ export default function OmniPromptInput({
       >
         {/* Drag Overlay Hint */}
         {isDragging && (
-          <div className="absolute inset-0 rounded-2xl bg-card/95 flex items-center justify-center gap-2 z-10 text-primary font-medium text-sm animate-in fade-in">
+          <div className="absolute inset-0 rounded-xl bg-card/95 flex items-center justify-center gap-2 z-10 text-primary font-medium text-sm animate-in fade-in">
             <UploadCloud className="w-5 h-5 animate-bounce" />
             <span>Drop your CV (PDF) here</span>
           </div>
@@ -145,7 +157,8 @@ export default function OmniPromptInput({
             <button
               type="button"
               onClick={handleRemoveFile}
-              className="p-0.5 hover:bg-secondary rounded text-muted-foreground hover:text-foreground cursor-pointer"
+              aria-label="Remove attached CV"
+              className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center hover:bg-destructive/10 rounded-md text-muted-foreground hover:text-destructive focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-destructive/50 cursor-pointer transition-colors"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -160,8 +173,10 @@ export default function OmniPromptInput({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           rows={1}
+          maxLength={MAX_PROMPT_CHARS}
           disabled={isLoading}
-          className="w-full resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none leading-relaxed py-1 min-h-[38px] max-h-[160px] overflow-y-auto scrollbar-thin"
+          aria-label="Message"
+          className="w-full resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none leading-relaxed py-1 min-h-[38px] max-h-[160px] overflow-y-auto custom-scrollbar"
         />
 
         {/* Action Toolbar */}
@@ -173,38 +188,53 @@ export default function OmniPromptInput({
               ref={fileInputRef}
               onChange={handleFileChange}
               accept=".pdf"
+              aria-label="Upload resume in PDF format"
               className="hidden"
             />
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isLoading}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/70 transition-colors cursor-pointer"
-              title="Attach CV (PDF)"
+              aria-label="Attach CV in PDF format up to 5MB"
+              className="min-h-[36px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors cursor-pointer disabled:opacity-50"
             >
               <Paperclip className="w-3.5 h-3.5" />
               <span>Attach CV</span>
             </button>
             <span className="hidden sm:inline text-[11px] text-muted-foreground/60">
-              PDF up to 10MB
+              PDF up to 5MB
             </span>
           </div>
 
-          {/* Send Button */}
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={!canSubmit}
-            className={`p-2 rounded-xl transition-all duration-150 flex items-center justify-center ${
-              canSubmit
-                ? "bg-primary text-primary-foreground hover:opacity-90 shadow-sm cursor-pointer active:scale-95"
-                : "bg-secondary text-muted-foreground cursor-not-allowed opacity-50"
-            }`}
-          >
-            <ArrowUp className="w-4 h-4" />
-          </button>
+          {/* Right Controls: Character counter & Submit */}
+          <div className="flex items-center gap-2.5">
+            {prompt.length > 1500 && (
+              <span
+                className={`text-[11px] font-mono transition-colors ${
+                  prompt.length >= MAX_PROMPT_CHARS
+                    ? "text-destructive font-semibold"
+                    : "text-muted-foreground"
+                }`}
+              >
+                {prompt.length}/{MAX_PROMPT_CHARS}
+              </span>
+            )}
+
+            <button
+              type="submit"
+              disabled={!canSubmit}
+              aria-label="Send message"
+              className={`w-9 h-9 rounded-lg transition-all duration-150 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 focus-visible:ring-offset-card ${
+                canSubmit
+                  ? "bg-primary text-primary-foreground hover:opacity-90 shadow-2xs cursor-pointer active:scale-95"
+                  : "bg-secondary text-muted-foreground cursor-not-allowed opacity-50"
+              }`}
+            >
+              <ArrowUp className="w-4 h-4" />
+            </button>
+          </div>
         </div>
-      </div>
+      </form>
     </div>
   );
 }

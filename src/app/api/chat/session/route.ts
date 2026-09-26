@@ -59,10 +59,42 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { title, resume_id, initial_message, attachment } = body;
 
+    // Security P0: Verify resume ownership if resume_id is provided
+    let verifiedResumeId: string | null = null;
+    if (resume_id) {
+      const { data: resumeRecord, error: resumeErr } = await supabaseAdmin
+        .from("resumes")
+        .select("id, profile_id")
+        .eq("id", resume_id)
+        .maybeSingle();
+
+      if (resumeErr || !resumeRecord) {
+        return NextResponse.json(
+          { error: "Dokumen resume tidak ditemukan." },
+          { status: 404 },
+        );
+      }
+
+      if (resumeRecord.profile_id !== user.id) {
+        console.warn(
+          `[SECURITY AUDIT] User ${user.id} attempted to bind unauthorized resume ${resume_id} (owned by ${resumeRecord.profile_id})`,
+        );
+        return NextResponse.json(
+          {
+            error:
+              "Forbidden! Anda tidak memiliki izin untuk mengaitkan resume ini.",
+          },
+          { status: 403 },
+        );
+      }
+
+      verifiedResumeId = resumeRecord.id;
+    }
+
     const sessionTitle =
       title ||
       (attachment?.name
-        ? `Analisis CV: ${attachment.name}`
+        ? `CV analysis: ${attachment.name}`
         : "Obrolan Karir Baru");
 
     let { data: session, error: sessionError } = await supabase
@@ -70,7 +102,7 @@ export async function POST(req: NextRequest) {
       .insert({
         user_id: user.id,
         title: sessionTitle,
-        resume_id: resume_id || null,
+        resume_id: verifiedResumeId,
       })
       .select()
       .single();
@@ -81,7 +113,7 @@ export async function POST(req: NextRequest) {
         .insert({
           user_id: user.id,
           title: sessionTitle,
-          resume_id: resume_id || null,
+          resume_id: verifiedResumeId,
         })
         .select()
         .single();

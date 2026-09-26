@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Sparkles, Briefcase, CheckCircle2 } from "lucide-react";
+import { Briefcase, CheckCircle2 } from "lucide-react";
 import { CandidateAnalysis } from "@/types/candidate";
 
 interface CandidateSummaryCardProps {
@@ -11,17 +11,16 @@ interface CandidateSummaryCardProps {
 export default function CandidateSummaryCard({
   analysis,
 }: CandidateSummaryCardProps) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const candidate = (analysis as any).candidate || analysis;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const career = (analysis as any).career || analysis;
+  const candidate = analysis.candidate || analysis;
+  const career = analysis.career || analysis;
 
   const name = candidate.name || "Professional Candidate";
   const title = candidate.title || "Software Engineer";
   const years = candidate.years_of_experience || 0;
   const summary = candidate.summary || "";
   const coreSkills = candidate.skills?.core || [];
-  const strengths = career?.strengths || [];
+  const strengths =
+    analysis.career?.strengths || analysis.insights?.strengths || [];
 
   return (
     <div className="w-full my-4 rounded-xl border border-border/80 bg-card/60 p-5 shadow-sm space-y-4">
@@ -44,9 +43,8 @@ export default function CandidateSummaryCard({
           </div>
         </div>
 
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 w-fit">
-          <Sparkles className="w-3 h-3" />
-          Verified AI Profile
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium bg-secondary/80 text-muted-foreground border border-border w-fit">
+          Extracted from your resume
         </span>
       </div>
 
@@ -61,7 +59,7 @@ export default function CandidateSummaryCard({
       {coreSkills.length > 0 && (
         <div className="space-y-1.5">
           <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-            Verified Tech Stack
+            Technical skills
           </span>
           <div className="flex flex-wrap gap-1.5">
             {coreSkills.map((skill: string, i: number) => (
