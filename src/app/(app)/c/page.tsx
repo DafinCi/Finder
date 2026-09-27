@@ -9,7 +9,7 @@ import ChatActionPills from "@/features/chat/components/ChatActionPills";
 import { chatService } from "@/features/chat/services/chat.service";
 import { generateSmartSessionTitle } from "@/features/chat/utils/title-generator";
 
-export default function HomePage() {
+export default function AppChatHomePage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [statusText, setStatusText] = useState("");
@@ -108,9 +108,7 @@ export default function HomePage() {
         {/* Trust & Privacy Footnote */}
         <div className="pt-2 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground/60">
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-500/70" />
-          <span>
-            Text-based PDF only. Your data stays private.
-          </span>
+          <span>Text-based PDF only. Your data stays private.</span>
         </div>
       </div>
     </div>

@@ -22,7 +22,7 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-      router.push("/");
+      router.push("/c");
       router.refresh();
     } catch (err: unknown) {
       const errorObj = err as Error;

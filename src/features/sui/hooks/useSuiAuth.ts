@@ -140,7 +140,7 @@ export function useSuiAuth(): UseSuiAuthReturn {
 
       // 7. Authentication successful: update state and refresh application
       setStatus("success");
-      router.push("/");
+      router.push("/c");
       router.refresh();
       return true;
     } catch (err: unknown) {
