@@ -1,407 +1,135 @@
 # Contributing to Finder
 
-Thank you for your interest in contributing to Finder.
+Thank you for your interest in contributing to Finder!
 
-Finder is an open-source AI Career Intelligence Platform that helps people understand their professional profile, identify skill gaps, and discover career opportunities through AI-powered resume analysis.
-
-We welcome contributions of all sizes, including:
-
-- Bug fixes
-- New features
-- UI/UX improvements
-- Performance optimization
-- Documentation
-- Accessibility improvements
-- Refactoring
-- Tests
+Finder is an open-source AI Career Intelligence Platform and Job Portal built with Next.js 16, Supabase, Groq Cloud, and Sui blockchain Web3 authentication.
 
 ---
 
-# Before You Start
+## Code of Conduct
 
-Please make sure you have:
+All contributors and maintainers are expected to follow our [**Code of Conduct**](CODE_OF_CONDUCT.md).
 
-- Node.js 22+
-- npm
-- Git
-- Supabase project
-- Required environment variables
+---
 
-Install dependencies
+## Development Workflow
+
+### 1. Branch Strategy
+
+- The primary development branch is **`develop`**.
+- Stable production releases reside on **`main`**.
+- Always branch your work from **`develop`**:
 
 ```bash
-npm install
+git checkout develop
+git pull origin develop
+git checkout -b feat/your-feature-name
 ```
 
-Run development server
+### 2. Branch Naming Conventions
+
+Use one of the following prefixes for branch names:
+
+| Prefix      | Purpose                                   | Example                      |
+| :---------- | :---------------------------------------- | :--------------------------- |
+| `feat/`     | New user-facing feature or enhancement    | `feat/job-card-bookmark`     |
+| `fix/`      | Bug fix                                   | `fix/pdf-magic-bytes-check`  |
+| `refactor/` | Code refactoring without behavior changes | `refactor/sui-nonce-manager` |
+| `test/`     | Adding or updating unit/integration tests | `test/prompt-boundary-unit`  |
+| `docs/`     | Documentation improvements                | `docs/api-reference-update`  |
+| `chore/`    | Tooling, dependencies, or config updates  | `chore/upgrade-vitest`       |
+
+---
+
+## Quality Gates Checklist
+
+Before committing or opening a Pull Request, your changes **must** pass all static and hermetic automated checks locally:
 
 ```bash
-npm run dev
+# 1. ESLint Code Quality
+npm run lint
+
+# 2. TypeScript Static Typecheck
+npx tsc --noEmit
+
+# 3. Hermetic Unit Tests (120 tests)
+npm run test:unit
+
+# 4. Hermetic Mocked Integration Tests (53 tests)
+npm run test:integration:mocked
+
+# 5. Production Build Verification
+npm run build
 ```
+
+These exact gates are run automatically by GitHub Actions on every Pull Request.
 
 ---
 
-# Development Workflow
+## Coding Standards
 
-Please follow this workflow for every contribution.
+### 1. TypeScript Strictness
 
-1. Fork the repository (if you're not a core contributor).
+- All source code must be written in TypeScript (`.ts` or `.tsx`).
+- Do not use `any` unless strictly wrapping legacy untyped modules.
+- Ensure all external data payloads (API requests, LLM outputs, job feeds) are validated with Zod schemas.
 
-2. Create a new branch from `main`.
+### 2. Feature-Based Architecture
 
-Example:
+Application code is organized into self-contained feature slices under `src/features/`:
 
-```bash
-git checkout -b feat/profile-redesign
-```
+- `ai-analysis/`: Resume parsing, candidate extraction, and job match orchestration.
+- `auth/`: User authentication forms, session state, and auth providers.
+- `chat/`: Real-time chat timeline, prompt omnibar, and SSE stream consumer.
+- `jobs/`: Job discovery view, filter toolbar, detail drawer, and ingestion client.
+- `sui/`: Web3 wallet connection, SIWS verification, and account linking cards.
 
-3. Make your changes.
+Shared infrastructure code resides in:
 
-4. Commit using Conventional Commits.
+- `src/lib/`: Database clients (`supabase/`), AI clients (`groq/`), Web3 utilities (`sui/`), rate limiters.
+- `src/components/`: Reusable UI components, application shell, and theme providers.
+- `src/types/`: Global domain interfaces.
 
-5. Push your branch.
+### 3. Separation of Concerns
 
-6. Open a Pull Request.
-
----
-
-# Branch Naming
-
-Use one of these prefixes.
-
-```
-feat/
-fix/
-docs/
-refactor/
-style/
-test/
-perf/
-chore/
-```
-
-Examples
-
-```
-feat/workspace-page
-
-feat/job-matching
-
-fix/upload-error
-
-docs/update-readme
-
-refactor/profile-service
-```
+- **Components** (`components/`): Pure UI rendering and event dispatch. Never call database or AI APIs directly inside React components.
+- **Hooks** (`hooks/`): Client-side state, lifecycle management, and UI reactivity.
+- **Services** (`services/`): Business logic, API calls, data transformation, and domain algorithms.
 
 ---
 
-# Commit Convention
+## Commit Message Conventions
 
-We follow Conventional Commits.
-
-Examples
+We follow the [Conventional Commits](https://www.conventionalcommits.org/) specification:
 
 ```text
-feat(profile): add career summary card
+<type>(<optional scope>): <description>
 
-fix(upload): prevent duplicate uploads
+[optional body]
 
-docs(readme): update installation guide
-
-refactor(ai): simplify recommendation service
+[optional footer(s)]
 ```
 
-Avoid commits like:
+### Examples:
 
-```
-update
-
-fix bug
-
-final
-
-done
-
-asdf
-```
+- `feat(matching): add fallback scoring formula for Groq rate limits`
+- `fix(auth): prevent synthetic wallet email from password login`
+- `docs(api): document all 13 route handlers with schemas`
+- `test(unit): add prompt boundary injection tests`
 
 ---
 
-# Pull Request Guidelines
-
-Before opening a Pull Request, please ensure:
-
-- The project builds successfully
-- No console errors
-- Code follows project conventions
-- UI is responsive
-- Existing functionality is not broken
-
-PR description should include:
-
-- What changed
-- Why it changed
-- Screenshots (if UI related)
-- Related issue (if any)
-
-Example
-
-```text
-## Description
-
-Improved Workspace Hero layout.
-
-## Changes
-
-- Reduced spacing
-- Updated typography
-- Improved mobile layout
-
-## Screenshot
-
-<image>
-
-Closes #12
-```
-
----
-
-# Coding Standards
-
-## General
-
-- Keep components small and reusable.
-- Avoid duplicated logic.
-- Prefer composition over large components.
-- Remove unused imports.
-- Use meaningful names.
-
-Good
-
-```
-CareerSummary.jsx
-
-ResumeDropzone.jsx
-
-WorkspaceHeader.jsx
-```
-
-Avoid
-
-```
-Card2.jsx
-
-NewComponent.jsx
-
-Data.jsx
-```
-
----
-
-## Components
-
-Components should only be responsible for rendering UI.
-
-Business logic belongs in:
-
-- hooks
-- services
-
----
-
-## Hooks
-
-Hooks should manage:
-
-- state
-- effects
-- API interactions
-
-Avoid rendering JSX inside hooks.
-
----
-
-## Services
-
-Services should contain:
-
-- API calls
-- Supabase queries
-- AI requests
-- Business logic
-
-Services should never render UI.
-
----
-
-## Feature Architecture
-
-Each feature should remain isolated.
-
-Example
-
-```
-features/
-
-resume/
-
-workspace/
-
-jobs/
-
-profile/
-```
-
-Avoid importing unrelated feature internals.
-
----
-
-# Design System
-
-Finder follows a strict design system.
-
-## Colors
-
-- Neutral first
-- Primary only for emphasis
-- Status colors only when necessary
-
-## Radius
-
-8px
-
-## Typography
-
-Heading
-
-Work Sans
-
-Body
-
-Inter
-
-## Shadows
-
-Avoid heavy shadows.
-
-Prefer subtle borders.
-
-## Motion
-
-150–200ms only.
-
-No excessive animations.
-
----
-
-# UI/UX Principles
-
-Finder is not a traditional job board.
-
-Finder is an AI Career Intelligence Platform.
-
-Every screen should answer one primary question.
-
-Examples
-
-Landing
-
-→ Upload Resume
-
-Workspace
-
-→ Understand Your Career
-
-Jobs
-
-→ Explore AI Recommendations
-
-Profile
-
-→ Manage Professional Profile
-
-Avoid unnecessary visual complexity.
-
-Focus on clarity.
-
----
-
-# AI Guidelines
-
-When working with AI-related features:
-
-- Keep prompts deterministic whenever possible.
-- Never hardcode AI responses.
-- Structured output should be preferred.
-- Avoid hallucinated placeholder data.
-
----
-
-# Documentation
-
-If your change affects:
-
-- architecture
-- API
-- environment variables
-- design system
-
-please update the documentation.
-
----
-
-# Reporting Bugs
-
-Please include:
-
-- Steps to reproduce
-- Expected behavior
-- Actual behavior
-- Screenshots
-- Browser
-- Operating system
-
----
-
-# Suggesting Features
-
-Feature requests should explain:
-
-- Problem
-- Proposed solution
-- Alternative solutions
-- Additional context
-
----
-
-# Code Review
-
-Every Pull Request will be reviewed for:
-
-- Code quality
-- Readability
-- Maintainability
-- Performance
-- Consistency with the design system
-- Consistency with the project architecture
-
-Please be open to feedback.
-
-Code reviews are collaborative, not personal.
-
----
-
-# Community
-
-Be respectful.
-
-Help others.
-
-Share knowledge.
-
-Constructive feedback is always appreciated.
-
----
-
-Thank you for helping build Finder ❤️
+## Opening a Pull Request
+
+1. Push your branch to GitHub:
+   ```bash
+   git push origin feat/your-feature-name
+   ```
+2. Open a Pull Request targeting the **`develop`** branch.
+3. Complete the PR template checklist:
+   - Provide a clear summary of what changed and why.
+   - Attach screenshots if you modified user-facing UI.
+   - Link related issues (e.g. `Closes #42`).
+4. Ensure all GitHub Actions status checks pass.
+
+Thank you for helping make Finder better!
