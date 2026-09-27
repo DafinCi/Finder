@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,6 +20,27 @@ export async function POST(req: NextRequest) {
 
     const userId = user.id;
 
+    // Rate Limit Guard: max 6 PDF uploads per minute per user
+    const rateLimit = checkRateLimit({
+      key: `upload:${userId}`,
+      limit: 6,
+      windowMs: 60 * 1000,
+    });
+
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        {
+          error: `Terlalu banyak upload dokumen dalam waktu singkat. Silakan tunggu ${rateLimit.resetInSeconds} detik sebelum mencoba lagi.`,
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(rateLimit.resetInSeconds),
+          },
+        },
+      );
+    }
+
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
     if (!file) {
@@ -34,30 +56,63 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB hard limit
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        {
+          error:
+            "Ukuran file terlalu besar! Maksimal ukuran file resume adalah 5 MB.",
+        },
+        { status: 413 },
+      );
+    }
+
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
+
+    // Magic bytes verification for PDF (%PDF- / 0x25 0x50 0x44 0x46)
+    if (
+      buffer.length < 4 ||
+      buffer[0] !== 0x25 ||
+      buffer[1] !== 0x50 ||
+      buffer[2] !== 0x44 ||
+      buffer[3] !== 0x46
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Format file tidak valid. Dokumen harus berupa file PDF murni.",
+        },
+        { status: 400 },
+      );
+    }
 
     let rawText = "";
 
     try {
       // Dynamic import to handle pdf-parse in ESM / Next.js server runtime
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const pdfModule = await import("pdf-parse");
-      // @ts-expect-error pdf-parse export variability
+      const pdfModule: any = await import("pdf-parse");
       const PDFParse = pdfModule.PDFParse || pdfModule.default || pdfModule;
-      if (typeof PDFParse === "function" && PDFParse.prototype?.getText) {
-        const parser = new PDFParse({ data: buffer });
+      if (
+        typeof PDFParse === "function" &&
+        PDFParse.prototype &&
+        "getText" in PDFParse.prototype
+      ) {
+        const parser = new (PDFParse as any)({ data: buffer });
         const result = await parser.getText();
         rawText = result.text.trim();
         if (parser.destroy) await parser.destroy();
-      } else {
-        const data = await PDFParse(buffer);
+      } else if (typeof PDFParse === "function") {
+        const data = await (PDFParse as any)(buffer);
         rawText = data.text?.trim() || "";
       }
     } catch (parseError) {
       console.error("PDF Parse Error:", parseError);
       return NextResponse.json(
-        { error: "Gagal membaca teks dari PDF. File corrupt atau dipasword." },
+        {
+          error:
+            "Couldn't read the PDF. The file may be corrupted or password-protected.",
+        },
         { status: 400 },
       );
     }
@@ -70,6 +125,14 @@ export async function POST(req: NextRequest) {
         },
         { status: 400 },
       );
+    }
+
+    const MAX_RAW_TEXT_CHARS = 15000;
+    if (rawText.length > MAX_RAW_TEXT_CHARS) {
+      console.warn(
+        `[UPLOAD] Truncating excessive raw text from ${rawText.length} to ${MAX_RAW_TEXT_CHARS} chars`,
+      );
+      rawText = rawText.slice(0, MAX_RAW_TEXT_CHARS);
     }
 
     const timestamp = Date.now();
@@ -86,7 +149,7 @@ export async function POST(req: NextRequest) {
     if (storageError) {
       console.error("Storage Upload Error:", storageError);
       return NextResponse.json(
-        { error: "Gagal mengunggah file ke Supabase Storage." },
+        { error: "Couldn't upload the file. Please try again." },
         { status: 500 },
       );
     }
@@ -107,26 +170,87 @@ export async function POST(req: NextRequest) {
       console.error("Database Insert Error:", dbError);
       await supabaseAdmin.storage.from("resumes").remove([storagePath]);
       return NextResponse.json(
-        { error: "Gagal menyimpan metadata ke database." },
+        { error: "Couldn't save file data. Please try again." },
         { status: 500 },
       );
     }
 
     const sessionId = formData.get("sessionId") as string | null;
+    const prompt = (formData.get("prompt") as string | null) || "";
     if (sessionId) {
+      // Security P0: Explicitly verify session exists and belongs to the authenticated user
+      const { data: sessionRecord, error: sessionFetchError } =
+        await supabaseAdmin
+          .from("chat_sessions")
+          .select("id, user_id")
+          .eq("id", sessionId)
+          .maybeSingle();
+
+      if (sessionFetchError || !sessionRecord) {
+        return NextResponse.json(
+          { error: "Sesi percakapan tidak ditemukan." },
+          { status: 404 },
+        );
+      }
+
+      if (sessionRecord.user_id !== userId) {
+        console.warn(
+          `[SECURITY ALERT] User ${userId} attempted to attach resume to unauthorized session ${sessionId} (owned by ${sessionRecord.user_id})`,
+        );
+        return NextResponse.json(
+          { error: "Forbidden! Sesi percakapan ini bukan milik Anda." },
+          { status: 403 },
+        );
+      }
+
       await supabaseAdmin
         .from("chat_sessions")
         .update({ resume_id: resumeRecord.id })
         .eq("id", sessionId)
         .eq("user_id", userId);
+
+      // Check if session already has this attachment message to avoid duplicate on initial creation
+      const { data: recentMsg } = await supabaseAdmin
+        .from("chat_messages")
+        .select("id, role, metadata")
+        .eq("session_id", sessionId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      interface AttachmentMeta {
+        attachment?: {
+          name?: string;
+        };
+      }
+      const lastMeta = recentMsg?.metadata as AttachmentMeta | undefined;
+      const lastAttachmentName = lastMeta?.attachment?.name;
+
+      if (!recentMsg || lastAttachmentName !== file.name) {
+        await supabaseAdmin.from("chat_messages").insert({
+          session_id: sessionId,
+          role: "user",
+          content:
+            prompt.trim() ||
+            "Please analyze my resume and find matching career opportunities.",
+          metadata: {
+            attachment: {
+              name: file.name,
+              size: file.size,
+              type: file.type,
+              resume_id: resumeRecord.id,
+            },
+          },
+        });
+      }
     }
 
     return NextResponse.json(
       {
         success: true,
-        message: "Upload dan ekstraksi teks berhasil",
+        message: "File uploaded and text extracted",
         resumeId: resumeRecord.id,
-        rawText: rawText,
+        fileName: file.name,
       },
       { status: 200 },
     );

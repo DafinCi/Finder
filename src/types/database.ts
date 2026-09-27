@@ -90,19 +90,41 @@ export interface Company {
   created_at: string;
 }
 
+export type JobSource =
+  | "manual"
+  | "remotive"
+  | "remoteok"
+  | "jobicy"
+  | "arbeitnow";
+
 export interface Job {
   id: string;
-  company_id: string;
+  company_id?: string | null;
+  company_name?: string | null;
+  company_logo?: string | null;
+  source?: JobSource;
+  source_job_id?: string | null;
+  source_url?: string | null;
+  apply_url?: string | null;
   title: string;
   description: string;
   requirements: string[];
   location: string;
-  job_type?: "full-time" | "part-time" | "contract" | "remote" | "hybrid";
+  job_type?:
+    | "full-time"
+    | "part-time"
+    | "contract"
+    | "remote"
+    | "hybrid"
+    | string
+    | null;
   salary_range?: string | null;
-  experience_level: string;
+  experience_level?: string | null;
   is_active: boolean;
+  posted_at?: string | null;
+  last_synced_at?: string | null;
   created_at: string;
-  companies?: Company;
+  companies?: Company | null;
 }
 
 export interface JobMatch {

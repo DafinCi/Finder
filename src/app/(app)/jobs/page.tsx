@@ -1,8 +1,8 @@
 import JobsView from "@/features/jobs/views/JobsView";
 
 export const metadata = {
-  title: "Matched Opportunities | Finder",
-  description: "Explore job openings precisely matched to your AI profile.",
+  title: "Recommended Jobs | Finder",
+  description: "Jobs matched to your CV by AI.",
 };
 
 export default function JobsPage() {

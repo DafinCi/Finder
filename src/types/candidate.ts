@@ -25,7 +25,26 @@ export interface CareerRecommendationItem {
   fit_score?: number;
 }
 
+export interface CandidateCareerProfile {
+  recommended_roles?: string[];
+  career_level?: string;
+  strengths?: string[];
+  weaknesses?: string[];
+}
+
+export interface CandidateSubProfile {
+  name?: string;
+  title?: string;
+  years_of_experience?: number;
+  summary?: string;
+  skills?: CandidateSkillSet;
+  experience?: CandidateExperience[];
+  education?: CandidateEducation[];
+}
+
 export interface CandidateAnalysis {
+  candidate?: CandidateSubProfile;
+  career?: CandidateCareerProfile;
   name?: string;
   title?: string;
   years_of_experience?: number;
@@ -39,5 +58,4 @@ export interface CandidateAnalysis {
   };
   career_recommendations?: CareerRecommendationItem[];
   career_score?: number;
-  [key: string]: any;
 }

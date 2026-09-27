@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { Sparkles, PanelLeftClose } from "lucide-react";
+import { PanelLeftClose } from "lucide-react";
 import { useSidebar } from "@/contexts/SidebarContext";
 
 export default function SidebarHeader({ collapsed }: { collapsed: boolean }) {
@@ -15,9 +15,7 @@ export default function SidebarHeader({ collapsed }: { collapsed: boolean }) {
   return (
     <div className="h-14 flex items-center justify-between border-b border-border/60 px-4 shrink-0">
       <Link href="/" className="flex items-center gap-2.5 group">
-        <div className="p-1.5 bg-primary text-primary-foreground rounded-lg shadow-xs transition-transform group-hover:scale-105">
-          <Sparkles className="w-4 h-4" />
-        </div>
+        <div className="p-1.5 bg-primary text-primary-foreground rounded-lg shadow-xs transition-transform group-hover:scale-105"></div>
         <div className="flex flex-col leading-none">
           <span className="text-[15px] font-heading font-bold tracking-tight text-foreground">
             Finder

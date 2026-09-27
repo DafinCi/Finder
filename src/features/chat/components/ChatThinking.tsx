@@ -13,7 +13,7 @@ export default function ChatThinking({ statusText }: ChatThinkingProps) {
           Finder
         </span>
         <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-mono">
-          Groq gpt-oss-120b
+          AI Model
         </span>
       </div>
 

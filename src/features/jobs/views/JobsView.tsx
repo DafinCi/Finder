@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useJobs } from "../hooks/useJobs";
 import JobSummary from "../components/JobSummary";
@@ -13,15 +13,18 @@ import {
   Briefcase,
   X,
   ExternalLink,
-  Sparkles,
   AlertCircle,
   MessageSquare,
+  RotateCcw,
 } from "lucide-react";
+import { toast } from "sonner";
 import { FormattedJobMatch } from "../services/jobs.api";
+import CompanyLogo from "@/components/common/CompanyLogo";
 
 export default function JobsView() {
   const {
     matches,
+    allMatches,
     isLoading,
     error,
     searchQuery,
@@ -33,16 +36,115 @@ export default function JobsView() {
     selectedLocation,
     setSelectedLocation,
     uniqueLocations,
+    hasActiveFilters,
+    resetFilters,
     stats,
+    refresh,
   } = useJobs();
 
   const [selectedJob, setSelectedJob] = useState<FormattedJobMatch | null>(
     null,
   );
+  const triggerElementRef = useRef<HTMLElement | null>(null);
+  const drawerRef = useRef<HTMLDivElement | null>(null);
+
+  const handleOpenDrawer = (job: FormattedJobMatch) => {
+    triggerElementRef.current = document.activeElement as HTMLElement | null;
+    setSelectedJob(job);
+  };
+
+  const handleCloseDrawer = useCallback(() => {
+    setSelectedJob(null);
+    requestAnimationFrame(() => {
+      triggerElementRef.current?.focus();
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!selectedJob) return;
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        handleCloseDrawer();
+        return;
+      }
+
+      if (e.key === "Tab") {
+        const container = drawerRef.current;
+        if (!container) return;
+
+        const focusableElements = container.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        );
+
+        if (focusableElements.length === 0) {
+          e.preventDefault();
+          return;
+        }
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey) {
+          if (
+            document.activeElement === firstElement ||
+            document.activeElement === container
+          ) {
+            e.preventDefault();
+            lastElement.focus();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    requestAnimationFrame(() => {
+      const firstFocusable = drawerRef.current?.querySelector<HTMLElement>(
+        'button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      if (firstFocusable) {
+        firstFocusable.focus();
+      } else {
+        drawerRef.current?.focus();
+      }
+    });
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [selectedJob, handleCloseDrawer]);
+
+  const handleApply = (job: FormattedJobMatch) => {
+    const targetUrl = job.applyUrl || job.companyWebsite;
+    if (targetUrl) {
+      const formattedUrl = targetUrl.startsWith("http")
+        ? targetUrl
+        : `https://${targetUrl}`;
+      toast.success("Opening company application portal...", {
+        description: `Redirecting to ${job.companyName || "the employer"} portal.`,
+      });
+      window.open(formattedUrl, "_blank", "noopener,noreferrer");
+    } else {
+      toast.info("Application portal link not provided", {
+        description:
+          "Direct application URL is not specified for this listing. Please check the employer's official website.",
+      });
+    }
+  };
 
   if (isLoading) {
     return (
-      <div className="h-full flex-1 overflow-y-auto bg-background text-foreground py-10 px-4 scrollbar-thin">
+      <div className="h-full flex-1 overflow-y-auto bg-background text-foreground py-10 px-4 custom-scrollbar">
         <JobsPageSkeleton />
       </div>
     );
@@ -50,28 +152,40 @@ export default function JobsView() {
 
   if (error) {
     return (
-      <div className="h-full flex-1 overflow-y-auto bg-background text-foreground flex items-center justify-center p-4">
-        <div className="max-w-md w-full border border-destructive/20 bg-destructive/10 rounded-xl p-6 text-center space-y-3">
-          <h3 className="text-base font-semibold text-destructive">
-            Failed to Load Recommendations
-          </h3>
-          <p className="text-xs text-muted-foreground">{error}</p>
+      <div className="h-full flex-1 overflow-y-auto bg-background text-foreground flex items-center justify-center p-4 custom-scrollbar">
+        <div className="max-w-md w-full border border-destructive/20 bg-destructive/10 rounded-xl p-6 text-center space-y-4 shadow-sm">
+          <div className="w-10 h-10 rounded-full bg-destructive/15 text-destructive flex items-center justify-center mx-auto">
+            <AlertCircle className="w-5 h-5" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-base font-semibold text-destructive">
+              Failed to Load Recommendations
+            </h3>
+            <p className="text-xs text-muted-foreground">{error}</p>
+          </div>
+          <button
+            type="button"
+            onClick={refresh}
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground text-xs font-semibold rounded-lg hover:opacity-90 transition-opacity cursor-pointer mx-auto"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Try Again</span>
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-full flex-1 overflow-y-auto bg-background text-foreground pb-20 relative scrollbar-thin">
+    <div className="h-full flex-1 overflow-y-auto bg-background text-foreground pb-20 relative custom-scrollbar">
       <div className="max-w-5xl mx-auto pt-10 pb-8 px-4 space-y-7">
         {/* Page Header */}
         <div className="space-y-1">
           <h1 className="text-2xl sm:text-3xl font-bold font-heading text-foreground tracking-tight">
-            Recommended Roles
+            Recommended jobs
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground font-sans">
-            AI-driven career opportunities custom-matched to your resume
-            profile.
+            Jobs matched to your CV by AI.
           </p>
         </div>
 
@@ -135,6 +249,16 @@ export default function JobsView() {
                 </option>
               ))}
             </select>
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="text-[11px] text-primary hover:underline font-medium ml-auto flex items-center gap-1 cursor-pointer"
+              >
+                <X className="w-3 h-3" />
+                <span>Reset filters</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -145,86 +269,151 @@ export default function JobsView() {
               <JobCard
                 key={match.matchId}
                 match={match}
-                onSelect={setSelectedJob}
+                onSelect={handleOpenDrawer}
               />
             ))
-          ) : (
-            <div className="border border-border/80 bg-card/40 rounded-xl p-12 text-center space-y-4">
+          ) : allMatches.length > 0 ? (
+            <div className="border border-border bg-card/60 rounded-xl p-10 text-center space-y-3.5">
               <p className="text-base font-semibold text-foreground">
-                No matching opportunities found
+                No jobs match your filters
+              </p>
+              <p className="text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed">
+                Try adjusting your filters to see more results.
+              </p>
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-secondary text-foreground border border-border text-xs font-medium hover:bg-secondary/80 transition-colors cursor-pointer mx-auto"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Reset all filters</span>
+              </button>
+            </div>
+          ) : (
+            <div className="border border-border bg-card/60 rounded-xl p-12 text-center space-y-4">
+              <p className="text-base font-semibold text-foreground">
+                No matched jobs yet
               </p>
               <p className="text-xs sm:text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
-                Upload your CV in the AI Career Copilot to unlock real-time
-                match scores and tailored job recommendations.
+                Upload your CV in a chat session to get matched with jobs.
               </p>
               <Link
                 href="/"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold shadow-xs hover:opacity-90 transition-opacity"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-semibold shadow-xs hover:opacity-90 transition-opacity"
               >
                 <MessageSquare className="w-3.5 h-3.5" />
-                <span>Go to Career Copilot</span>
+                <span>Start a chat</span>
               </Link>
             </div>
           )}
         </div>
       </div>
 
-      {/* Solid Detail Drawer (No Transparency Bleed-Through) */}
+      {/* Solid Detail Drawer (Accessible WAI-ARIA Dialog) */}
       {selectedJob && (
-        <>
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="job-drawer-title"
+          aria-describedby="job-drawer-desc"
+          className="relative z-50"
+        >
+          {/* Backdrop */}
           <div
             className="fixed inset-0 bg-background/70 backdrop-blur-xs z-40 transition-opacity duration-300"
-            onClick={() => setSelectedJob(null)}
+            onClick={handleCloseDrawer}
+            aria-hidden="true"
           />
 
-          <div className="fixed inset-y-0 right-0 w-full max-w-lg bg-card border-l border-border z-50 p-6 shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+          <div
+            ref={drawerRef}
+            tabIndex={-1}
+            className="fixed inset-y-0 right-0 w-full max-w-lg bg-card border-l border-border z-50 p-6 shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 focus:outline-none"
+          >
             {/* Drawer Header */}
             <div className="flex items-center justify-between border-b border-border/80 pb-4">
               <div className="flex items-center gap-2 text-primary font-semibold text-xs tracking-tight">
-                <Sparkles className="w-4 h-4" />
-                <span>AI Deep Matching Analysis</span>
+                <span>Match details</span>
               </div>
               <button
                 type="button"
-                onClick={() => setSelectedJob(null)}
-                className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                onClick={handleCloseDrawer}
+                aria-label="Close job details"
+                className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Drawer Body */}
-            <div className="flex-1 overflow-y-auto py-5 space-y-5 pr-1 scrollbar-thin">
-              <div className="space-y-2">
-                <div className="flex items-start justify-between gap-3">
-                  <h2 className="text-lg font-bold font-heading text-foreground leading-tight">
-                    {selectedJob.title}
-                  </h2>
-                  <span className="text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-lg shrink-0">
-                    {selectedJob.matchScore}% Match
-                  </span>
+            <div className="flex-1 overflow-y-auto py-5 space-y-5 pr-1 custom-scrollbar">
+              <div className="space-y-3">
+                <div className="flex items-start gap-3.5">
+                  <CompanyLogo
+                    src={selectedJob.companyLogo}
+                    name={selectedJob.companyName}
+                    size="md"
+                  />
+                  <div className="flex-1 space-y-1 min-w-0">
+                    <div className="flex items-start justify-between gap-3">
+                      <h2
+                        id="job-drawer-title"
+                        className="text-lg font-bold font-heading text-foreground leading-tight"
+                      >
+                        {selectedJob.title}
+                      </h2>
+                      <span className="text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-lg shrink-0">
+                        {selectedJob.matchScore}% Match
+                      </span>
+                    </div>
+                    <p
+                      id="job-drawer-desc"
+                      className="text-sm font-medium text-muted-foreground truncate"
+                    >
+                      {selectedJob.companyName}
+                    </p>
+                  </div>
                 </div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  {selectedJob.companyName}
-                </p>
 
                 <div className="flex flex-wrap gap-3 text-xs text-muted-foreground pt-1">
                   <span className="flex items-center gap-1">
                     <MapPin className="w-3.5 h-3.5" />
-                    {selectedJob.location || "Remote"}
+                    <span>{selectedJob.location || "Remote"}</span>
                   </span>
                   <span className="flex items-center gap-1">
                     <Briefcase className="w-3.5 h-3.5" />
-                    {selectedJob.experienceLevel || "Mid Level"}
+                    <span>{selectedJob.experienceLevel || "Mid Level"}</span>
                   </span>
                 </div>
+
+                {/* Remotive Attribution */}
+                {selectedJob.source === "remotive" && (
+                  <div className="p-2.5 bg-secondary/40 border border-border/70 rounded-lg flex items-center justify-between text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1.5">
+                      <span>Source:</span>
+                      <span className="font-semibold text-foreground">
+                        Remotive
+                      </span>
+                    </div>
+                    {selectedJob.sourceUrl && (
+                      <a
+                        href={selectedJob.sourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-primary hover:underline font-medium text-[11px]"
+                      >
+                        <span>View original listing</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Fit Insights */}
               <div className="border border-border/80 bg-secondary/30 rounded-xl p-4 space-y-2">
                 <h4 className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-primary" />
-                  <span>Why This Job Fits:</span>
+                  <span>Why this job fits</span>
                 </h4>
                 <p className="text-xs leading-relaxed text-muted-foreground font-sans">
                   {selectedJob.reason}
@@ -237,15 +426,14 @@ export default function JobsView() {
                   <div className="border border-amber-500/20 bg-amber-500/5 rounded-xl p-4 space-y-2">
                     <h4 className="text-xs font-semibold text-amber-500 flex items-center gap-1.5">
                       <AlertCircle className="w-3.5 h-3.5" />
-                      <span>Identified Skills Gap:</span>
+                      <span>Skills to develop</span>
                     </h4>
                     <p className="text-xs leading-relaxed text-muted-foreground font-sans">
-                      Target requirements mention{" "}
+                      This role mentions{" "}
                       <span className="font-semibold text-foreground">
                         {selectedJob.missingSkills.join(", ")}
                       </span>
-                      . Preparing these areas will boost your interview
-                      readiness.
+                      . Brushing up on these will help in interviews.
                     </p>
                   </div>
                 )}
@@ -257,7 +445,7 @@ export default function JobsView() {
                     Job Description
                   </h4>
                   <p className="text-xs leading-relaxed text-muted-foreground whitespace-pre-line font-sans">
-                    {selectedJob.description || "No description provided."}
+                    {selectedJob.description || "No description available."}
                   </p>
                 </div>
 
@@ -291,24 +479,22 @@ export default function JobsView() {
             <div className="border-t border-border/80 pt-4 flex gap-3">
               <button
                 type="button"
-                onClick={() => {
-                  console.log("Applying to job:", selectedJob.jobId);
-                }}
-                className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 bg-primary text-primary-foreground font-semibold rounded-xl text-xs hover:opacity-90 transition-opacity cursor-pointer shadow-xs"
+                onClick={() => handleApply(selectedJob)}
+                className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 bg-primary text-primary-foreground font-semibold rounded-lg text-xs hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-opacity cursor-pointer shadow-xs"
               >
                 <span>Apply Now</span>
                 <ExternalLink className="w-3.5 h-3.5" />
               </button>
               <button
                 type="button"
-                onClick={() => setSelectedJob(null)}
-                className="px-4 py-2.5 border border-border/80 bg-secondary/60 rounded-xl text-xs font-medium text-foreground hover:bg-secondary transition-colors cursor-pointer"
+                onClick={handleCloseDrawer}
+                className="px-4 py-2.5 border border-border/80 bg-secondary/60 rounded-lg text-xs font-medium text-foreground hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors cursor-pointer"
               >
                 Close
               </button>
             </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

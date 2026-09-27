@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import rehypeRaw from "rehype-raw";
 import { Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 
@@ -88,7 +87,6 @@ export default function ChatMarkdown({ content }: ChatMarkdownProps) {
     <div className="chat-markdown text-sm leading-relaxed text-foreground">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeRaw]}
         components={{
           // Headings
           h1: ({ children }) => (

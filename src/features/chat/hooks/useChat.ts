@@ -8,13 +8,30 @@ export function useChat(sessionId?: string) {
   const [session, setSession] = useState<ChatSession | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentSessionId, setCurrentSessionId] = useState<string | undefined>(
+    sessionId,
+  );
+  const [isInitialLoading, setIsInitialLoading] = useState<boolean>(
+    Boolean(sessionId),
+  );
+
+  // Synchronize initial loading when sessionId changes across route navigation
+  if (currentSessionId !== sessionId) {
+    setCurrentSessionId(sessionId);
+    setIsInitialLoading(Boolean(sessionId));
+  }
+
   const [thinkingStatus, setThinkingStatus] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+  const [failedSubmission, setFailedSubmission] = useState<{
+    prompt: string;
+    file?: File;
+  } | null>(null);
 
   const fetchSessionData = useCallback(async () => {
     if (!sessionId) return;
     try {
-      setIsLoading(true);
+      setIsInitialLoading(true);
       setError(null);
       const data = await chatService.getSessionDetail(sessionId);
       setSession(data.session);
@@ -22,13 +39,96 @@ export function useChat(sessionId?: string) {
     } catch (err) {
       setError((err as Error).message);
     } finally {
-      setIsLoading(false);
+      setIsInitialLoading(false);
     }
   }, [sessionId]);
 
   useEffect(() => {
-    fetchSessionData();
-  }, [fetchSessionData]);
+    if (!sessionId) return;
+    let cancelled = false;
+
+    chatService
+      .getSessionDetail(sessionId)
+      .then((data) => {
+        if (!cancelled) {
+          setSession(data.session);
+          setMessages(data.messages);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError((err as Error).message);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsInitialLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId]);
+
+  // Synchronize session details in real-time when title is updated or refreshed
+  useEffect(() => {
+    if (!sessionId) return;
+
+    const handleSessionsChanged = (e: Event) => {
+      const customEvent = e as CustomEvent<{
+        action?: "create" | "update" | "delete" | "refresh";
+        session?: ChatSession;
+        sessionId?: string;
+      }>;
+
+      if (!customEvent.detail) return;
+
+      const { action, session: updatedSession } = customEvent.detail;
+
+      if (
+        action === "update" &&
+        updatedSession &&
+        updatedSession.id === sessionId
+      ) {
+        setSession(updatedSession);
+      } else if (action === "refresh") {
+        chatService
+          .getSessionDetail(sessionId)
+          .then((data) => {
+            setSession(data.session);
+          })
+          .catch(() => {});
+      }
+    };
+
+    window.addEventListener("chat-sessions-changed", handleSessionsChanged);
+    return () => {
+      window.removeEventListener(
+        "chat-sessions-changed",
+        handleSessionsChanged,
+      );
+    };
+  }, [sessionId]);
+
+  const updateTitle = async (newTitle: string) => {
+    if (!sessionId) return;
+    const trimmed = newTitle.trim();
+    if (!trimmed) return;
+
+    const previous = session;
+    if (session) {
+      setSession({ ...session, title: trimmed });
+    }
+
+    try {
+      const updated = await chatService.updateSessionTitle(sessionId, trimmed);
+      setSession(updated);
+    } catch (err) {
+      setSession(previous);
+      throw err;
+    }
+  };
 
   const sendMessage = async (prompt: string, file?: File | null) => {
     if (!sessionId) return;
@@ -60,16 +160,21 @@ export function useChat(sessionId?: string) {
         };
         setMessages((prev) => [...prev, tempUserMsg]);
 
-        await chatService.uploadAndAnalyzeResume(file, sessionId, (status) => {
-          setThinkingStatus(status);
-        });
+        await chatService.uploadAndAnalyzeResume(
+          file,
+          sessionId,
+          (status) => {
+            setThinkingStatus(status);
+          },
+          prompt,
+        );
 
         // Refetch complete session messages to sync with database
         const updatedData = await chatService.getSessionDetail(sessionId);
         setMessages(updatedData.messages);
       } else {
-        // Text-only message
-        setThinkingStatus("Finder AI is drafting a response...");
+        // Text-only message: assistant message bubble provides the streaming placeholder, so keep thinkingStatus empty
+        setThinkingStatus("");
 
         // Optimistically add user message
         const tempUserMsg: ChatMessage = {
@@ -79,25 +184,63 @@ export function useChat(sessionId?: string) {
           content: prompt,
           created_at: new Date().toISOString(),
         };
-        setMessages((prev) => [...prev, tempUserMsg]);
 
-        const res = await chatService.sendMessage({
+        const tempAssistantId = `stream-${Date.now()}`;
+        const tempAssistantMsg: ChatMessage = {
+          id: tempAssistantId,
           session_id: sessionId,
-          content: prompt,
-        });
+          role: "assistant",
+          content: "",
+          created_at: new Date().toISOString(),
+        };
 
-        // Replace optimistic user message with persisted one and append assistant message
+        setMessages((prev) => [...prev, tempUserMsg, tempAssistantMsg]);
+
+        const res = await chatService.sendMessage(
+          {
+            session_id: sessionId,
+            content: prompt,
+          },
+          (token: string) => {
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === tempAssistantId
+                  ? { ...msg, content: msg.content + token }
+                  : msg,
+              ),
+            );
+          },
+        );
+
+        // Replace optimistic messages with persisted database records
         setMessages((prev) => [
-          ...prev.filter((m) => m.id !== tempUserMsg.id),
+          ...prev.filter(
+            (m) => m.id !== tempUserMsg.id && m.id !== tempAssistantId,
+          ),
           res.userMessage,
           res.assistantMessage,
         ]);
+        setFailedSubmission(null);
       }
     } catch (err) {
-      setError((err as Error).message);
+      const errorMsg = (err as Error).message;
+      setError(errorMsg);
+      setFailedSubmission({ prompt, file: file || undefined });
+      // Clean up unpersisted optimistic temp messages on error
+      setMessages((prev) =>
+        prev.filter(
+          (m) => !m.id.startsWith("temp-") && !m.id.startsWith("stream-"),
+        ),
+      );
     } finally {
       setIsLoading(false);
       setThinkingStatus("");
+    }
+  };
+
+  const retryLastMessage = () => {
+    if (failedSubmission) {
+      sendMessage(failedSubmission.prompt, failedSubmission.file);
     }
   };
 
@@ -105,9 +248,14 @@ export function useChat(sessionId?: string) {
     session,
     messages,
     isLoading,
+    isInitialLoading,
     thinkingStatus,
     error,
+    failedPrompt: failedSubmission?.prompt ?? null,
+    canRetry: failedSubmission !== null,
     sendMessage,
+    retryLastMessage,
+    updateTitle,
     refreshSession: fetchSessionData,
   };
 }

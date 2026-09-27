@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { isSyntheticSuiEmail } from "@/lib/sui/auth-abstraction";
 
 export async function POST(req: NextRequest) {
   try {
@@ -7,7 +8,22 @@ export async function POST(req: NextRequest) {
 
     if (!email || !password) {
       return NextResponse.json(
-        { error: "Email dan password wajib diisi!" },
+        {
+          error: "Email and password are required.",
+          code: "INVALID_CREDENTIALS",
+        },
+        { status: 400 },
+      );
+    }
+
+    // Guardrail 4: Block synthetic wallet emails from password authentication
+    if (isSyntheticSuiEmail(email)) {
+      return NextResponse.json(
+        {
+          error:
+            "Wallet authentication must be performed using Sign-In with Sui.",
+          code: "SYNTHETIC_EMAIL_NOT_PERMITTED",
+        },
         { status: 400 },
       );
     }
@@ -26,7 +42,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        message: "Login sukses!",
+        message: "Sign in successful.",
         user: data.user,
       },
       { status: 200 },
@@ -34,7 +50,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("Signin Error:", error);
     return NextResponse.json(
-      { error: "Terjadi kesalahan pada server" },
+      { error: "An unexpected server error occurred." },
       { status: 500 },
     );
   }

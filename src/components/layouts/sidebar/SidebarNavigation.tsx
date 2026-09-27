@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Plus, BriefcaseBusiness } from "lucide-react";
+import { Plus, BriefcaseBusiness, Settings } from "lucide-react";
 import { useSessions } from "@/features/chat/hooks/useSessions";
 import SessionHistoryList from "./SessionHistoryList";
 
@@ -13,7 +13,15 @@ export default function SidebarNavigation({
   collapsed: boolean;
 }) {
   const pathname = usePathname();
-  const { groupedSessions, isLoading, deleteSession } = useSessions();
+  const {
+    groupedSessions,
+    isLoading,
+    error,
+    deletingId,
+    refreshSessions,
+    renameSession,
+    deleteSession,
+  } = useSessions();
 
   if (collapsed) {
     return (
@@ -36,16 +44,27 @@ export default function SidebarNavigation({
               ? "bg-primary text-primary-foreground border-primary"
               : "bg-secondary/60 text-muted-foreground hover:text-foreground border-border"
           }`}
-          title="Explore Jobs"
+          title="Jobs"
         >
           <BriefcaseBusiness className="w-4 h-4" />
+        </Link>
+        <Link
+          href="/settings"
+          className={`p-2.5 rounded-xl border transition-all ${
+            pathname === "/settings"
+              ? "bg-primary text-primary-foreground border-primary"
+              : "bg-secondary/60 text-muted-foreground hover:text-foreground border-border"
+          }`}
+          title="Settings"
+        >
+          <Settings className="w-4 h-4" />
         </Link>
       </nav>
     );
   }
 
   return (
-    <nav className="flex-1 flex flex-col px-3 py-3 overflow-hidden">
+    <nav className="flex-1 flex flex-col px-3 py-3 overflow-hidden min-h-0 no-scrollbar">
       {/* Primary Action Button: New Chat */}
       <Link
         href="/"
@@ -66,17 +85,32 @@ export default function SidebarNavigation({
           }`}
         >
           <BriefcaseBusiness className="w-3.5 h-3.5 text-primary" />
-          <span>Explore Jobs</span>
+          <span>Jobs</span>
+        </Link>
+        <Link
+          href="/settings"
+          className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+            pathname === "/settings"
+              ? "bg-secondary text-foreground font-semibold"
+              : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+          }`}
+        >
+          <Settings className="w-3.5 h-3.5 text-primary" />
+          <span>Settings</span>
         </Link>
       </div>
 
       <hr className="border-border/60 my-1 mx-2" />
 
       {/* Dynamic Session History */}
-      <div className="flex-1 overflow-hidden flex flex-col mt-2">
+      <div className="flex-1 overflow-hidden flex flex-col mt-2 min-h-0 no-scrollbar">
         <SessionHistoryList
           groupedSessions={groupedSessions}
           isLoading={isLoading}
+          error={error}
+          deletingId={deletingId}
+          onRetry={refreshSessions}
+          onRenameSession={renameSession}
           onDeleteSession={deleteSession}
         />
       </div>

@@ -15,14 +15,37 @@ export const useJobs = (analysisId: string | null = null) => {
   const [selectedExperience, setSelectedExperience] = useState("all");
   const [selectedLocation, setSelectedLocation] = useState("all");
 
-  const fetchMatches = useCallback(
-    async (id: string | null, signal?: AbortSignal) => {
+  const handleRefresh = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      let activeAnalysisId = analysisId;
+      if (!activeAnalysisId) {
+        const latestAnalysis = await fetchUserLatestAnalysis();
+        if (latestAnalysis) activeAnalysisId = latestAnalysis.id;
+      }
+      if (activeAnalysisId) {
+        const data = await jobsApi.getJobMatches(activeAnalysisId);
+        setMatches(data);
+      } else {
+        setMatches([]);
+      }
+    } catch (err: unknown) {
+      const errorObj = err as Error;
+      console.error("useJobs Fetch Error:", errorObj);
+      setError(errorObj.message || "Couldn't load job recommendations.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [analysisId]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let cancelled = false;
+
+    async function loadMatches() {
       try {
-        setIsLoading((prev) => (prev === false ? true : prev));
-        setError((prev) => (prev !== null ? null : prev));
-
-        let activeAnalysisId = id;
-
+        let activeAnalysisId = analysisId;
         if (!activeAnalysisId) {
           const latestAnalysis = await fetchUserLatestAnalysis();
           if (latestAnalysis) {
@@ -30,47 +53,90 @@ export const useJobs = (analysisId: string | null = null) => {
           }
         }
 
-        if (signal?.aborted) return;
+        if (controller.signal.aborted || cancelled) return;
 
         if (activeAnalysisId) {
           const data = await jobsApi.getJobMatches(activeAnalysisId);
-          if (!signal?.aborted) {
+          if (!cancelled && !controller.signal.aborted) {
             setMatches(data);
           }
         } else {
-          if (!signal?.aborted) {
+          if (!cancelled && !controller.signal.aborted) {
             setMatches([]);
           }
         }
       } catch (err: unknown) {
-        const errorObj = err as Error;
-        console.error("useJobs Fetch Error:", errorObj);
-        if (!signal?.aborted) {
+        if (!cancelled && !controller.signal.aborted) {
+          const errorObj = err as Error;
+          console.error("useJobs Fetch Error:", errorObj);
           setError(
-            errorObj.message || "Gagal memuat rekomendasi lowongan kerja.",
+            errorObj.message || "Couldn't load job recommendations.",
           );
         }
       } finally {
-        if (!signal?.aborted) {
+        if (!cancelled && !controller.signal.aborted) {
           setIsLoading(false);
         }
       }
-    },
-    [],
-  );
+    }
 
-  useEffect(() => {
-    const controller = new AbortController();
-    fetchMatches(analysisId, controller.signal);
+    loadMatches();
+
     return () => {
+      cancelled = true;
       controller.abort();
     };
-  }, [analysisId, fetchMatches]);
+  }, [analysisId]);
 
   const uniqueLocations = useMemo(() => {
     const locs = matches.map((m) => m.location).filter(Boolean);
     return ["all", ...new Set(locs)];
   }, [matches]);
+
+  function matchesExperienceLevel(
+    jobLevel: string | undefined | null,
+    filterLevel: string,
+  ): boolean {
+    if (filterLevel === "all") return true;
+    if (!jobLevel) return true;
+    const norm = jobLevel.toLowerCase();
+
+    if (filterLevel === "junior") {
+      return (
+        norm.includes("junior") ||
+        norm.includes("entry") ||
+        norm.includes("intern") ||
+        norm.includes("graduate") ||
+        norm.includes("0-") ||
+        norm.includes("1-")
+      );
+    }
+
+    if (filterLevel === "mid") {
+      return (
+        norm.includes("mid") ||
+        norm.includes("intermediate") ||
+        norm.includes("2-") ||
+        norm.includes("3-") ||
+        norm.includes("associate")
+      );
+    }
+
+    if (filterLevel === "senior") {
+      return (
+        norm.includes("senior") ||
+        norm.includes("lead") ||
+        norm.includes("principal") ||
+        norm.includes("staff") ||
+        norm.includes("head") ||
+        norm.includes("director") ||
+        norm.includes("5+") ||
+        norm.includes("7+")
+      );
+    }
+
+    return norm.includes(filterLevel.toLowerCase());
+  }
 
   const filteredMatches = useMemo(() => {
     return matches.filter((match) => {
@@ -90,10 +156,10 @@ export const useJobs = (analysisId: string | null = null) => {
         else if (selectedMatchLevel === "potential") matchesLevel = score < 60;
       }
 
-      const matchesExperience =
-        selectedExperience === "all" ||
-        match.experienceLevel?.toLowerCase() ===
-          selectedExperience.toLowerCase();
+      const matchesExperience = matchesExperienceLevel(
+        match.experienceLevel,
+        selectedExperience,
+      );
 
       const matchesLocation =
         selectedLocation === "all" || match.location === selectedLocation;
@@ -110,24 +176,41 @@ export const useJobs = (analysisId: string | null = null) => {
     selectedLocation,
   ]);
 
+  const hasActiveFilters =
+    searchQuery.trim().length > 0 ||
+    selectedMatchLevel !== "all" ||
+    selectedExperience !== "all" ||
+    selectedLocation !== "all";
+
+  const resetFilters = useCallback(() => {
+    setSearchQuery("");
+    setSelectedMatchLevel("all");
+    setSelectedExperience("all");
+    setSelectedLocation("all");
+  }, []);
+
   const stats = useMemo(() => {
-    if (matches.length === 0) return { count: 0, highest: 0, average: 0 };
-    const scores = matches.map((m) => m.matchScore);
+    if (matches.length === 0 || filteredMatches.length === 0) {
+      return {
+        count: filteredMatches.length,
+        totalCount: matches.length,
+        highest: null,
+        average: null,
+      };
+    }
+
+    const scores = filteredMatches.map((m) => m.matchScore);
     const highest = Math.max(...scores);
     const average = Math.round(
-      scores.reduce((a, b) => a + b, 0) / matches.length,
+      scores.reduce((a, b) => a + b, 0) / filteredMatches.length,
     );
     return {
-      count: matches.length,
+      count: filteredMatches.length,
+      totalCount: matches.length,
       highest,
       average,
     };
-  }, [matches]);
-
-  const handleRefresh = useCallback(() => {
-    const controller = new AbortController();
-    fetchMatches(analysisId, controller.signal);
-  }, [analysisId, fetchMatches]);
+  }, [matches, filteredMatches]);
 
   return {
     matches: filteredMatches,
@@ -143,6 +226,8 @@ export const useJobs = (analysisId: string | null = null) => {
     selectedLocation,
     setSelectedLocation,
     uniqueLocations,
+    hasActiveFilters,
+    resetFilters,
     stats,
     refresh: handleRefresh,
   };

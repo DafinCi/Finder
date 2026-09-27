@@ -34,7 +34,7 @@ export interface ChatMessageMetadata {
   analysis?: CandidateAnalysis | null;
   job_matches?: MatchedJobItem[];
   is_analysis_loading?: boolean;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface ChatMessage {
