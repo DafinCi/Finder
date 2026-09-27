@@ -27,9 +27,9 @@ export default function SidebarNavigation({
     return (
       <nav className="flex-1 px-2 py-4 space-y-3 flex flex-col items-center">
         <Link
-          href="/"
+          href="/c"
           className={`p-2.5 rounded-xl border transition-all ${
-            pathname === "/"
+            pathname === "/c"
               ? "bg-primary text-primary-foreground border-primary"
               : "bg-secondary/60 text-muted-foreground hover:text-foreground border-border"
           }`}
@@ -67,7 +67,7 @@ export default function SidebarNavigation({
     <nav className="flex-1 flex flex-col px-3 py-3 overflow-hidden min-h-0 no-scrollbar">
       {/* Primary Action Button: New Chat */}
       <Link
-        href="/"
+        href="/c"
         className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl bg-primary text-primary-foreground text-xs font-semibold shadow-xs hover:opacity-95 transition-all active:scale-[0.98] mb-3"
       >
         <Plus className="w-4 h-4" />
