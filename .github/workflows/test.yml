@@ -78,6 +78,7 @@ jobs:
     name: Live Supabase Integration Tests
     needs: [static-checks, unit-and-mocked-tests]
     runs-on: ubuntu-latest
+    if: ${{ secrets.SUPABASE_TEST_URL != '' && secrets.SUPABASE_TEST_SERVICE_ROLE_KEY != '' }}
     env:
       NODE_ENV: test
       SUPABASE_TEST_URL: ${{ secrets.SUPABASE_TEST_URL }}
