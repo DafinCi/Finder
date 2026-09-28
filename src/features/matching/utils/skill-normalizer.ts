@@ -50,6 +50,7 @@ const CANONICAL_SKILL_ALIASES: Record<string, string> = {
   py: "python",
   python: "python",
   python3: "python",
+  "python 3": "python",
 
   // Databases
   postgres: "postgresql",
