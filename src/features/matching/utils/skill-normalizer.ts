@@ -65,6 +65,11 @@ const CANONICAL_SKILL_ALIASES: Record<string, string> = {
   "amazon web services": "aws",
   "google cloud": "gcp",
   "google cloud platform": "gcp",
+
+  // Styling & Frameworks
+  tailwind: "tailwind css",
+  tailwindcss: "tailwind css",
+  "tailwind css": "tailwind css",
 };
 
 /**

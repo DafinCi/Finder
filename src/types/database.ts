@@ -119,6 +119,7 @@ export interface Job {
     | string
     | null;
   salary_range?: string | null;
+  work_mode?: "remote" | "hybrid" | "onsite" | "unknown" | null;
   experience_level?: string | null;
   is_active: boolean;
   posted_at?: string | null;
