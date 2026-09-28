@@ -1,0 +1,229 @@
+// ==============================================================================
+// ONBOARDING DOMAIN TYPES & CONSTANTS
+// Module: @/features/onboarding/types/onboarding.types
+// ==============================================================================
+
+import {
+  TargetRoleItem,
+  TargetLevel,
+  EmploymentType,
+  WorkMode,
+  CapabilityItem,
+  SuppressedSkillItem,
+  BackgroundEvidence,
+  NegativePreferenceItem,
+  CareerProfile,
+} from "@/features/profile/types/career-profile.types";
+
+export type OnboardingStepNumber = 1 | 2 | 3 | 4;
+
+export interface OnboardingFormState {
+  // Step 1: CV & Background
+  resumeId: string | null;
+  resumeFileName: string | null;
+  isUploadingResume: boolean;
+  isAnalyzingResume: boolean;
+  resumeExtracted: boolean;
+  background: BackgroundEvidence;
+
+  // Step 2: Career Intent
+  targetRoles: TargetRoleItem[];
+  targetLevel: TargetLevel | null;
+  employmentTypes: EmploymentType[];
+
+  // Step 3: Work Mode & Constraints
+  workModes: WorkMode[];
+  workModeStrict: boolean;
+  locations: string[];
+  relocationProhibited: boolean;
+  salaryMin: number | null;
+  salaryCurrency: string;
+  priorities: string[];
+  negativePreferences: NegativePreferenceItem[];
+
+  // Step 4: Skills & Capabilities (Review Bento)
+  skills: CapabilityItem[];
+  suppressedSkills: SuppressedSkillItem[];
+
+  // Concurrency & Lifecycle
+  currentStep: OnboardingStepNumber;
+  expectedVersion: number;
+  profileId: string | null;
+  isExistingActiveProfile: boolean;
+}
+
+// Preset Options for Onboarding Wizard
+
+export const PRESET_TARGET_ROLES: string[] = [
+  "Frontend Engineer",
+  "Backend Engineer",
+  "Fullstack Engineer",
+  "Mobile Engineer (iOS/Android)",
+  "DevOps / SRE",
+  "Data Engineer",
+  "AI / Machine Learning Engineer",
+  "Product Manager",
+  "QA / Test Automation Engineer",
+  "Smart Contract / Web3 Engineer",
+];
+
+export const SENIORITY_LEVEL_OPTIONS: {
+  value: TargetLevel;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: "internship",
+    label: "Internship",
+    description: "Students & aspiring interns seeking practical experience",
+  },
+  {
+    value: "entry_level",
+    label: "Entry-Level",
+    description: "Fresh graduates or 0–1 year of professional experience",
+  },
+  {
+    value: "junior",
+    label: "Junior",
+    description: "1–2 years of hands-on software development experience",
+  },
+  {
+    value: "mid_level",
+    label: "Mid-Level",
+    description: "3–5 years of building, shipping, and owning systems",
+  },
+  {
+    value: "senior",
+    label: "Senior",
+    description: "5+ years of deep technical mastery and system design",
+  },
+  {
+    value: "lead",
+    label: "Lead / Principal",
+    description: "Architectural leadership, team mentorship, and strategy",
+  },
+];
+
+export const EMPLOYMENT_TYPE_OPTIONS: {
+  value: EmploymentType;
+  label: string;
+}[] = [
+  { value: "full_time", label: "Full-Time" },
+  { value: "contract", label: "Contract" },
+  { value: "internship", label: "Internship" },
+  { value: "part_time", label: "Part-Time" },
+  { value: "freelance", label: "Freelance" },
+];
+
+export const WORK_MODE_OPTIONS: {
+  value: WorkMode;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: "remote",
+    label: "Remote",
+    description: "Work from anywhere with internet connectivity",
+  },
+  {
+    value: "hybrid",
+    label: "Hybrid",
+    description: "Balanced mix of office days and remote flexibility",
+  },
+  {
+    value: "onsite",
+    label: "On-site",
+    description: "Dedicated daily presence at company headquarters or office",
+  },
+];
+
+export const PRESET_LOCATIONS: string[] = [
+  "Indonesia",
+  "Jakarta, Indonesia",
+  "Singapore",
+  "Worldwide / Remote",
+  "United States",
+  "Europe",
+];
+
+export const PRESET_PRIORITIES: {
+  id: string;
+  label: string;
+  description: string;
+}[] = [
+  {
+    id: "mentorship",
+    label: "Mentorship & Guidance",
+    description: "Experienced leads who actively coach and review code",
+  },
+  {
+    id: "modern_tech",
+    label: "Modern Tech Stack",
+    description: "TypeScript, Next.js, modern cloud architectures",
+  },
+  {
+    id: "learning_growth",
+    label: "High Learning & Growth",
+    description: "Steep learning curve with opportunities to level up fast",
+  },
+  {
+    id: "work_life_balance",
+    label: "Work-Life Balance",
+    description: "Healthy working hours without regular unpaid crunch",
+  },
+  {
+    id: "competitive_salary",
+    label: "Competitive Salary",
+    description: "Market-leading compensation and transparent pay",
+  },
+  {
+    id: "high_autonomy",
+    label: "High Autonomy",
+    description: "Freedom to make architectural and technical decisions",
+  },
+];
+
+export const PRESET_NEGATIVE_PREFERENCES: NegativePreferenceItem[] = [
+  {
+    domain: "tech",
+    token: "legacy_codebases",
+    penalty_weight: 1.0,
+  },
+  {
+    domain: "work_style",
+    token: "unpaid_overtime",
+    penalty_weight: 1.0,
+  },
+  {
+    domain: "industry",
+    token: "gambling",
+    penalty_weight: 1.0,
+  },
+  {
+    domain: "industry",
+    token: "crypto_speculation",
+    penalty_weight: 0.8,
+  },
+  {
+    domain: "work_style",
+    token: "frequent_travel",
+    penalty_weight: 0.8,
+  },
+];
+
+export const NEGATIVE_PREFERENCE_LABELS: Record<string, string> = {
+  legacy_codebases: "Legacy Codebases / Maintenance-Only",
+  unpaid_overtime: "Unpaid Overtime / 996 Schedule",
+  gambling: "Gambling & Online Betting",
+  crypto_speculation: "High-Risk Token Speculation",
+  frequent_travel: "Frequent Business Travel (>25%)",
+};
+
+export interface OnboardingApiResponse<T = unknown> {
+  profile?: CareerProfile;
+  error?: string;
+  code?: string;
+  expectedVersion?: number;
+  currentVersion?: number;
+  details?: T;
+}
