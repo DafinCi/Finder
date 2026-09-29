@@ -12,7 +12,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
     <div className="flex h-screen w-full bg-background text-foreground overflow-hidden">
       <Sidebar />
 
-      <main className="flex-1 h-screen flex flex-col overflow-hidden p-0 w-full relative">
+      <main className="flex-1 min-h-0 h-screen flex flex-col overflow-hidden p-0 w-full relative">
         {/* Floating Open Sidebar Button when collapsed */}
         {collapsed && (
           <div className="absolute top-2.5 left-3 z-50 animate-in fade-in duration-200">

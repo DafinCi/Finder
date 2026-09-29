@@ -27,6 +27,8 @@ export interface JobMatchCandidate {
   experience_level?: string | null;
   is_active?: boolean;
   apply_url?: string | null;
+  source_url?: string | null;
+  source?: string | null;
   posted_at?: string | null;
 }
 

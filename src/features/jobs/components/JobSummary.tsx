@@ -43,7 +43,7 @@ export default function JobSummary({ stats }: JobSummaryProps) {
           </p>
           <div className="flex items-baseline gap-1.5">
             <h4 className="text-xl font-bold font-heading text-foreground">
-              {highest !== null ? `${highest}%` : "—"}
+              {highest !== null ? `${highest} / 100` : "—"}
             </h4>
           </div>
         </div>
@@ -59,7 +59,7 @@ export default function JobSummary({ stats }: JobSummaryProps) {
           </p>
           <div className="flex items-baseline gap-1.5">
             <h4 className="text-xl font-bold font-heading text-foreground">
-              {average !== null ? `${average}%` : "—"}
+              {average !== null ? `${average} / 100` : "—"}
             </h4>
           </div>
         </div>

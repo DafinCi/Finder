@@ -1,6 +1,14 @@
 import React from "react";
 
-export default function MatchBadge({ score }: { score: number }) {
+interface MatchBadgeProps {
+  score: number;
+  showScoreOnly?: boolean;
+}
+
+export default function MatchBadge({
+  score,
+  showScoreOnly = false,
+}: MatchBadgeProps) {
   let text = "Potential Match";
   let colorClass = "bg-amber-500/10 text-amber-500 border-amber-500/20";
 
@@ -20,7 +28,7 @@ export default function MatchBadge({ score }: { score: number }) {
       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-[12px] font-semibold ${colorClass}`}
     >
       <span className="w-1.5 h-1.5 rounded-full bg-current" />
-      {text} • {score}%
+      {showScoreOnly ? `${score} / 100` : `${text} • ${score} / 100`}
     </span>
   );
 }

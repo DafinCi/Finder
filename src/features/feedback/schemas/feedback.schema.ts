@@ -49,3 +49,7 @@ export const TelemetryItemSchema = z.object({
 export const TelemetryBatchRequestSchema = z.object({
   events: z.array(TelemetryItemSchema).min(1).max(50),
 });
+
+export type FeedbackEventType = z.infer<typeof FeedbackEventTypeSchema>;
+export type FeedbackReason = z.infer<typeof FeedbackReasonSchema>;
+export type InteractionType = z.infer<typeof InteractionTypeSchema>;

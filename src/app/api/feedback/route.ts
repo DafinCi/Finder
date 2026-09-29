@@ -6,6 +6,36 @@ import { FeedbackRequestSchema } from "@/features/feedback/schemas/feedback.sche
 export const dynamic = "force-dynamic";
 
 /**
+ * GET /api/feedback
+ * Returns list of saved job IDs for the authenticated candidate.
+ */
+export async function GET(req: NextRequest) {
+  try {
+    const supabase = await createClient(req);
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: "Unauthorized! Sesi telah habis, silakan login kembali." },
+        { status: 401 },
+      );
+    }
+
+    const savedJobIds = await feedbackRepository.getSavedJobIds(user.id);
+    return NextResponse.json({ savedJobIds }, { status: 200 });
+  } catch (error) {
+    console.error("[API:Feedback:GET] Unexpected error:", error);
+    return NextResponse.json(
+      { error: "Gagal mengambil daftar pekerjaan tersimpan." },
+      { status: 500 },
+    );
+  }
+}
+
+/**
  * POST /api/feedback
  * Records user feedback events (save, unsave, reject, external_apply_clicked, interview).
  */

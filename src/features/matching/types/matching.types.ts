@@ -26,9 +26,14 @@ export interface RecommendedJobOpportunity {
   location: string;
   work_mode: "remote" | "hybrid" | "onsite" | "unknown";
   salary_range: string | null;
+  description?: string;
+  requirements?: string[];
+  experience_level?: string | null;
   match_score: number; // "X / 100 Match Score"
   score_breakdown: MatchScoreBreakdown;
   qualitative: QualitativeAnalysis;
   apply_url: string | null;
+  source_url?: string | null;
+  source?: string;
   posted_at: string;
 }

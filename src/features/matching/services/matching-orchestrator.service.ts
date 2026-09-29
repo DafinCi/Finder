@@ -54,7 +54,7 @@ export class MatchingOrchestratorService {
     const { data: rawJobs, error } = await this.client
       .from("jobs")
       .select(
-        "id, title, company_name, company_logo, description, requirements, location, work_mode, job_type, salary_range, experience_level, is_active, apply_url, posted_at",
+        "id, title, company_name, company_logo, description, requirements, location, work_mode, job_type, salary_range, experience_level, is_active, apply_url, source_url, source, posted_at",
       )
       .eq("is_active", true)
       .order("posted_at", { ascending: false })
@@ -71,14 +71,20 @@ export class MatchingOrchestratorService {
         company_name: (j.company_name as string) || null,
         company_logo: (j.company_logo as string) || null,
         description: (j.description as string) || "",
-        requirements: Array.isArray(j.requirements) ? (j.requirements as string[]) : [],
+        requirements: Array.isArray(j.requirements)
+          ? (j.requirements as string[])
+          : [],
         location: (j.location as string) || "",
-        work_mode: (j.work_mode as "remote" | "hybrid" | "onsite" | "unknown") || "unknown",
+        work_mode:
+          (j.work_mode as "remote" | "hybrid" | "onsite" | "unknown") ||
+          "unknown",
         job_type: (j.job_type as string) || null,
         salary_range: (j.salary_range as string) || null,
         experience_level: (j.experience_level as string) || null,
         is_active: j.is_active as boolean,
         apply_url: (j.apply_url as string) || null,
+        source_url: (j.source_url as string) || null,
+        source: (j.source as string) || null,
         posted_at: (j.posted_at as string) || null,
       }),
     );
@@ -107,7 +113,9 @@ export class MatchingOrchestratorService {
     const topOpportunities = scoredList.slice(0, limit);
 
     return topOpportunities.map(({ job, scoring }) => {
-      const fitRationale = this.generateDeterministicRationale(scoring.breakdown);
+      const fitRationale = this.generateDeterministicRationale(
+        scoring.breakdown,
+      );
 
       return {
         job_id: job.id,
@@ -117,6 +125,9 @@ export class MatchingOrchestratorService {
         location: job.location,
         work_mode: resolveJobWorkMode(job),
         salary_range: job.salary_range || null,
+        description: job.description || "",
+        requirements: job.requirements || [],
+        experience_level: job.experience_level || null,
         match_score: scoring.score,
         score_breakdown: scoring.breakdown,
         qualitative: {
@@ -124,6 +135,8 @@ export class MatchingOrchestratorService {
           missing_skills: scoring.missingSkills,
         },
         apply_url: job.apply_url || null,
+        source_url: job.source_url || null,
+        source: job.source || undefined,
         posted_at: job.posted_at || new Date().toISOString(),
       };
     });
@@ -132,7 +145,9 @@ export class MatchingOrchestratorService {
   /**
    * Generates a concise, explainable rationale based strictly on deterministic components.
    */
-  private generateDeterministicRationale(breakdown: RecommendedJobOpportunity["score_breakdown"]): string {
+  private generateDeterministicRationale(
+    breakdown: RecommendedJobOpportunity["score_breakdown"],
+  ): string {
     const parts: string[] = [];
 
     if (breakdown.role_score >= 80) {
@@ -150,7 +165,9 @@ export class MatchingOrchestratorService {
     }
 
     if (breakdown.negative_penalty > 0) {
-      parts.push(`Note: Includes ${breakdown.negative_penalty} penalty points from identified preference conflicts.`);
+      parts.push(
+        `Note: Includes ${breakdown.negative_penalty} penalty points from identified preference conflicts.`,
+      );
     }
 
     return parts.join(" ");
