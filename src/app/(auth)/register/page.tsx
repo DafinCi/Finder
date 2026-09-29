@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { AlertCircle, CheckCircle2, ArrowRight } from "lucide-react";
 import { register } from "@/features/auth/services/auth.service";
 import { Button } from "@/components/ui/button";
+import { SuiSignInButton } from "@/features/sui/components/SuiSignInButton";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -70,7 +71,7 @@ export default function RegisterPage() {
             </div>
             <Button
               onClick={() => router.push("/login")}
-              className="w-full h-10 text-xs font-semibold"
+              className="w-full min-h-[44px] h-11 text-xs font-semibold"
             >
               Go to sign in
             </Button>
@@ -167,12 +168,27 @@ export default function RegisterPage() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full h-10 text-xs font-semibold"
+              className="w-full min-h-[44px] h-11 text-xs font-semibold"
             >
               <span>{loading ? "Creating account..." : "Create account"}</span>
               <ArrowRight className="w-3.5 h-3.5 ml-1" />
             </Button>
           </form>
+        )}
+
+        {!success && (
+          <>
+            {/* Auth Divider */}
+            <div className="relative flex items-center justify-center my-4">
+              <div className="w-full border-t border-border/80" />
+              <span className="bg-card px-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground absolute font-sans">
+                Or continue with
+              </span>
+            </div>
+
+            {/* Sui Wallet SIWS Sign Up */}
+            <SuiSignInButton mode="signup" />
+          </>
         )}
 
         {/* Footer Navigation */}

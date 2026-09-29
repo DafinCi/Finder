@@ -13,7 +13,11 @@ import { useSuiAuth } from "../hooks/useSuiAuth";
 import { SuiWalletModal } from "./SuiWalletModal";
 import { Button } from "@/components/ui/button";
 
-export function SuiSignInButton() {
+interface SuiSignInButtonProps {
+  mode?: "signin" | "signup";
+}
+
+export function SuiSignInButton({ mode = "signin" }: SuiSignInButtonProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const dAppKit = useDAppKit();
   const currentWallet = useCurrentWallet();
@@ -28,6 +32,7 @@ export function SuiSignInButton() {
   } = useSuiAuth();
 
   const isTestnet = !currentNetwork || currentNetwork === "testnet";
+  const isSignUp = mode === "signup";
 
   const getStatusLabel = () => {
     switch (status) {
@@ -38,7 +43,7 @@ export function SuiSignInButton() {
       case "verifying":
         return "Verifying signature...";
       default:
-        return "Sign in with Sui";
+        return isSignUp ? "Sign up with Sui" : "Sign in with Sui";
     }
   };
 
@@ -140,7 +145,7 @@ export function SuiSignInButton() {
         onClick={handleAction}
         disabled={isBusy || (Boolean(account) && !isTestnet)}
         aria-busy={isBusy}
-        className={`w-full h-10 text-xs font-semibold border-border hover:bg-secondary/70 transition-all ${
+        className={`w-full min-h-[44px] h-11 text-xs font-semibold border-border hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-primary transition-all ${
           account
             ? "bg-primary/5 hover:bg-primary/10 border-primary/30 text-foreground"
             : "bg-secondary/40 text-foreground"
@@ -154,13 +159,19 @@ export function SuiSignInButton() {
         ) : account ? (
           <>
             <Wallet className="w-3.5 h-3.5 mr-2 text-primary" />
-            <span>Sign in with connected wallet</span>
+            <span>
+              {isSignUp
+                ? "Sign up with connected wallet"
+                : "Sign in with connected wallet"}
+            </span>
             <ArrowRight className="w-3.5 h-3.5 ml-auto text-muted-foreground" />
           </>
         ) : (
           <>
             <Wallet className="w-3.5 h-3.5 mr-2 text-primary" />
-            <span>Sign in with Sui wallet</span>
+            <span>
+              {isSignUp ? "Sign up with Sui wallet" : "Sign in with Sui wallet"}
+            </span>
           </>
         )}
       </Button>

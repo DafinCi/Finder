@@ -136,11 +136,16 @@ export function useSuiAuth(): UseSuiAuthReturn {
 
       // 6. Verify signature and establish Supabase SSR session
       setStatus("verifying");
-      await verifySiwsLogin(messageText, signatureResult.signature);
+      const verifyRes = await verifySiwsLogin(
+        messageText,
+        signatureResult.signature,
+      );
 
-      // 7. Authentication successful: update state and refresh application
+      // 7. Authentication successful: update state and redirect appropriately
       setStatus("success");
-      router.push("/c");
+      const shouldOnboard =
+        verifyRes.user.isNewUser || !verifyRes.user.onboardingCompleted;
+      router.push(shouldOnboard ? "/onboarding" : "/c");
       router.refresh();
       return true;
     } catch (err: unknown) {

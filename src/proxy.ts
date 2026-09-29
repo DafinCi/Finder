@@ -52,8 +52,14 @@ export async function proxy(request: NextRequest) {
     request.nextUrl.pathname === "/register";
 
   if (user && isAuthPage) {
+    const { data: profile } = await supabase
+      .from("career_profiles")
+      .select("onboarding_completed")
+      .eq("profile_id", user.id)
+      .maybeSingle();
+
     const url = request.nextUrl.clone();
-    url.pathname = "/c";
+    url.pathname = profile?.onboarding_completed ? "/c" : "/onboarding";
     return NextResponse.redirect(url);
   }
 

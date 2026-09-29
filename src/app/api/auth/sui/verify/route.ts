@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
-import { verifySiwsMessage, SiwsVerificationError } from "@/lib/sui/siws-verifier";
+import {
+  verifySiwsMessage,
+  SiwsVerificationError,
+} from "@/lib/sui/siws-verifier";
 import { resolveSuiWalletIdentity } from "@/lib/sui/identity-resolver";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { checkRateLimit } from "@/lib/rate-limit";
@@ -20,7 +23,8 @@ export async function POST(req: NextRequest) {
     if (!rateCheck.success) {
       return NextResponse.json(
         {
-          error: "Too many verification attempts. Please wait a moment and try again.",
+          error:
+            "Too many verification attempts. Please wait a moment and try again.",
           code: "RATE_LIMITED",
           resetInSeconds: rateCheck.resetInSeconds,
         },
@@ -43,14 +47,20 @@ export async function POST(req: NextRequest) {
 
     if (!message || typeof message !== "string") {
       return NextResponse.json(
-        { error: "Missing or invalid SIWS message string.", code: "INVALID_MESSAGE" },
+        {
+          error: "Missing or invalid SIWS message string.",
+          code: "INVALID_MESSAGE",
+        },
         { status: 400 },
       );
     }
 
     if (!signature || typeof signature !== "string") {
       return NextResponse.json(
-        { error: "Missing or invalid wallet signature.", code: "INVALID_SIGNATURE" },
+        {
+          error: "Missing or invalid wallet signature.",
+          code: "INVALID_SIGNATURE",
+        },
         { status: 400 },
       );
     }
@@ -77,7 +87,10 @@ export async function POST(req: NextRequest) {
     if (linkRes.error || !linkRes.data?.properties) {
       console.error("Failed to generate official auth link:", linkRes.error);
       return NextResponse.json(
-        { error: "Authentication provider failed to generate session token.", code: "AUTH_LINK_FAILED" },
+        {
+          error: "Authentication provider failed to generate session token.",
+          code: "AUTH_LINK_FAILED",
+        },
         { status: 500 },
       );
     }
@@ -85,7 +98,11 @@ export async function POST(req: NextRequest) {
     const { hashed_token, verification_type } = linkRes.data.properties;
 
     // Step B: Server client (@supabase/ssr) consumes the official token and writes official session cookies
-    const cookiesToSetBuffer: Array<{ name: string; value: string; options?: any }> = [];
+    const cookiesToSetBuffer: Array<{
+      name: string;
+      value: string;
+      options?: any;
+    }> = [];
     let nextCookies: any;
     try {
       nextCookies = await cookies();
@@ -102,7 +119,9 @@ export async function POST(req: NextRequest) {
             if (nextCookies) {
               return nextCookies.getAll();
             }
-            return req.cookies.getAll().map((c) => ({ name: c.name, value: c.value }));
+            return req.cookies
+              .getAll()
+              .map((c) => ({ name: c.name, value: c.value }));
           },
           setAll(cookiesToSet) {
             cookiesToSetBuffer.push(...cookiesToSet);
@@ -120,20 +139,36 @@ export async function POST(req: NextRequest) {
       },
     );
 
-    const { data: sessionData, error: otpError } = await supabase.auth.verifyOtp({
-      token_hash: hashed_token,
-      type: verification_type,
-    });
+    const { data: sessionData, error: otpError } =
+      await supabase.auth.verifyOtp({
+        token_hash: hashed_token,
+        type: verification_type,
+      });
 
     if (otpError || !sessionData.session) {
       console.error("verifyOtp session bridge error:", otpError);
       return NextResponse.json(
-        { error: "Failed to establish authenticated session.", code: "SESSION_FAILED" },
+        {
+          error: "Failed to establish authenticated session.",
+          code: "SESSION_FAILED",
+        },
         { status: 500 },
       );
     }
 
-    // 6. Build response, set verified cookies, and clear the transient nonce cookie
+    // 6. Check onboarding completion status for user
+    let onboardingCompleted = false;
+    if (!resolved.isNewUser) {
+      const { data: profile } = await supabaseAdmin
+        .from("career_profiles")
+        .select("onboarding_completed")
+        .eq("profile_id", resolved.userId)
+        .maybeSingle();
+
+      onboardingCompleted = Boolean(profile?.onboarding_completed);
+    }
+
+    // 7. Build response, set verified cookies, and clear the transient nonce cookie
     const response = NextResponse.json(
       {
         success: true,
@@ -142,6 +177,7 @@ export async function POST(req: NextRequest) {
           id: resolved.userId,
           suiAddress: resolved.suiAddress,
           isNewUser: resolved.isNewUser,
+          onboardingCompleted,
         },
       },
       { status: 200 },
@@ -169,7 +205,9 @@ export async function POST(req: NextRequest) {
     console.error("SIWS Verification Route Error:", errorObj);
     return NextResponse.json(
       {
-        error: errorObj.message || "An unexpected error occurred during wallet verification.",
+        error:
+          errorObj.message ||
+          "An unexpected error occurred during wallet verification.",
         code: "INTERNAL_ERROR",
       },
       { status: 500 },

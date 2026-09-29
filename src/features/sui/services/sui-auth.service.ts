@@ -16,6 +16,7 @@ export interface VerifyResponse {
     id: string;
     suiAddress: string;
     isNewUser: boolean;
+    onboardingCompleted?: boolean;
   };
 }
 
