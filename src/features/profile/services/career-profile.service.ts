@@ -13,12 +13,21 @@ import {
   BackgroundEvidence,
   CapabilityEvidence,
   CapabilityItem,
+  SuppressedSkillItem,
   SkillCategory,
+  SkillProficiencyClaim,
+  CareerIntent,
+  Preferences,
+  HardConstraints,
   ProfileOrigin,
 } from "../types/career-profile.types";
 import {
   ConfirmProfileRequestSchema,
   SaveDraftProfileRequestSchema,
+  UpdateCareerIntentRequestSchema,
+  UpdatePreferencesRequestSchema,
+  UpdateBackgroundRequestSchema,
+  UpdateSkillsRequestSchema,
 } from "../schemas/career-profile.schema";
 import {
   ProfileNotFoundError,
@@ -334,6 +343,7 @@ export class CareerProfileService {
     skillName: string,
     category: SkillCategory,
     expectedVersion: number,
+    proficiencyClaim?: SkillProficiencyClaim,
   ): Promise<CareerProfile> {
     const existing = await this.requireProfile(profileId);
     const now = new Date().toISOString();
@@ -350,12 +360,13 @@ export class CareerProfileService {
 
     let updatedSkills: CapabilityItem[];
     if (existingSkill) {
-      // Upgrade confirmation state
+      // Upgrade confirmation state and category
       updatedSkills = existing.capabilities.skills.map((s) =>
         matchesSkill(s.skill, skillName)
           ? {
               ...s,
               category,
+              proficiency_claim: proficiencyClaim ?? s.proficiency_claim,
               confirmation_state: "user_added" as const,
               provenance: {
                 source: "user_explicit" as const,
@@ -371,6 +382,7 @@ export class CareerProfileService {
         {
           skill: skillName.trim(),
           category,
+          proficiency_claim: proficiencyClaim,
           confirmation_state: "user_added",
           provenance: {
             source: "user_explicit",
@@ -392,6 +404,334 @@ export class CareerProfileService {
       { capabilities: updatedCapabilities },
       expectedVersion,
     );
+  }
+
+  /**
+   * Updates career intent (target roles, level, employment types) with user_explicit provenance.
+   * Enforces business invariants:
+   * - Exactly 1 primary role
+   * - No duplicate role names across primary and secondary
+   */
+  async updateCareerIntent(
+    profileId: string,
+    rawIntent: unknown,
+    expectedVersion: number,
+  ): Promise<CareerProfile> {
+    const validation = UpdateCareerIntentRequestSchema.safeParse({
+      expected_version: expectedVersion,
+      career_intent: rawIntent,
+    });
+
+    if (!validation.success) {
+      throw new ProfileValidationError(
+        "Invalid career intent payload",
+        validation.error.format(),
+      );
+    }
+
+    const { career_intent } = validation.data;
+    const now = new Date().toISOString();
+
+    const updatedIntent: CareerIntent = {
+      target_roles: career_intent.target_roles.map((r) => ({
+        role: r.role.trim(),
+        priority: r.priority,
+      })),
+      target_level: career_intent.target_level,
+      employment_types: career_intent.employment_types,
+      provenance: {
+        source: "user_explicit",
+        confidence: 1.0,
+        updated_at: now,
+      },
+    };
+
+    return this.profileRepo.updateProfileWithCas(
+      profileId,
+      { careerIntent: updatedIntent },
+      expectedVersion,
+    );
+  }
+
+  /**
+   * Updates career preferences and optional hard constraints.
+   */
+  async updatePreferences(
+    profileId: string,
+    rawPreferences: unknown,
+    rawConstraints: unknown | undefined,
+    expectedVersion: number,
+  ): Promise<CareerProfile> {
+    const validation = UpdatePreferencesRequestSchema.safeParse({
+      expected_version: expectedVersion,
+      preferences: rawPreferences,
+      constraints: rawConstraints,
+    });
+
+    if (!validation.success) {
+      throw new ProfileValidationError(
+        "Invalid preferences payload",
+        validation.error.format(),
+      );
+    }
+
+    const { preferences, constraints } = validation.data;
+    const updatePayload: CareerProfileUpdatePayload = {
+      preferences: preferences as Preferences,
+    };
+    if (constraints) {
+      updatePayload.constraints = constraints as HardConstraints;
+    }
+
+    return this.profileRepo.updateProfileWithCas(
+      profileId,
+      updatePayload,
+      expectedVersion,
+    );
+  }
+
+  /**
+   * Updates career background (education, experience, projects).
+   */
+  async updateBackground(
+    profileId: string,
+    rawBackground: unknown,
+    expectedVersion: number,
+  ): Promise<CareerProfile> {
+    const validation = UpdateBackgroundRequestSchema.safeParse({
+      expected_version: expectedVersion,
+      background: rawBackground,
+    });
+
+    if (!validation.success) {
+      throw new ProfileValidationError(
+        "Invalid background payload",
+        validation.error.format(),
+      );
+    }
+
+    return this.profileRepo.updateProfileWithCas(
+      profileId,
+      { background: validation.data.background as BackgroundEvidence },
+      expectedVersion,
+    );
+  }
+
+  /**
+   * Restores a previously suppressed/deleted skill back to active skills with user_confirmed provenance.
+   */
+  async restoreSuppressedSkill(
+    profileId: string,
+    skillName: string,
+    category: SkillCategory = "supporting",
+    expectedVersion: number,
+  ): Promise<CareerProfile> {
+    const existing = await this.requireProfile(profileId);
+    const now = new Date().toISOString();
+
+    const remainingSuppressed = (
+      existing.capabilities.suppressed_skills || []
+    ).filter((s) => !matchesSkill(s.skill, skillName));
+
+    const existingSkill = existing.capabilities.skills.find((s) =>
+      matchesSkill(s.skill, skillName),
+    );
+
+    let updatedSkills: CapabilityItem[];
+    if (existingSkill) {
+      updatedSkills = existing.capabilities.skills.map((s) =>
+        matchesSkill(s.skill, skillName)
+          ? {
+              ...s,
+              category: s.category || category,
+              confirmation_state: "confirmed" as const,
+              provenance: {
+                source: "user_confirmed" as const,
+                confidence: 1.0,
+                updated_at: now,
+              },
+            }
+          : s,
+      );
+    } else {
+      updatedSkills = [
+        ...existing.capabilities.skills,
+        {
+          skill: skillName.trim(),
+          category,
+          confirmation_state: "confirmed",
+          provenance: {
+            source: "user_confirmed",
+            confidence: 1.0,
+            updated_at: now,
+          },
+        },
+      ];
+    }
+
+    const updatedCapabilities: CapabilityEvidence = {
+      ...existing.capabilities,
+      skills: updatedSkills,
+      suppressed_skills: remainingSuppressed,
+    };
+
+    return this.profileRepo.updateProfileWithCas(
+      profileId,
+      { capabilities: updatedCapabilities },
+      expectedVersion,
+    );
+  }
+
+  /**
+   * Updates an existing skill's category, proficiency claim, or confirmation state.
+   */
+  async updateSkill(
+    profileId: string,
+    skillName: string,
+    updates: {
+      category?: SkillCategory;
+      proficiency_claim?: SkillProficiencyClaim;
+      confirmation_state?: "draft" | "confirmed" | "user_added";
+    },
+    expectedVersion: number,
+  ): Promise<CareerProfile> {
+    const existing = await this.requireProfile(profileId);
+    const now = new Date().toISOString();
+
+    const targetSkill = existing.capabilities.skills.find((s) =>
+      matchesSkill(s.skill, skillName),
+    );
+
+    if (!targetSkill) {
+      throw new ProfileValidationError(
+        `Skill '${skillName}' not found in profile capabilities.`,
+      );
+    }
+
+    const updatedSkills = existing.capabilities.skills.map((s) => {
+      if (matchesSkill(s.skill, skillName)) {
+        const nextConfirmationState =
+          updates.confirmation_state ?? s.confirmation_state;
+        const isUserAction =
+          nextConfirmationState === "confirmed" ||
+          nextConfirmationState === "user_added";
+
+        return {
+          ...s,
+          category: updates.category ?? s.category,
+          proficiency_claim:
+            updates.proficiency_claim !== undefined
+              ? updates.proficiency_claim
+              : s.proficiency_claim,
+          confirmation_state: nextConfirmationState,
+          provenance: {
+            ...s.provenance,
+            source: isUserAction ? "user_confirmed" : s.provenance.source,
+            confidence: isUserAction ? 1.0 : s.provenance.confidence,
+            updated_at: now,
+          },
+        };
+      }
+      return s;
+    });
+
+    const updatedCapabilities: CapabilityEvidence = {
+      ...existing.capabilities,
+      skills: updatedSkills,
+    };
+
+    return this.profileRepo.updateProfileWithCas(
+      profileId,
+      { capabilities: updatedCapabilities },
+      expectedVersion,
+    );
+  }
+
+  /**
+   * Synchronizes the entire capabilities list (skills and optional suppressed_skills).
+   */
+  async syncSkills(
+    profileId: string,
+    skills: CapabilityItem[],
+    suppressedSkills: SuppressedSkillItem[] | undefined,
+    expectedVersion: number,
+  ): Promise<CareerProfile> {
+    const existing = await this.requireProfile(profileId);
+
+    const updatedCapabilities: CapabilityEvidence = {
+      ...existing.capabilities,
+      skills,
+      suppressed_skills:
+        suppressedSkills !== undefined
+          ? suppressedSkills
+          : existing.capabilities.suppressed_skills,
+    };
+
+    return this.profileRepo.updateProfileWithCas(
+      profileId,
+      { capabilities: updatedCapabilities },
+      expectedVersion,
+    );
+  }
+
+  /**
+   * Action dispatcher for skill mutations (add, suppress, restore, update, sync).
+   */
+  async handleSkillAction(
+    profileId: string,
+    rawRequest: unknown,
+  ): Promise<CareerProfile> {
+    const validation = UpdateSkillsRequestSchema.safeParse(rawRequest);
+    if (!validation.success) {
+      throw new ProfileValidationError(
+        "Invalid skill action payload",
+        validation.error.format(),
+      );
+    }
+
+    const payload = validation.data;
+    switch (payload.action) {
+      case "add":
+        return this.addSkill(
+          profileId,
+          payload.skill,
+          payload.category,
+          payload.expected_version,
+          payload.proficiency_claim,
+        );
+      case "suppress":
+        return this.suppressSkill(
+          profileId,
+          payload.skill,
+          payload.reason,
+          payload.expected_version,
+        );
+      case "restore":
+        return this.restoreSuppressedSkill(
+          profileId,
+          payload.skill,
+          payload.category,
+          payload.expected_version,
+        );
+      case "update":
+        return this.updateSkill(
+          profileId,
+          payload.skill,
+          {
+            category: payload.category,
+            proficiency_claim: payload.proficiency_claim,
+            confirmation_state: payload.confirmation_state,
+          },
+          payload.expected_version,
+        );
+      case "sync":
+        return this.syncSkills(
+          profileId,
+          payload.skills,
+          payload.suppressed_skills,
+          payload.expected_version,
+        );
+    }
   }
 }
 

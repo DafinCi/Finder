@@ -217,3 +217,111 @@ export const ConfirmProfileRequestSchema = z.object({
     })
     .optional(),
 });
+
+// --- Granular Domain Update Schemas (Phase 2A) ---
+
+export const UpdateCareerIntentRequestSchema = z.object({
+  expected_version: z.number().int().min(1),
+  career_intent: z.object({
+    target_roles: z
+      .array(TargetRoleItemSchema)
+      .min(1, "At least one target role is required")
+      .refine(
+        (roles) => roles.filter((r) => r.priority === "primary").length === 1,
+        { message: "Must have exactly one primary role" },
+      )
+      .refine(
+        (roles) => {
+          const roleNames = roles.map((r) => r.role.trim().toLowerCase());
+          return new Set(roleNames).size === roleNames.length;
+        },
+        { message: "Duplicate roles are not allowed" },
+      ),
+    target_level: TargetLevelSchema.nullable().default(null),
+    employment_types: z
+      .array(EmploymentTypeSchema)
+      .min(1, "At least one employment type is required"),
+  }),
+});
+
+export const UpdatePreferencesRequestSchema = z.object({
+  expected_version: z.number().int().min(1),
+  preferences: z.object({
+    locations: z.array(z.string().trim()).default([]),
+    work_modes: z
+      .array(WorkModeSchema)
+      .min(1, "At least one work mode is required"),
+    priorities: z.array(z.string().trim()).default([]),
+    salary: z
+      .object({
+        min_amount: z.number().positive().nullable(),
+        currency: z.string().trim().default("USD"),
+      })
+      .nullable()
+      .default(null),
+    negative_preferences: z.array(NegativePreferenceItemSchema).default([]),
+  }),
+  constraints: HardConstraintsSchema.optional(),
+});
+
+export const UpdateBackgroundRequestSchema = z.object({
+  expected_version: z.number().int().min(1),
+  background: BackgroundEvidenceSchema,
+});
+
+export const SkillActionAddSchema = z.object({
+  action: z.literal("add"),
+  expected_version: z.number().int().min(1),
+  skill: z.string().trim().min(1),
+  category: SkillCategorySchema.default("supporting"),
+  proficiency_claim: SkillProficiencyClaimSchema.optional(),
+});
+
+export const SkillActionSuppressSchema = z.object({
+  action: z.literal("suppress"),
+  expected_version: z.number().int().min(1),
+  skill: z.string().trim().min(1),
+  reason: z.enum(["user_deleted", "user_rejected"]).default("user_deleted"),
+});
+
+export const SkillActionRestoreSchema = z.object({
+  action: z.literal("restore"),
+  expected_version: z.number().int().min(1),
+  skill: z.string().trim().min(1),
+  category: SkillCategorySchema.default("supporting"),
+});
+
+export const SkillActionUpdateSchema = z.object({
+  action: z.literal("update"),
+  expected_version: z.number().int().min(1),
+  skill: z.string().trim().min(1),
+  category: SkillCategorySchema.optional(),
+  proficiency_claim: SkillProficiencyClaimSchema.optional(),
+  confirmation_state: z.enum(["draft", "confirmed", "user_added"]).optional(),
+});
+
+export const SkillActionSyncSchema = z.object({
+  action: z.literal("sync"),
+  expected_version: z.number().int().min(1),
+  skills: z.array(CapabilityItemSchema),
+  suppressed_skills: z.array(SuppressedSkillItemSchema).optional(),
+});
+
+export const UpdateSkillsRequestSchema = z.discriminatedUnion("action", [
+  SkillActionAddSchema,
+  SkillActionSuppressSchema,
+  SkillActionRestoreSchema,
+  SkillActionUpdateSchema,
+  SkillActionSyncSchema,
+]);
+
+export type UpdateCareerIntentRequest = z.infer<
+  typeof UpdateCareerIntentRequestSchema
+>;
+export type UpdatePreferencesRequest = z.infer<
+  typeof UpdatePreferencesRequestSchema
+>;
+export type UpdateBackgroundRequest = z.infer<
+  typeof UpdateBackgroundRequestSchema
+>;
+export type UpdateSkillsRequest = z.infer<typeof UpdateSkillsRequestSchema>;

@@ -366,4 +366,220 @@ describe("Unit: CareerProfileService", () => {
       expect(added?.provenance.confidence).toBe(1.0);
     });
   });
+
+  describe("updateCareerIntent", () => {
+    it("should update career intent and set provenance to user_explicit with 1.0 confidence", async () => {
+      mockRepo.findByProfileId.mockResolvedValue(sampleProfile);
+      mockRepo.updateProfileWithCas.mockImplementation(
+        (_pid: string, payload: any) => ({
+          ...sampleProfile,
+          careerIntent: payload.careerIntent,
+        }),
+      );
+
+      const intentInput = {
+        target_roles: [
+          { role: "Backend Engineer", priority: "primary" as const },
+          { role: "DevOps Engineer", priority: "secondary" as const },
+        ],
+        target_level: "senior" as const,
+        employment_types: ["full_time" as const],
+      };
+
+      const result = await service.updateCareerIntent("u1", intentInput, 1);
+      expect(mockRepo.updateProfileWithCas).toHaveBeenCalledWith(
+        "u1",
+        expect.objectContaining({
+          careerIntent: expect.objectContaining({
+            target_level: "senior",
+            provenance: expect.objectContaining({
+              source: "user_explicit",
+              confidence: 1.0,
+            }),
+          }),
+        }),
+        1,
+      );
+      expect(result.careerIntent.target_roles).toHaveLength(2);
+    });
+
+    it("should throw ProfileValidationError when target roles violate invariants (e.g. no primary)", async () => {
+      const invalidIntent = {
+        target_roles: [
+          { role: "Backend Engineer", priority: "secondary" as const },
+        ],
+        target_level: "senior" as const,
+        employment_types: ["full_time" as const],
+      };
+
+      await expect(
+        service.updateCareerIntent("u1", invalidIntent, 1),
+      ).rejects.toThrow(ProfileValidationError);
+    });
+  });
+
+  describe("updatePreferences", () => {
+    it("should update preferences and constraints with CAS", async () => {
+      mockRepo.updateProfileWithCas.mockImplementation(
+        (_pid: string, payload: any) => ({
+          ...sampleProfile,
+          preferences: payload.preferences,
+          constraints: payload.constraints,
+        }),
+      );
+
+      const prefsInput = {
+        locations: ["Singapore", "Tokyo"],
+        work_modes: ["remote" as const],
+        priorities: ["compensation", "mentorship"],
+        salary: { min_amount: 8000, currency: "USD" },
+        negative_preferences: [],
+      };
+      const constraintsInput = {
+        relocation_prohibited: false,
+        work_mode_strict: true,
+      };
+
+      const result = await service.updatePreferences(
+        "u1",
+        prefsInput,
+        constraintsInput,
+        2,
+      );
+      expect(mockRepo.updateProfileWithCas).toHaveBeenCalledWith(
+        "u1",
+        {
+          preferences: prefsInput,
+          constraints: constraintsInput,
+        },
+        2,
+      );
+      expect(result.preferences.locations).toContain("Singapore");
+    });
+  });
+
+  describe("updateBackground", () => {
+    it("should update background evidence with CAS", async () => {
+      mockRepo.updateProfileWithCas.mockImplementation(
+        (_pid: string, payload: any) => ({
+          ...sampleProfile,
+          background: payload.background,
+        }),
+      );
+
+      const bgInput = {
+        education: [
+          {
+            id: "edu-new",
+            institution: "MIT",
+            degree: "BS",
+            field_of_study: "CS",
+            graduation_year: 2025,
+            provenance: {
+              source: "user_explicit" as const,
+              confidence: 1.0,
+              updated_at: new Date().toISOString(),
+            },
+          },
+        ],
+        experience: [],
+        projects: [],
+      };
+
+      const result = await service.updateBackground("u1", bgInput, 1);
+      expect(mockRepo.updateProfileWithCas).toHaveBeenCalledWith(
+        "u1",
+        { background: bgInput },
+        1,
+      );
+      expect(result.background.education).toHaveLength(1);
+    });
+  });
+
+  describe("restoreSuppressedSkill & updateSkill & handleSkillAction", () => {
+    it("restoreSuppressedSkill should un-suppress and mark skill as confirmed", async () => {
+      mockRepo.findByProfileId.mockResolvedValue(sampleProfile);
+      mockRepo.updateProfileWithCas.mockImplementation(
+        (_pid: string, payload: any) => ({
+          ...sampleProfile,
+          capabilities: payload.capabilities,
+        }),
+      );
+
+      const result = await service.restoreSuppressedSkill(
+        "u1",
+        "angular",
+        "core",
+        1,
+      );
+      const suppressed = result.capabilities.suppressed_skills.map(
+        (s) => s.skill,
+      );
+      expect(suppressed).not.toContain("angular");
+
+      const skill = result.capabilities.skills.find(
+        (s) => s.skill.toLowerCase() === "angular",
+      );
+      expect(skill).toBeDefined();
+      expect(skill?.confirmation_state).toBe("confirmed");
+      expect(skill?.category).toBe("core");
+    });
+
+    it("updateSkill should update skill category and proficiency claim", async () => {
+      mockRepo.findByProfileId.mockResolvedValue(sampleProfile);
+      mockRepo.updateProfileWithCas.mockImplementation(
+        (_pid: string, payload: any) => ({
+          ...sampleProfile,
+          capabilities: payload.capabilities,
+        }),
+      );
+
+      const result = await service.updateSkill(
+        "u1",
+        "typescript",
+        {
+          category: "tool",
+          proficiency_claim: "proficient",
+          confirmation_state: "confirmed",
+        },
+        1,
+      );
+
+      const skill = result.capabilities.skills.find(
+        (s) => s.skill === "typescript",
+      );
+      expect(skill?.category).toBe("tool");
+      expect(skill?.proficiency_claim).toBe("proficient");
+      expect(skill?.provenance.source).toBe("user_confirmed");
+    });
+
+    it("updateSkill should throw error if skill does not exist", async () => {
+      mockRepo.findByProfileId.mockResolvedValue(sampleProfile);
+
+      await expect(
+        service.updateSkill("u1", "nonexistent-skill", { category: "tool" }, 1),
+      ).rejects.toThrow(ProfileValidationError);
+    });
+
+    it("handleSkillAction should dispatch properly for 'restore'", async () => {
+      mockRepo.findByProfileId.mockResolvedValue(sampleProfile);
+      mockRepo.updateProfileWithCas.mockImplementation(
+        (_pid: string, payload: any) => ({
+          ...sampleProfile,
+          capabilities: payload.capabilities,
+        }),
+      );
+
+      const result = await service.handleSkillAction("u1", {
+        action: "restore",
+        expected_version: 1,
+        skill: "angular",
+        category: "supporting",
+      });
+
+      expect(
+        result.capabilities.suppressed_skills.map((s) => s.skill),
+      ).not.toContain("angular");
+    });
+  });
 });

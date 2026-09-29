@@ -3,6 +3,9 @@ import {
   CareerProfileDbRowSchema,
   ConfirmProfileRequestSchema,
   SaveDraftProfileRequestSchema,
+  UpdateCareerIntentRequestSchema,
+  UpdatePreferencesRequestSchema,
+  UpdateSkillsRequestSchema,
 } from "@/features/profile/schemas/career-profile.schema";
 
 describe("Unit: CareerProfile Schema & Boundary Validation", () => {
@@ -183,5 +186,160 @@ describe("Unit: CareerProfile Schema & Boundary Validation", () => {
     expect(parsed.capabilities.extraction_status).toBe("failed");
     expect(parsed.capabilities.extraction_error).toBe("Groq 503 Overloaded");
     expect(parsed.capabilities.skills).toHaveLength(0);
+  });
+
+  describe("UpdateCareerIntentRequestSchema", () => {
+    it("should accept valid intent with exactly one primary and unique secondary roles", () => {
+      const valid = {
+        expected_version: 1,
+        career_intent: {
+          target_roles: [
+            { role: "Frontend Engineer", priority: "primary" as const },
+            { role: "Fullstack Developer", priority: "secondary" as const },
+          ],
+          target_level: "junior" as const,
+          employment_types: ["full_time" as const],
+        },
+      };
+
+      const parsed = UpdateCareerIntentRequestSchema.parse(valid);
+      expect(parsed.career_intent.target_roles).toHaveLength(2);
+    });
+
+    it("should reject when there are zero primary roles", () => {
+      const invalid = {
+        expected_version: 1,
+        career_intent: {
+          target_roles: [
+            { role: "Frontend Engineer", priority: "secondary" as const },
+          ],
+          target_level: "junior" as const,
+          employment_types: ["full_time" as const],
+        },
+      };
+
+      expect(() => UpdateCareerIntentRequestSchema.parse(invalid)).toThrow(
+        /exactly one primary role/i,
+      );
+    });
+
+    it("should reject when there are multiple primary roles", () => {
+      const invalid = {
+        expected_version: 1,
+        career_intent: {
+          target_roles: [
+            { role: "Frontend Engineer", priority: "primary" as const },
+            { role: "Fullstack Developer", priority: "primary" as const },
+          ],
+          target_level: "junior" as const,
+          employment_types: ["full_time" as const],
+        },
+      };
+
+      expect(() => UpdateCareerIntentRequestSchema.parse(invalid)).toThrow(
+        /exactly one primary role/i,
+      );
+    });
+
+    it("should reject duplicate role names", () => {
+      const invalid = {
+        expected_version: 1,
+        career_intent: {
+          target_roles: [
+            { role: "Frontend Engineer", priority: "primary" as const },
+            { role: "frontend engineer", priority: "secondary" as const },
+          ],
+          target_level: "junior" as const,
+          employment_types: ["full_time" as const],
+        },
+      };
+
+      expect(() => UpdateCareerIntentRequestSchema.parse(invalid)).toThrow(
+        /duplicate roles are not allowed/i,
+      );
+    });
+  });
+
+  describe("UpdatePreferencesRequestSchema", () => {
+    it("should accept valid preferences and constraints", () => {
+      const valid = {
+        expected_version: 3,
+        preferences: {
+          locations: ["Remote", "Jakarta"],
+          work_modes: ["remote" as const, "hybrid" as const],
+          priorities: ["mentorship"],
+          salary: { min_amount: 10000000, currency: "IDR" },
+          negative_preferences: [],
+        },
+        constraints: {
+          relocation_prohibited: true,
+          work_mode_strict: false,
+        },
+      };
+
+      const parsed = UpdatePreferencesRequestSchema.parse(valid);
+      expect(parsed.preferences.work_modes).toEqual(["remote", "hybrid"]);
+      expect(parsed.constraints?.relocation_prohibited).toBe(true);
+    });
+
+    it("should reject when work_modes is empty", () => {
+      const invalid = {
+        expected_version: 1,
+        preferences: {
+          locations: ["Remote"],
+          work_modes: [],
+          priorities: [],
+          salary: null,
+          negative_preferences: [],
+        },
+      };
+
+      expect(() => UpdatePreferencesRequestSchema.parse(invalid)).toThrow(
+        /at least one work mode is required/i,
+      );
+    });
+  });
+
+  describe("UpdateSkillsRequestSchema", () => {
+    it("should validate 'add' action", () => {
+      const parsed = UpdateSkillsRequestSchema.parse({
+        action: "add",
+        expected_version: 2,
+        skill: "Docker",
+        category: "tool",
+      });
+      expect(parsed.action).toBe("add");
+    });
+
+    it("should validate 'suppress' action", () => {
+      const parsed = UpdateSkillsRequestSchema.parse({
+        action: "suppress",
+        expected_version: 2,
+        skill: "PHP",
+        reason: "user_deleted",
+      });
+      expect(parsed.action).toBe("suppress");
+    });
+
+    it("should validate 'restore' action", () => {
+      const parsed = UpdateSkillsRequestSchema.parse({
+        action: "restore",
+        expected_version: 2,
+        skill: "PHP",
+        category: "supporting",
+      });
+      expect(parsed.action).toBe("restore");
+    });
+
+    it("should validate 'update' action", () => {
+      const parsed = UpdateSkillsRequestSchema.parse({
+        action: "update",
+        expected_version: 2,
+        skill: "TypeScript",
+        category: "core",
+        confirmation_state: "confirmed",
+      });
+      expect(parsed.action).toBe("update");
+    });
   });
 });

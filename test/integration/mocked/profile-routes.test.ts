@@ -5,6 +5,10 @@ import {
 } from "@/app/api/profile/route";
 import { PATCH as patchDraft } from "@/app/api/profile/draft/route";
 import { POST as postConfirm } from "@/app/api/profile/confirm/route";
+import { PATCH as patchCareerIntent } from "@/app/api/profile/career-intent/route";
+import { PATCH as patchPreferences } from "@/app/api/profile/preferences/route";
+import { PATCH as patchSkills } from "@/app/api/profile/skills/route";
+import { PATCH as patchBackground } from "@/app/api/profile/background/route";
 import { NextRequest } from "next/server";
 import { VersionConflictError } from "@/features/profile/errors/profile-errors";
 
@@ -15,6 +19,10 @@ const { mockAuthUser, mockCareerProfileService } = vi.hoisted(() => ({
     getOrCreateDraft: vi.fn(),
     updateDraftStep: vi.fn(),
     confirmProfile: vi.fn(),
+    updateCareerIntent: vi.fn(),
+    updatePreferences: vi.fn(),
+    handleSkillAction: vi.fn(),
+    updateBackground: vi.fn(),
   },
 }));
 
@@ -234,6 +242,208 @@ describe("Integration (Mock-Based): Profile API Routes", () => {
       expect(res.status).toBe(200);
       expect(data.profile.status).toBe("active");
       expect(data.profile.onboardingCompleted).toBe(true);
+    });
+  });
+
+  describe("PATCH /api/profile/career-intent", () => {
+    it("should return 401 when not authenticated", async () => {
+      mockAuthUser.mockResolvedValueOnce({
+        data: { user: null },
+        error: new Error("Unauthorized"),
+      });
+
+      const req = new NextRequest(
+        "http://localhost:3000/api/profile/career-intent",
+        {
+          method: "PATCH",
+          body: JSON.stringify({ expected_version: 1 }),
+        },
+      );
+      const res = await patchCareerIntent(req);
+      expect(res.status).toBe(401);
+    });
+
+    it("should return 400 when expected_version is missing", async () => {
+      mockAuthUser.mockResolvedValueOnce({
+        data: { user: sampleUser },
+        error: null,
+      });
+
+      const req = new NextRequest(
+        "http://localhost:3000/api/profile/career-intent",
+        {
+          method: "PATCH",
+          body: JSON.stringify({ career_intent: {} }),
+        },
+      );
+      const res = await patchCareerIntent(req);
+      expect(res.status).toBe(400);
+    });
+
+    it("should return 409 on version conflict", async () => {
+      mockAuthUser.mockResolvedValueOnce({
+        data: { user: sampleUser },
+        error: null,
+      });
+      mockCareerProfileService.updateCareerIntent.mockRejectedValueOnce(
+        new VersionConflictError(1, 2),
+      );
+
+      const req = new NextRequest(
+        "http://localhost:3000/api/profile/career-intent",
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            expected_version: 1,
+            career_intent: {
+              target_roles: [{ role: "Frontend", priority: "primary" }],
+            },
+          }),
+        },
+      );
+      const res = await patchCareerIntent(req);
+      expect(res.status).toBe(409);
+    });
+
+    it("should return 200 on success", async () => {
+      mockAuthUser.mockResolvedValueOnce({
+        data: { user: sampleUser },
+        error: null,
+      });
+      mockCareerProfileService.updateCareerIntent.mockResolvedValueOnce({
+        id: "a1",
+        userId: sampleUser.id,
+        careerIntent: {
+          target_roles: [{ role: "Frontend", priority: "primary" }],
+        },
+        profileVersion: 2,
+      });
+
+      const req = new NextRequest(
+        "http://localhost:3000/api/profile/career-intent",
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            expected_version: 1,
+            career_intent: {
+              target_roles: [{ role: "Frontend", priority: "primary" }],
+              target_level: "junior",
+              employment_types: ["full_time"],
+            },
+          }),
+        },
+      );
+      const res = await patchCareerIntent(req);
+      const data = await res.json();
+      expect(res.status).toBe(200);
+      expect(data.profile.profileVersion).toBe(2);
+    });
+  });
+
+  describe("PATCH /api/profile/preferences", () => {
+    it("should return 401 when not authenticated", async () => {
+      mockAuthUser.mockResolvedValueOnce({
+        data: { user: null },
+        error: new Error("Unauthorized"),
+      });
+
+      const req = new NextRequest(
+        "http://localhost:3000/api/profile/preferences",
+        {
+          method: "PATCH",
+          body: JSON.stringify({ expected_version: 1 }),
+        },
+      );
+      const res = await patchPreferences(req);
+      expect(res.status).toBe(401);
+    });
+
+    it("should return 200 on success", async () => {
+      mockAuthUser.mockResolvedValueOnce({
+        data: { user: sampleUser },
+        error: null,
+      });
+      mockCareerProfileService.updatePreferences.mockResolvedValueOnce({
+        id: "a1",
+        userId: sampleUser.id,
+        preferences: { locations: ["Remote"], work_modes: ["remote"] },
+        profileVersion: 3,
+      });
+
+      const req = new NextRequest(
+        "http://localhost:3000/api/profile/preferences",
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            expected_version: 2,
+            preferences: { locations: ["Remote"], work_modes: ["remote"] },
+          }),
+        },
+      );
+      const res = await patchPreferences(req);
+      expect(res.status).toBe(200);
+    });
+  });
+
+  describe("PATCH /api/profile/skills", () => {
+    it("should dispatch action and return 200", async () => {
+      mockAuthUser.mockResolvedValueOnce({
+        data: { user: sampleUser },
+        error: null,
+      });
+      mockCareerProfileService.handleSkillAction.mockResolvedValueOnce({
+        id: "a1",
+        userId: sampleUser.id,
+        capabilities: {
+          skills: [{ skill: "Docker", category: "tool" }],
+        },
+        profileVersion: 4,
+      });
+
+      const req = new NextRequest("http://localhost:3000/api/profile/skills", {
+        method: "PATCH",
+        body: JSON.stringify({
+          action: "add",
+          expected_version: 3,
+          skill: "Docker",
+          category: "tool",
+        }),
+      });
+      const res = await patchSkills(req);
+      const data = await res.json();
+      expect(res.status).toBe(200);
+      expect(mockCareerProfileService.handleSkillAction).toHaveBeenCalledWith(
+        sampleUser.id,
+        expect.objectContaining({ action: "add", skill: "Docker" }),
+      );
+    });
+  });
+
+  describe("PATCH /api/profile/background", () => {
+    it("should return 200 on valid background update", async () => {
+      mockAuthUser.mockResolvedValueOnce({
+        data: { user: sampleUser },
+        error: null,
+      });
+      mockCareerProfileService.updateBackground.mockResolvedValueOnce({
+        id: "a1",
+        userId: sampleUser.id,
+        background: { education: [], experience: [], projects: [] },
+        profileVersion: 5,
+      });
+
+      const req = new NextRequest(
+        "http://localhost:3000/api/profile/background",
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            expected_version: 4,
+            background: { education: [], experience: [], projects: [] },
+          }),
+        },
+      );
+      const res = await patchBackground(req);
+      expect(res.status).toBe(200);
     });
   });
 });
