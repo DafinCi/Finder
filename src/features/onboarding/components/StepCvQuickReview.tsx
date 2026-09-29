@@ -16,12 +16,14 @@ import {
   OnboardingFormState,
   SENIORITY_LEVEL_OPTIONS,
   WORK_MODE_OPTIONS,
+  COMMON_POPULAR_SKILLS,
 } from "../types/onboarding.types";
 import {
   TargetLevel,
   WorkMode,
   SkillCategory,
 } from "@/features/profile/types/career-profile.types";
+import { matchesSkill } from "@/features/matching/utils/skill-normalizer";
 
 interface StepCvQuickReviewProps {
   state: OnboardingFormState;
@@ -254,6 +256,29 @@ export function StepCvQuickReview({
             ))
           )}
         </div>
+
+        {/* Quick Suggestions */}
+        {state.skills.length < 5 && (
+          <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+            <span className="text-[11px] text-muted-foreground mr-1">
+              Suggestions:
+            </span>
+            {COMMON_POPULAR_SKILLS.filter(
+              (name) => !state.skills.some((s) => matchesSkill(s.skill, name)),
+            )
+              .slice(0, 5)
+              .map((name) => (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => addCustomSkill(name, "core")}
+                  className="min-h-[30px] px-2.5 py-0.5 rounded-md text-xs font-medium border border-border bg-secondary/40 text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                >
+                  + {name}
+                </button>
+              ))}
+          </div>
+        )}
 
         {/* Quick Add Skill Form */}
         <form onSubmit={handleAddSkill} className="flex gap-2">

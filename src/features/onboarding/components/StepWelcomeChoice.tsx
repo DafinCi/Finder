@@ -10,6 +10,7 @@ import {
   ArrowRight,
   Sparkles,
   RotateCcw,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OnboardingFormState } from "../types/onboarding.types";
@@ -83,10 +84,20 @@ export function StepWelcomeChoice({
       {localError && (
         <div
           role="alert"
-          className="p-3.5 rounded-lg bg-destructive/10 border border-destructive/30 flex items-center gap-2.5 text-destructive text-sm"
+          className="p-3.5 rounded-lg bg-destructive/10 border border-destructive/30 flex items-center justify-between gap-2.5 text-destructive text-sm"
         >
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          <span>{localError}</span>
+          <div className="flex items-center gap-2.5">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{localError}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setLocalError(null)}
+            className="text-destructive hover:opacity-75 cursor-pointer p-0.5 rounded-xs focus-visible:ring-2 focus-visible:ring-destructive focus-visible:outline-none"
+            aria-label="Dismiss alert"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 

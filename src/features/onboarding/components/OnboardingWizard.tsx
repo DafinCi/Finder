@@ -1,8 +1,9 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, ArrowRight } from "lucide-react";
 import { useOnboardingProfile } from "../hooks/useOnboardingProfile";
 import { OnboardingHeader } from "./OnboardingHeader";
 import { StepWelcomeChoice } from "./StepWelcomeChoice";
@@ -93,6 +94,36 @@ export function OnboardingWizard() {
         flowMode={state.flowMode}
         isExistingActiveProfile={state.isExistingActiveProfile}
       />
+
+      {/* Active Profile Shortcut Banner */}
+      {state.isExistingActiveProfile && (
+        <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+          <div className="space-y-0.5">
+            <p className="font-semibold text-foreground">
+              You already have an active Career Profile
+            </p>
+            <p className="text-muted-foreground">
+              You can re-configure your preferences here, or manage your full
+              settings in your Career Profile.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Link
+              href="/profile"
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-secondary text-foreground font-medium transition-colors"
+            >
+              Manage in Profile
+            </Link>
+            <Link
+              href="/jobs"
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity"
+            >
+              View Matching Jobs
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Main Screen Container */}
       <main className="rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-xs">
