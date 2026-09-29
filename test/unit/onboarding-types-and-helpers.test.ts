@@ -105,4 +105,77 @@ describe("Phase 1E: Onboarding Types & Helper Logic Unit Tests", () => {
     expect(active.length).toBe(1);
     expect(active[0].skill).toBe("PostgreSQL");
   });
+
+  describe("Phase 3A: Streamlined Onboarding Preset & Skill Suggestions", () => {
+    it("COMMON_POPULAR_SKILLS should be non-empty with trimmed unique skill names", async () => {
+      const { COMMON_POPULAR_SKILLS } =
+        await import("@/features/onboarding/types/onboarding.types");
+      expect(COMMON_POPULAR_SKILLS.length).toBeGreaterThanOrEqual(5);
+      for (const skill of COMMON_POPULAR_SKILLS) {
+        expect(skill.trim()).toBe(skill);
+        expect(skill.length).toBeGreaterThan(0);
+      }
+    });
+
+    it("SUGGESTED_SKILLS_BY_ROLE should provide curated skills for core tech roles", async () => {
+      const { SUGGESTED_SKILLS_BY_ROLE } =
+        await import("@/features/onboarding/types/onboarding.types");
+      const expectedRoles = [
+        "frontend",
+        "backend",
+        "fullstack",
+        "mobile",
+        "devops",
+        "data",
+        "ai",
+      ];
+      for (const roleKey of expectedRoles) {
+        expect(SUGGESTED_SKILLS_BY_ROLE[roleKey]).toBeDefined();
+        expect(SUGGESTED_SKILLS_BY_ROLE[roleKey].length).toBeGreaterThanOrEqual(
+          3,
+        );
+      }
+    });
+
+    it("should correctly promote first role to primary and deduplicate roles", () => {
+      const rolesInput = [
+        "Frontend Engineer",
+        "frontend engineer",
+        "React Developer",
+      ];
+      // Simulate setPrimaryRole logic
+      const targetRole = "Frontend Engineer";
+      const otherRoles = rolesInput
+        .filter((r) => r.toLowerCase() !== targetRole.toLowerCase())
+        .map((r) => ({ role: r, priority: "secondary" as const }));
+
+      const finalRoles = [
+        { role: targetRole, priority: "primary" as const },
+        ...otherRoles,
+      ];
+
+      expect(finalRoles).toHaveLength(2); // "Frontend Engineer" and "React Developer"
+      expect(finalRoles[0].priority).toBe("primary");
+      expect(finalRoles[1].priority).toBe("secondary");
+    });
+
+    it("should toggle skill membership correctly", () => {
+      let skills = [{ skill: "React" }, { skill: "TypeScript" }];
+      const toggle = (list: { skill: string }[], name: string) => {
+        const exists = list.some((s) => matchesSkill(s.skill, name));
+        if (exists) {
+          return list.filter((s) => !matchesSkill(s.skill, name));
+        }
+        return [...list, { skill: name }];
+      };
+
+      // Toggle off existing skill
+      skills = toggle(skills, "react");
+      expect(skills.some((s) => s.skill === "React")).toBe(false);
+
+      // Toggle on new skill
+      skills = toggle(skills, "Next.js");
+      expect(skills.some((s) => s.skill === "Next.js")).toBe(true);
+    });
+  });
 });

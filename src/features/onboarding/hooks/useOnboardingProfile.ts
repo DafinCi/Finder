@@ -9,6 +9,7 @@ import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import {
   OnboardingStepNumber,
+  OnboardingFlowMode,
   OnboardingFormState,
 } from "../types/onboarding.types";
 import {
@@ -30,6 +31,7 @@ import {
 import { matchesSkill } from "@/features/matching/utils/skill-normalizer";
 
 const INITIAL_STATE: OnboardingFormState = {
+  flowMode: "choice",
   resumeId: null,
   resumeFileName: null,
   isUploadingResume: false,
@@ -63,8 +65,16 @@ export function useOnboardingProfile() {
 
   // Sync state from CareerProfile entity
   const syncFromProfile = useCallback((profile: CareerProfile) => {
+    const hasCv = Boolean(profile.resumeId);
+    const initialFlowMode: OnboardingFlowMode = hasCv
+      ? "cv_magic"
+      : (profile.currentOnboardingStep || 1) > 1
+        ? "manual"
+        : "choice";
+
     setState((prev) => ({
       ...prev,
+      flowMode: initialFlowMode,
       profileId: profile.id,
       expectedVersion: profile.profileVersion,
       currentStep: Math.min(
@@ -323,15 +333,14 @@ export function useOnboardingProfile() {
           ...prev,
           expectedVersion: updatedProfile.profileVersion,
           resumeExtracted: true,
+          flowMode: "cv_magic",
           background: newBackground,
           skills: filteredSkills,
           targetRoles: suggestedRoles,
           targetLevel: suggestedLevel,
         }));
 
-        toast.success(
-          "Resume parsed successfully! Skills & background extracted.",
-        );
+        toast.success("Resume parsed! Review your key details below.");
       } catch (err) {
         if (err instanceof OnboardingVersionConflictError) {
           await handleVersionConflict(err);
@@ -370,6 +379,7 @@ export function useOnboardingProfile() {
 
       setState((prev) => ({
         ...prev,
+        flowMode: "manual",
         currentStep: 2,
         expectedVersion: updatedProfile.profileVersion,
       }));
@@ -390,21 +400,28 @@ export function useOnboardingProfile() {
   // Step 2: Save Career Intent & Continue to Step 3
   const handleSaveStep2 = useCallback(async () => {
     if (state.targetRoles.length === 0) {
-      toast.error("Please select at least one target role.");
+      toast.error("Please enter or select at least one target role.");
       return;
     }
-    if (!state.targetRoles.some((r) => r.priority === "primary")) {
-      toast.error("Please mark at least one role as Primary.");
-      return;
+    // Auto-promote first role to primary if none is explicitly marked
+    let rolesToSave = state.targetRoles;
+    if (!rolesToSave.some((r) => r.priority === "primary")) {
+      rolesToSave = [
+        { ...rolesToSave[0], priority: "primary" },
+        ...rolesToSave.slice(1).map((r) => ({
+          ...r,
+          priority: "secondary" as const,
+        })),
+      ];
     }
     if (!state.targetLevel) {
-      toast.error("Please select your target seniority level.");
+      toast.error("Please select your experience level.");
       return;
     }
-    if (state.employmentTypes.length === 0) {
-      toast.error("Please select at least one employment type.");
-      return;
-    }
+    const employmentToSave =
+      state.employmentTypes.length > 0
+        ? state.employmentTypes
+        : (["full_time"] as EmploymentType[]);
 
     try {
       setIsSaving(true);
@@ -413,14 +430,16 @@ export function useOnboardingProfile() {
         expected_version: state.expectedVersion,
         current_step: 3,
         career_intent: {
-          target_roles: state.targetRoles,
+          target_roles: rolesToSave,
           target_level: state.targetLevel,
-          employment_types: state.employmentTypes,
+          employment_types: employmentToSave,
         },
       });
 
       setState((prev) => ({
         ...prev,
+        targetRoles: rolesToSave,
+        employmentTypes: employmentToSave,
         currentStep: 3,
         expectedVersion: updatedProfile.profileVersion,
       }));
@@ -512,21 +531,33 @@ export function useOnboardingProfile() {
   const handleConfirmProfile =
     useCallback(async (): Promise<CareerProfile | null> => {
       if (state.targetRoles.length === 0) {
-        toast.error("At least one target role is required.");
+        toast.error("Please specify at least one target role.");
         return null;
+      }
+      let rolesToConfirm = state.targetRoles;
+      if (!rolesToConfirm.some((r) => r.priority === "primary")) {
+        rolesToConfirm = [
+          { ...rolesToConfirm[0], priority: "primary" },
+          ...rolesToConfirm.slice(1).map((r) => ({
+            ...r,
+            priority: "secondary" as const,
+          })),
+        ];
       }
       if (!state.targetLevel) {
-        toast.error("Seniority level is required.");
+        toast.error("Please select your experience level.");
         return null;
       }
-      if (state.employmentTypes.length === 0) {
-        toast.error("At least one employment type is required.");
-        return null;
-      }
-      if (state.workModes.length === 0) {
-        toast.error("At least one work mode is required.");
-        return null;
-      }
+      const employmentToConfirm =
+        state.employmentTypes.length > 0
+          ? state.employmentTypes
+          : (["full_time"] as EmploymentType[]);
+      const workModesToConfirm =
+        state.workModes.length > 0
+          ? state.workModes
+          : (["remote"] as WorkMode[]);
+      const locationsToConfirm =
+        state.locations.length > 0 ? state.locations : ["Remote"];
 
       try {
         setIsSaving(true);
@@ -534,13 +565,13 @@ export function useOnboardingProfile() {
         const confirmedProfile = await onboardingService.confirmProfile({
           expected_version: state.expectedVersion,
           career_intent: {
-            target_roles: state.targetRoles,
+            target_roles: rolesToConfirm,
             target_level: state.targetLevel,
-            employment_types: state.employmentTypes,
+            employment_types: employmentToConfirm,
           },
           preferences: {
-            locations: state.locations,
-            work_modes: state.workModes,
+            locations: locationsToConfirm,
+            work_modes: workModesToConfirm,
             priorities: state.priorities,
             salary:
               state.salaryMin !== null
@@ -563,13 +594,15 @@ export function useOnboardingProfile() {
 
         setState((prev) => ({
           ...prev,
+          targetRoles: rolesToConfirm,
+          employmentTypes: employmentToConfirm,
+          workModes: workModesToConfirm,
+          locations: locationsToConfirm,
           expectedVersion: confirmedProfile.profileVersion,
           isExistingActiveProfile: true,
         }));
 
-        toast.success(
-          "Career Profile successfully confirmed! Finder matching is now active.",
-        );
+        toast.success("Profile setup complete! Welcome to your job dashboard.");
         return confirmedProfile;
       } catch (err) {
         if (err instanceof OnboardingVersionConflictError) {
@@ -678,7 +711,7 @@ export function useOnboardingProfile() {
           suppressedSkills: remainingSuppressed,
         };
       });
-      toast.success(`Added "${trimmed}" to capabilities.`);
+      toast.success(`Added "${trimmed}" to your skills.`);
     },
     [],
   );
@@ -687,6 +720,179 @@ export function useOnboardingProfile() {
   const goToStep = useCallback((step: OnboardingStepNumber) => {
     setState((prev) => ({ ...prev, currentStep: step }));
   }, []);
+
+  const setFlowMode = useCallback((mode: OnboardingFlowMode) => {
+    setState((prev) => ({ ...prev, flowMode: mode }));
+  }, []);
+
+  const setPrimaryRole = useCallback((roleTitle: string) => {
+    const trimmed = roleTitle.trim();
+    if (!trimmed) return;
+
+    setState((prev) => {
+      const lower = trimmed.toLowerCase();
+      const otherRoles = prev.targetRoles.filter(
+        (r) => r.role.toLowerCase() !== lower,
+      );
+      const secondaries = otherRoles.map((r) => ({
+        ...r,
+        priority: "secondary" as const,
+      }));
+      return {
+        ...prev,
+        targetRoles: [
+          { role: trimmed, priority: "primary" as const },
+          ...secondaries,
+        ],
+      };
+    });
+  }, []);
+
+  const toggleSkill = useCallback((skillName: string) => {
+    const trimmed = skillName.trim();
+    if (!trimmed) return;
+
+    setState((prev) => {
+      const exists = prev.skills.some((s) => matchesSkill(s.skill, trimmed));
+      if (exists) {
+        return {
+          ...prev,
+          skills: prev.skills.filter((s) => !matchesSkill(s.skill, trimmed)),
+        };
+      } else {
+        const now = new Date().toISOString();
+        return {
+          ...prev,
+          skills: [
+            ...prev.skills,
+            {
+              skill: trimmed,
+              category: "core",
+              confirmation_state: "user_added",
+              provenance: {
+                source: "user_confirmed",
+                confidence: 1.0,
+                updated_at: now,
+              },
+            },
+          ],
+        };
+      }
+    });
+  }, []);
+
+  const removeSkill = useCallback((skillName: string) => {
+    setState((prev) => ({
+      ...prev,
+      skills: prev.skills.filter((s) => !matchesSkill(s.skill, skillName)),
+    }));
+  }, []);
+
+  const handleQuickCvConfirm =
+    useCallback(async (): Promise<CareerProfile | null> => {
+      let effectiveRoles = state.targetRoles;
+      if (effectiveRoles.length === 0) {
+        toast.error("Please enter or select your target role.");
+        return null;
+      }
+      if (!effectiveRoles.some((r) => r.priority === "primary")) {
+        effectiveRoles = [
+          { ...effectiveRoles[0], priority: "primary" },
+          ...effectiveRoles.slice(1).map((r) => ({
+            ...r,
+            priority: "secondary" as const,
+          })),
+        ];
+      }
+
+      const effectiveLevel = state.targetLevel || "mid_level";
+      const effectiveWorkModes =
+        state.workModes.length > 0
+          ? state.workModes
+          : (["remote"] as WorkMode[]);
+      const effectiveLocations =
+        state.locations.length > 0 ? state.locations : ["Remote"];
+      const effectiveEmployment =
+        state.employmentTypes.length > 0
+          ? state.employmentTypes
+          : (["full_time"] as EmploymentType[]);
+
+      try {
+        setIsSaving(true);
+        setError(null);
+        const confirmedProfile = await onboardingService.confirmProfile({
+          expected_version: state.expectedVersion,
+          career_intent: {
+            target_roles: effectiveRoles,
+            target_level: effectiveLevel,
+            employment_types: effectiveEmployment,
+          },
+          preferences: {
+            locations: effectiveLocations,
+            work_modes: effectiveWorkModes,
+            priorities: state.priorities,
+            salary:
+              state.salaryMin !== null
+                ? {
+                    min_amount: state.salaryMin,
+                    currency: state.salaryCurrency,
+                  }
+                : null,
+            negative_preferences: state.negativePreferences,
+          },
+          constraints: {
+            work_mode_strict: state.workModeStrict,
+            relocation_prohibited: state.relocationProhibited,
+          },
+          capabilities: {
+            skills: state.skills,
+            suppressed_skills: state.suppressedSkills,
+          },
+        });
+
+        setState((prev) => ({
+          ...prev,
+          targetRoles: effectiveRoles,
+          targetLevel: effectiveLevel,
+          workModes: effectiveWorkModes,
+          locations: effectiveLocations,
+          employmentTypes: effectiveEmployment,
+          expectedVersion: confirmedProfile.profileVersion,
+          isExistingActiveProfile: true,
+        }));
+
+        toast.success("Profile setup complete! Welcome to your job dashboard.");
+        return confirmedProfile;
+      } catch (err) {
+        if (err instanceof OnboardingVersionConflictError) {
+          await handleVersionConflict(err);
+        } else {
+          const msg =
+            err instanceof Error ? err.message : "Failed to confirm profile";
+          setError(msg);
+          toast.error(msg);
+        }
+        return null;
+      } finally {
+        setIsSaving(false);
+      }
+    }, [
+      state.targetRoles,
+      state.targetLevel,
+      state.employmentTypes,
+      state.workModes,
+      state.locations,
+      state.priorities,
+      state.salaryMin,
+      state.salaryCurrency,
+      state.negativePreferences,
+      state.workModeStrict,
+      state.relocationProhibited,
+      state.skills,
+      state.suppressedSkills,
+      state.expectedVersion,
+      handleVersionConflict,
+    ]);
 
   const setTargetRoles = useCallback((roles: TargetRoleItem[]) => {
     setState((prev) => ({ ...prev, targetRoles: roles }));
@@ -741,8 +947,13 @@ export function useOnboardingProfile() {
     isSaving,
     error,
     goToStep,
+    setFlowMode,
+    setPrimaryRole,
+    toggleSkill,
+    removeSkill,
     handleUploadAndAnalyzeResume,
     handleContinueWithoutCv,
+    handleQuickCvConfirm,
     handleSaveStep2,
     handleSaveStep3,
     handleConfirmProfile,

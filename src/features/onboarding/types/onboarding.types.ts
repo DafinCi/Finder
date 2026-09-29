@@ -16,8 +16,11 @@ import {
 } from "@/features/profile/types/career-profile.types";
 
 export type OnboardingStepNumber = 1 | 2 | 3 | 4;
+export type OnboardingFlowMode = "choice" | "cv_magic" | "manual";
 
 export interface OnboardingFormState {
+  flowMode: OnboardingFlowMode;
+
   // Step 1: CV & Background
   resumeId: string | null;
   resumeFileName: string | null;
@@ -75,32 +78,35 @@ export const SENIORITY_LEVEL_OPTIONS: {
   {
     value: "internship",
     label: "Internship",
-    description: "Students & aspiring interns seeking practical experience",
+    description: "Students or beginners seeking practical experience",
   },
   {
     value: "entry_level",
     label: "Entry-Level",
-    description: "Fresh graduates or 0–1 year of professional experience",
+    description: "Recent graduates or starting out in your career (0–1 yr)",
   },
   {
     value: "junior",
     label: "Junior",
-    description: "1–2 years of hands-on software development experience",
+    description: "Building confidence and shipping code (1–2 yrs)",
   },
   {
     value: "mid_level",
     label: "Mid-Level",
-    description: "3–5 years of building, shipping, and owning systems",
+    description:
+      "Independent contributor owning features and systems (3–5 yrs)",
   },
   {
     value: "senior",
     label: "Senior",
-    description: "5+ years of deep technical mastery and system design",
+    description:
+      "Deep expertise, mentoring, and leading technical direction (5+ yrs)",
   },
   {
     value: "lead",
-    label: "Lead / Principal",
-    description: "Architectural leadership, team mentorship, and strategy",
+    label: "Lead",
+    description:
+      "Architectural leadership, team strategy, and high-level execution",
   },
 ];
 
@@ -123,19 +129,100 @@ export const WORK_MODE_OPTIONS: {
   {
     value: "remote",
     label: "Remote",
-    description: "Work from anywhere with internet connectivity",
+    description: "Work from anywhere with a good internet connection",
   },
   {
     value: "hybrid",
     label: "Hybrid",
-    description: "Balanced mix of office days and remote flexibility",
+    description: "Mix of working from home and office visits",
   },
   {
     value: "onsite",
     label: "On-site",
-    description: "Dedicated daily presence at company headquarters or office",
+    description: "Work directly at the company office",
   },
 ];
+
+export const COMMON_POPULAR_SKILLS: string[] = [
+  "React",
+  "TypeScript",
+  "Node.js",
+  "Next.js",
+  "Python",
+  "PostgreSQL",
+  "Tailwind CSS",
+  "Docker",
+  "AWS",
+  "Git",
+];
+
+export const SUGGESTED_SKILLS_BY_ROLE: Record<string, string[]> = {
+  frontend: [
+    "React",
+    "TypeScript",
+    "Next.js",
+    "Tailwind CSS",
+    "JavaScript",
+    "HTML/CSS",
+    "Vue.js",
+    "Redux",
+  ],
+  backend: [
+    "Node.js",
+    "Python",
+    "PostgreSQL",
+    "Go",
+    "Java",
+    "Docker",
+    "REST API",
+    "Redis",
+  ],
+  fullstack: [
+    "TypeScript",
+    "React",
+    "Node.js",
+    "Next.js",
+    "PostgreSQL",
+    "Tailwind CSS",
+    "Docker",
+  ],
+  mobile: [
+    "React Native",
+    "Flutter",
+    "iOS",
+    "Android",
+    "Swift",
+    "Kotlin",
+    "TypeScript",
+  ],
+  devops: [
+    "Docker",
+    "Kubernetes",
+    "AWS",
+    "CI/CD",
+    "Terraform",
+    "Linux",
+    "GitHub Actions",
+  ],
+  data: [
+    "Python",
+    "SQL",
+    "Pandas",
+    "PostgreSQL",
+    "Machine Learning",
+    "PyTorch",
+    "Data Modeling",
+  ],
+  ai: [
+    "Python",
+    "PyTorch",
+    "Machine Learning",
+    "LLMs",
+    "TensorFlow",
+    "FastAPI",
+    "Docker",
+  ],
+};
 
 export const PRESET_LOCATIONS: string[] = [
   "Indonesia",
