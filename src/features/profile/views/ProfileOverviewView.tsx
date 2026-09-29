@@ -7,7 +7,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Sparkles, UserCheck } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useCareerProfile } from "../hooks/useCareerProfile";
 import { ProfileHeader } from "../components/ProfileHeader";
@@ -16,8 +16,11 @@ import { ProfilePreferencesCard } from "../components/ProfilePreferencesCard";
 import { ProfileSkillsCard } from "../components/ProfileSkillsCard";
 import { ProfileBackgroundCard } from "../components/ProfileBackgroundCard";
 import { ProfilePageSkeleton } from "../components/ProfilePageSkeleton";
+import { EditCareerIntentDialog } from "../components/dialogs/EditCareerIntentDialog";
+import { EditPreferencesDialog } from "../components/dialogs/EditPreferencesDialog";
+import { ManageSkillsSheet } from "../components/dialogs/ManageSkillsSheet";
+import { EditBackgroundDialog } from "../components/dialogs/EditBackgroundDialog";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
 
 export default function ProfileOverviewView() {
   const { user } = useAuth();
@@ -34,13 +37,17 @@ export default function ProfileOverviewView() {
     suppressedSkills,
     completenessScore,
     refreshProfile,
+    updateCareerIntent,
+    updatePreferences,
     addSkill,
     suppressSkill,
     restoreSkill,
     updateSkill,
+    syncSkills,
+    updateBackground,
   } = useCareerProfile();
 
-  // Active dialog modal state for Phase 2D
+  // Active dialog modal state
   const [activeModal, setActiveModal] = useState<
     "intent" | "preferences" | "skills" | "background" | null
   >(null);
@@ -80,13 +87,6 @@ export default function ProfileOverviewView() {
     );
   }
 
-  const handleOpenModal = (
-    modal: "intent" | "preferences" | "skills" | "background",
-  ) => {
-    setActiveModal(modal);
-    toast.info(`Dialog editor ${modal} akan diaktifkan penuh di Phase 2D.`);
-  };
-
   const handleConfirmSkill = async (skillName: string) => {
     return updateSkill(skillName, { confirmation_state: "confirmed" });
   };
@@ -110,14 +110,14 @@ export default function ProfileOverviewView() {
             careerIntent={profile.careerIntent}
             primaryRole={primaryRole}
             secondaryRoles={secondaryRoles}
-            onEdit={() => handleOpenModal("intent")}
+            onEdit={() => setActiveModal("intent")}
           />
 
           {/* Card 2: Career Preferences & Constraints */}
           <ProfilePreferencesCard
             preferences={profile.preferences}
             constraints={profile.constraints}
-            onEdit={() => handleOpenModal("preferences")}
+            onEdit={() => setActiveModal("preferences")}
           />
 
           {/* Card 3: Skills & Capabilities (Spans 2 columns on desktop) */}
@@ -132,7 +132,7 @@ export default function ProfileOverviewView() {
               onSuppressSkill={(skill) => suppressSkill(skill)}
               onRestoreSkill={(skill) => restoreSkill(skill)}
               onConfirmSkill={handleConfirmSkill}
-              onManage={() => handleOpenModal("skills")}
+              onManage={() => setActiveModal("skills")}
             />
           </div>
 
@@ -140,10 +140,46 @@ export default function ProfileOverviewView() {
           <div className="md:col-span-2">
             <ProfileBackgroundCard
               background={profile.background}
-              onEdit={() => handleOpenModal("background")}
+              onEdit={() => setActiveModal("background")}
             />
           </div>
         </div>
+
+        {/* Edit Dialogs */}
+        <EditCareerIntentDialog
+          isOpen={activeModal === "intent"}
+          onClose={() => setActiveModal(null)}
+          careerIntent={profile.careerIntent}
+          onSave={updateCareerIntent}
+        />
+
+        <EditPreferencesDialog
+          isOpen={activeModal === "preferences"}
+          onClose={() => setActiveModal(null)}
+          preferences={profile.preferences}
+          constraints={profile.constraints}
+          onSave={updatePreferences}
+        />
+
+        <ManageSkillsSheet
+          isOpen={activeModal === "skills"}
+          onClose={() => setActiveModal(null)}
+          skills={profile.capabilities?.skills || []}
+          suppressedSkills={profile.capabilities?.suppressed_skills || []}
+          isMutating={isMutating}
+          onAddSkill={addSkill}
+          onUpdateSkill={updateSkill}
+          onSuppressSkill={suppressSkill}
+          onRestoreSkill={restoreSkill}
+          onSyncSkills={syncSkills}
+        />
+
+        <EditBackgroundDialog
+          isOpen={activeModal === "background"}
+          onClose={() => setActiveModal(null)}
+          background={profile.background}
+          onSave={updateBackground}
+        />
       </div>
     </div>
   );
