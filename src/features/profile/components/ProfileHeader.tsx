@@ -1,8 +1,3 @@
-// ==============================================================================
-// COMPONENT: ProfileHeader
-// Module: @/features/profile/components/ProfileHeader
-// ==============================================================================
-
 "use client";
 
 import React from "react";
@@ -34,7 +29,7 @@ export function ProfileHeader({
 }: ProfileHeaderProps) {
   const userName =
     user?.user_metadata?.full_name ||
-    (user?.email ? user.email.split("@")[0] : "Kandidat");
+    (user?.email ? user.email.split("@")[0] : "Candidate");
   const userEmail = user?.email || "";
   const initials = userName
     .split(" ")
@@ -44,19 +39,19 @@ export function ProfileHeader({
     .toUpperCase();
 
   const formattedUpdated = profile?.updatedAt
-    ? new Date(profile.updatedAt).toLocaleDateString("id-ID", {
-        day: "numeric",
+    ? new Date(profile.updatedAt).toLocaleDateString("en-US", {
         month: "short",
+        day: "numeric",
         year: "numeric",
       })
-    : "Baru dibuat";
+    : "Recently created";
 
   const isOptimal = completenessScore >= 80;
 
   return (
     <div className="rounded-xl border border-border bg-card p-6 space-y-6 shadow-xs">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        {/* User Identity info */}
+        {/* User Identity Info */}
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-primary/10 border-2 border-primary/20 text-primary flex items-center justify-center font-bold text-lg shadow-inner">
             {initials}
@@ -69,11 +64,11 @@ export function ProfileHeader({
               {profile?.status === "active" ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Active Profile (v{profile.profileVersion})
+                  Active Profile
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                  Draft Mode (v{profile?.profileVersion || 1})
+                  Draft Mode
                 </span>
               )}
             </div>
@@ -82,21 +77,22 @@ export function ProfileHeader({
               <span>•</span>
               <span className="flex items-center gap-1">
                 <Clock className="w-3 h-3" />
-                Terakhir diupdate: {formattedUpdated}
+                Last updated: {formattedUpdated}
               </span>
             </div>
           </div>
         </div>
 
-        {/* Quick Hub Navigation */}
+        {/* Action Hub Navigation */}
         <div className="flex items-center gap-2 self-stretch sm:self-auto">
           <Button
+            type="button"
             variant="outline"
             size="sm"
             onClick={onRefresh}
             disabled={isMutating}
-            className="text-xs"
-            title="Muat ulang data profil terbaru"
+            className="text-xs h-10 min-h-[40px] sm:h-9 sm:min-h-[36px] gap-1.5 border-border hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-primary"
+            title="Reload latest profile data"
           >
             <RotateCcw
               className={`w-3.5 h-3.5 ${isMutating ? "animate-spin" : ""}`}
@@ -105,9 +101,12 @@ export function ProfileHeader({
           </Button>
 
           <Link href="/jobs">
-            <Button size="sm" className="text-xs gap-1.5">
+            <Button
+              size="sm"
+              className="text-xs h-10 min-h-[40px] sm:h-9 sm:min-h-[36px] gap-1.5 focus-visible:ring-2 focus-visible:ring-primary"
+            >
               <BriefcaseBusiness className="w-3.5 h-3.5" />
-              <span>Jobs Feed</span>
+              <span>Explore Jobs</span>
             </Button>
           </Link>
         </div>
@@ -119,7 +118,7 @@ export function ProfileHeader({
           <div className="flex items-center justify-between text-xs">
             <span className="font-semibold text-foreground flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-primary" />
-              Kelengkapan Profil Pencocokan
+              Match Readiness
             </span>
             <span className="font-mono font-bold text-primary">
               {completenessScore}%
@@ -149,9 +148,7 @@ export function ProfileHeader({
             }`}
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
-            {isOptimal
-              ? "Presisi Pencocokan: Optimal"
-              : "Presisi Pencocokan: Standar"}
+            {isOptimal ? "Optimal Match Precision" : "Standard Match Precision"}
           </span>
         </div>
       </div>

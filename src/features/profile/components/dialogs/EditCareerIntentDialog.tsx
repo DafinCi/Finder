@@ -96,7 +96,7 @@ export function EditCareerIntentDialog({
 
   const handleToggleSecondary = (role: string) => {
     if (role.toLowerCase() === primaryRole.toLowerCase()) {
-      toast.warning("Role ini sudah dipilih sebagai Primary Role.");
+      toast.warning("This role is already selected as your primary role.");
       return;
     }
 
@@ -106,7 +106,7 @@ export function EditCareerIntentDialog({
       );
     } else {
       if (secondaryRoles.length >= 3) {
-        toast.warning("Maksimal 3 secondary roles.");
+        toast.warning("Maximum 3 alternative roles allowed.");
         return;
       }
       setSecondaryRoles((prev) => [...prev, role]);
@@ -125,17 +125,17 @@ export function EditCareerIntentDialog({
     }
 
     if (trimmed.toLowerCase() === primaryRole.toLowerCase()) {
-      toast.warning("Role ini sudah menjadi Primary Role.");
+      toast.warning("This role is already selected as your primary role.");
       return;
     }
 
     if (secondaryRoles.some((r) => r.toLowerCase() === trimmed.toLowerCase())) {
-      toast.warning("Role ini sudah ada di daftar.");
+      toast.warning("This role is already in your alternative list.");
       return;
     }
 
     if (secondaryRoles.length >= 3) {
-      toast.warning("Maksimal 3 secondary roles.");
+      toast.warning("Maximum 3 alternative roles allowed.");
       return;
     }
 
@@ -147,7 +147,7 @@ export function EditCareerIntentDialog({
     setEmploymentTypes((prev) => {
       if (prev.includes(type)) {
         if (prev.length === 1) {
-          toast.warning("Minimal pilih 1 jenis pekerjaan.");
+          toast.warning("Please select at least 1 employment type.");
           return prev;
         }
         return prev.filter((t) => t !== type);
@@ -160,12 +160,12 @@ export function EditCareerIntentDialog({
     e.preventDefault();
 
     if (!primaryRole.trim()) {
-      toast.error("Wajib memilih tepat 1 Primary Target Role.");
+      toast.error("Please select 1 primary target role.");
       return;
     }
 
     if (employmentTypes.length === 0) {
-      toast.error("Wajib memilih minimal 1 jenis pekerjaan.");
+      toast.error("Please select at least 1 employment type.");
       return;
     }
 
@@ -218,7 +218,8 @@ export function EditCareerIntentDialog({
                 Edit Career Intent
               </h2>
               <p className="text-[11px] text-muted-foreground">
-                Target posisi utama, posisi sekunder, dan tingkat kematangan
+                Define your primary position, alternative roles, and seniority
+                level.
               </p>
             </div>
           </div>
@@ -243,18 +244,18 @@ export function EditCareerIntentDialog({
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
                 <Briefcase className="w-3.5 h-3.5 text-primary" />
-                Primary Role (Tepat 1 Role - S_role: 1.0)
+                Primary Role (Select 1)
               </label>
               {primaryRole && (
                 <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
-                  ✓ Dipilih
+                  ✓ Selected
                 </span>
               )}
             </div>
 
             <p className="text-[11px] text-muted-foreground">
-              Posisi spesifik yang paling Anda utamakan. Rekomendasi Finder akan
-              memberikan bobot penuh untuk role ini.
+              Your main target position. Recommendations will prioritize jobs
+              matching this role.
             </p>
 
             {primaryRole && (
@@ -294,15 +295,15 @@ export function EditCareerIntentDialog({
           <div className="space-y-2 pt-2 border-t border-border/60">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-foreground">
-                Secondary Roles (Maksimal 3 - S_role: 0.7)
+                Alternative Target Roles (Up to 3)
               </label>
               <span className="text-[10px] text-muted-foreground font-mono">
-                {secondaryRoles.length}/3 dipilih
+                {secondaryRoles.length}/3 selected
               </span>
             </div>
 
             <p className="text-[11px] text-muted-foreground">
-              Posisi alternatif yang masih relevan dengan minat Anda.
+              Alternative positions relevant to your background.
             </p>
 
             <div className="flex flex-wrap gap-1.5">
@@ -387,7 +388,7 @@ export function EditCareerIntentDialog({
           {/* Section 4: Employment Types */}
           <div className="space-y-2 pt-2 border-t border-border/60">
             <label className="text-xs font-bold text-foreground">
-              Employment Types (Pilih minimal 1)
+              Employment Types (Select at least 1)
             </label>
             <div className="flex flex-wrap gap-2">
               {EMPLOYMENT_TYPE_OPTIONS.map((emp) => {
@@ -420,9 +421,9 @@ export function EditCareerIntentDialog({
             size="sm"
             onClick={onClose}
             disabled={isSaving}
-            className="text-xs"
+            className="text-xs h-9 min-h-[36px]"
           >
-            Batal
+            Cancel
           </Button>
 
           <Button
@@ -430,10 +431,10 @@ export function EditCareerIntentDialog({
             form="career-intent-form"
             size="sm"
             disabled={isSaving || !primaryRole.trim()}
-            className="text-xs gap-1.5"
+            className="text-xs h-9 min-h-[36px] gap-1.5"
           >
             {isSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-            <span>Simpan Perubahan</span>
+            <span>Save Changes</span>
           </Button>
         </div>
       </div>

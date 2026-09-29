@@ -1,8 +1,3 @@
-// ==============================================================================
-// COMPONENT: ProfileSkillsCard
-// Module: @/features/profile/components/ProfileSkillsCard
-// ==============================================================================
-
 "use client";
 
 import React, { useState } from "react";
@@ -13,7 +8,6 @@ import {
   Trash2,
   RotateCcw,
   Sparkles,
-  Shield,
   FileText,
   Sliders,
   EyeOff,
@@ -73,7 +67,7 @@ export function ProfileSkillsCard({
     return (
       <div
         key={item.skill}
-        className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card/60 hover:bg-secondary/60 transition-colors text-xs"
+        className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card/70 hover:bg-secondary/60 transition-colors text-xs"
       >
         <span className="font-semibold text-foreground">{item.skill}</span>
 
@@ -81,9 +75,9 @@ export function ProfileSkillsCard({
         {isConfirmed ? (
           <span
             className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5"
-            title="Dikonfirmasi langsung oleh Anda"
+            title="Confirmed skill"
           >
-            <CheckCircle2 className="w-2.5 h-2.5" />
+            <CheckCircle2 className="w-3 h-3" />
             <span className="hidden sm:inline">Confirmed</span>
           </span>
         ) : isCvExtracted ? (
@@ -91,29 +85,30 @@ export function ProfileSkillsCard({
             type="button"
             onClick={() => onConfirmSkill(item.skill)}
             disabled={isMutating}
-            className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5 bg-blue-500/10 px-1 rounded cursor-pointer"
-            title="Dianalisis dari CV. Klik untuk konfirmasi keahlian ini"
+            className="text-[10px] text-primary hover:underline flex items-center gap-1 bg-primary/10 px-1.5 py-0.5 rounded cursor-pointer transition-colors"
+            title="Extracted from resume. Click to confirm"
           >
             <FileText className="w-2.5 h-2.5" />
-            <span>Confirm?</span>
+            <span>Confirm</span>
           </button>
         ) : (
           <span
-            className="text-[10px] text-purple-600 dark:text-purple-400 flex items-center gap-0.5"
-            title="AI Inferred"
+            className="text-[10px] text-muted-foreground flex items-center gap-0.5"
+            title="Suggested"
           >
             <Sparkles className="w-2.5 h-2.5" />
-            <span>AI</span>
+            <span>Suggested</span>
           </span>
         )}
 
-        {/* Quick Suppress/Delete Button */}
+        {/* Remove Skill Button */}
         <button
           type="button"
           onClick={() => onSuppressSkill(item.skill)}
           disabled={isMutating}
-          className="opacity-0 group-hover:opacity-100 hover:text-destructive transition-opacity ml-1 cursor-pointer p-0.5"
-          title="Sembunyikan keahlian ini dari matching"
+          className="opacity-60 hover:opacity-100 hover:text-destructive transition-opacity ml-1 cursor-pointer p-0.5"
+          title="Remove skill from profile"
+          aria-label={`Remove ${item.skill}`}
         >
           <Trash2 className="w-3 h-3" />
         </button>
@@ -124,7 +119,7 @@ export function ProfileSkillsCard({
   return (
     <div className="rounded-xl border border-border bg-card p-5 space-y-6 shadow-2xs">
       {/* Header */}
-      <div className="flex items-center justify-between gap-3 pb-3 border-b border-border/80">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/80">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
             <Code className="w-4 h-4" />
@@ -134,19 +129,20 @@ export function ProfileSkillsCard({
               Skills & Capabilities
             </h2>
             <p className="text-[11px] text-muted-foreground">
-              Keahlian kanonikal untuk kalkulasi S_tech (skor teknologi & tools)
+              Verified technical proficiencies and domain strengths.
             </p>
           </div>
         </div>
 
         <Button
+          type="button"
           variant="outline"
           size="sm"
           onClick={onManage}
-          className="text-xs h-8 gap-1.5"
+          className="text-xs h-9 min-h-[36px] sm:h-8 gap-1.5 border-border hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-primary self-start sm:self-auto"
         >
-          <Edit3 className="w-3.5 h-3.5" />
-          <span>Manage Skills</span>
+          <Edit3 className="w-3.5 h-3.5 text-primary" />
+          <span>Manage All Skills</span>
         </Button>
       </div>
 
@@ -159,7 +155,7 @@ export function ProfileSkillsCard({
           type="text"
           value={newSkill}
           onChange={(e) => setNewSkill(e.target.value)}
-          placeholder="+ Tambah keahlian (contoh: TypeScript, Docker, PostgreSQL)..."
+          placeholder="+ Add skill (e.g. TypeScript, Docker, PostgreSQL)..."
           className="flex-1 bg-transparent px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
         />
 
@@ -167,7 +163,7 @@ export function ProfileSkillsCard({
           <select
             value={newCategory}
             onChange={(e) => setNewCategory(e.target.value as SkillCategory)}
-            className="text-xs rounded-md bg-card border border-border px-2 py-1.5 text-foreground focus:outline-none"
+            className="text-xs rounded-md bg-card border border-border px-2.5 py-1.5 text-foreground focus:outline-none"
           >
             <option value="core">Core Skill</option>
             <option value="supporting">Supporting Skill</option>
@@ -178,10 +174,10 @@ export function ProfileSkillsCard({
             type="submit"
             size="sm"
             disabled={!newSkill.trim() || isMutating}
-            className="text-xs h-8"
+            className="text-xs h-9 min-h-[36px] sm:h-8 px-3 gap-1 focus-visible:ring-2 focus-visible:ring-primary"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Tambah</span>
+            <span>Add</span>
           </Button>
         </div>
       </form>
@@ -196,7 +192,7 @@ export function ProfileSkillsCard({
               Core Skills ({coreSkills.length})
             </span>
             <span className="text-[10px] text-muted-foreground">
-              Bobot tertinggi dalam matching
+              Primary matching weight
             </span>
           </div>
           {coreSkills.length > 0 ? (
@@ -205,7 +201,7 @@ export function ProfileSkillsCard({
             </div>
           ) : (
             <p className="text-xs text-muted-foreground italic">
-              Belum ada core skill. Tambahkan keahlian utama Anda di atas.
+              No core skills added yet. Add your main strengths above.
             </p>
           )}
         </div>
@@ -224,17 +220,17 @@ export function ProfileSkillsCard({
             </div>
           ) : (
             <p className="text-xs text-muted-foreground italic">
-              Belum ada supporting skill.
+              No supporting skills added yet.
             </p>
           )}
         </div>
 
-        {/* Tool Skills */}
+        {/* Tools & DevOps */}
         <div className="space-y-1.5 pt-2 border-t border-border/60">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-purple-500" />
-              Tools & Platforms ({toolSkills.length})
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              Tools & DevOps ({toolSkills.length})
             </span>
           </div>
           {toolSkills.length > 0 ? (
@@ -243,61 +239,54 @@ export function ProfileSkillsCard({
             </div>
           ) : (
             <p className="text-xs text-muted-foreground italic">
-              Belum ada tools terdaftar.
+              No tools or DevOps technologies added yet.
             </p>
           )}
         </div>
-      </div>
 
-      {/* Suppressed Skills Drawer/Accordion */}
-      <div className="pt-2 border-t border-border/80">
-        <div className="flex items-center justify-between">
-          <button
-            type="button"
-            onClick={() => setShowSuppressed(!showSuppressed)}
-            className="text-xs font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1.5 cursor-pointer"
-          >
-            <EyeOff className="w-3.5 h-3.5" />
-            <span>Suppressed Skills ({suppressedSkills.length})</span>
-          </button>
-          <span className="text-[10px] text-muted-foreground">
-            {showSuppressed ? "Sembunyikan" : "Tampilkan"}
-          </span>
-        </div>
+        {/* Suppressed Skills Drawer Toggle */}
+        {suppressedSkills.length > 0 && (
+          <div className="pt-2 border-t border-border/60">
+            <button
+              type="button"
+              onClick={() => setShowSuppressed(!showSuppressed)}
+              className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1.5 transition-colors cursor-pointer py-1"
+            >
+              <EyeOff className="w-3.5 h-3.5" />
+              <span>
+                {showSuppressed
+                  ? "Hide removed skills"
+                  : `Show ${suppressedSkills.length} removed skills`}
+              </span>
+            </button>
 
-        {showSuppressed && (
-          <div className="mt-3 p-3 rounded-lg bg-secondary/30 border border-border space-y-2 animate-in fade-in duration-150">
-            <p className="text-[11px] text-muted-foreground">
-              Skill di bawah ini telah Anda hapus/tolak. Finder tidak akan
-              memasukkannya kembali meskipun terdeteksi di CV yang Anda upload
-              ulang:
-            </p>
-
-            {suppressedSkills.length > 0 ? (
-              <div className="flex flex-wrap gap-2 pt-1">
-                {suppressedSkills.map((item) => (
-                  <span
-                    key={item.skill}
-                    className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-card border border-border text-xs text-muted-foreground line-through"
-                  >
-                    <span>{item.skill}</span>
-                    <button
-                      type="button"
-                      onClick={() => onRestoreSkill(item.skill)}
-                      disabled={isMutating}
-                      className="text-primary hover:underline not-italic cursor-pointer flex items-center gap-0.5 text-[10px] font-semibold"
-                      title="Pulihkan skill ini ke daftar aktif"
+            {showSuppressed && (
+              <div className="mt-2 p-3 rounded-lg bg-destructive/5 border border-destructive/20 space-y-2">
+                <p className="text-[11px] text-muted-foreground">
+                  These skills have been removed and will not be suggested by
+                  AI:
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {suppressedSkills.map((item) => (
+                    <div
+                      key={item.skill}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-secondary/80 border border-border text-xs text-muted-foreground"
                     >
-                      <RotateCcw className="w-2.5 h-2.5" />
-                      <span>Restore</span>
-                    </button>
-                  </span>
-                ))}
+                      <span className="line-through">{item.skill}</span>
+                      <button
+                        type="button"
+                        onClick={() => onRestoreSkill(item.skill)}
+                        disabled={isMutating}
+                        className="text-[10px] text-primary hover:underline flex items-center gap-0.5 cursor-pointer"
+                        title="Restore skill"
+                      >
+                        <RotateCcw className="w-2.5 h-2.5" />
+                        <span>Restore</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
-            ) : (
-              <p className="text-xs text-muted-foreground italic">
-                Tidak ada skill yang di-suppress.
-              </p>
             )}
           </div>
         )}

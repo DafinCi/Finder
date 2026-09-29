@@ -1,8 +1,3 @@
-// ==============================================================================
-// DIALOG: EditPreferencesDialog
-// Module: @/features/profile/components/dialogs/EditPreferencesDialog
-// ==============================================================================
-
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -16,7 +11,6 @@ import {
   Plus,
   Check,
   Loader2,
-  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -120,7 +114,7 @@ export function EditPreferencesDialog({
     setWorkModes((prev) => {
       if (prev.includes(wm)) {
         if (prev.length === 1) {
-          toast.warning("Minimal pilih 1 work mode.");
+          toast.warning("Select at least one work mode.");
           return prev;
         }
         return prev.filter((m) => m !== wm);
@@ -133,7 +127,7 @@ export function EditPreferencesDialog({
     const trimmed = loc.trim();
     if (!trimmed) return;
     if (locations.some((l) => l.toLowerCase() === trimmed.toLowerCase())) {
-      toast.warning("Lokasi ini sudah ada.");
+      toast.warning("This location is already added.");
       return;
     }
     setLocations((prev) => [...prev, trimmed]);
@@ -165,7 +159,7 @@ export function EditPreferencesDialog({
     const trimmed = customNegativeToken.trim().toLowerCase();
     if (!trimmed) return;
     if (negativePreferences.some((p) => p.token === trimmed)) {
-      toast.warning("Kriteria negatif ini sudah terdaftar.");
+      toast.warning("This negative preference is already added.");
       return;
     }
     setNegativePreferences((prev) => [
@@ -183,7 +177,7 @@ export function EditPreferencesDialog({
     e.preventDefault();
 
     if (workModes.length === 0) {
-      toast.error("Minimal harus memilih 1 work mode.");
+      toast.error("Select at least one work mode.");
       return;
     }
 
@@ -239,7 +233,7 @@ export function EditPreferencesDialog({
                 Edit Preferences & Constraints
               </h2>
               <p className="text-[11px] text-muted-foreground">
-                Pengaturan filter ketat (Stage 1) dan preferensi kerja (Stage 2)
+                Configure hard constraints and job match preferences.
               </p>
             </div>
           </div>
@@ -247,7 +241,8 @@ export function EditPreferencesDialog({
             type="button"
             onClick={onClose}
             disabled={isSaving}
-            className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors cursor-pointer"
+            aria-label="Close preferences dialog"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary focus-visible:ring-2 focus-visible:ring-primary transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -262,7 +257,7 @@ export function EditPreferencesDialog({
           {/* Section 1: Work Mode & Strictness */}
           <div className="space-y-3">
             <label className="text-xs font-bold text-foreground block">
-              Work Mode (Pilih minimal 1)
+              Work Mode (Select at least 1)
             </label>
 
             <div className="grid grid-cols-3 gap-2">
@@ -273,7 +268,7 @@ export function EditPreferencesDialog({
                     key={opt.value}
                     type="button"
                     onClick={() => handleToggleWorkMode(opt.value)}
-                    className={`p-2.5 rounded-lg border text-center transition-colors cursor-pointer ${
+                    className={`min-h-[44px] p-2.5 rounded-lg border text-center transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ${
                       isSelected
                         ? "bg-primary text-primary-foreground border-primary font-bold"
                         : "bg-secondary/40 text-muted-foreground border-border hover:bg-secondary"
@@ -286,14 +281,14 @@ export function EditPreferencesDialog({
             </div>
 
             {/* Strictness Switch */}
-            <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/30 border border-border">
-              <div className="space-y-0.5">
+            <label className="flex items-center justify-between p-3.5 rounded-lg bg-secondary/30 border border-border cursor-pointer hover:bg-secondary/50 transition-colors">
+              <div className="space-y-0.5 pr-3">
                 <span className="text-xs font-semibold text-foreground block">
-                  Stage 1 Hard Constraint (Ketat)
+                  Strict Work Mode Filter
                 </span>
                 <p className="text-[11px] text-muted-foreground">
-                  Jika aktif, lowongan yang tidak sesuai mode kerja akan
-                  langsung dibuang di Stage 1 constraint filter.
+                  When active, jobs that do not match your selected work modes
+                  will be excluded from recommendations.
                 </p>
               </div>
 
@@ -301,9 +296,9 @@ export function EditPreferencesDialog({
                 type="checkbox"
                 checked={workModeStrict}
                 onChange={(e) => setWorkModeStrict(e.target.checked)}
-                className="w-4 h-4 accent-primary cursor-pointer"
+                className="w-5 h-5 accent-primary cursor-pointer shrink-0"
               />
-            </div>
+            </label>
           </div>
 
           {/* Section 2: Locations & Relocation */}
@@ -325,7 +320,7 @@ export function EditPreferencesDialog({
                         ? handleRemoveLocation(loc)
                         : handleAddLocation(loc)
                     }
-                    className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors cursor-pointer ${
+                    className={`min-h-[36px] px-3 py-1.5 rounded-md text-xs font-medium border transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ${
                       isSelected
                         ? "bg-primary text-primary-foreground border-primary"
                         : "bg-secondary/40 text-muted-foreground border-border hover:bg-secondary"
@@ -343,8 +338,8 @@ export function EditPreferencesDialog({
                 type="text"
                 value={newLocationInput}
                 onChange={(e) => setNewLocationInput(e.target.value)}
-                placeholder="+ Tambah lokasi kustom..."
-                className="flex-1 bg-secondary/30 border border-border rounded-md px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
+                placeholder="+ Add custom location (e.g. London, Tokyo)..."
+                className="flex-1 bg-secondary/30 border border-border rounded-md px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               />
               <Button
                 type="button"
@@ -352,22 +347,22 @@ export function EditPreferencesDialog({
                 variant="outline"
                 onClick={() => handleAddLocation(newLocationInput)}
                 disabled={!newLocationInput.trim()}
-                className="text-xs h-8"
+                className="min-h-[40px] px-3 text-xs"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>Tambah</span>
+                <span>Add</span>
               </Button>
             </div>
 
             {/* Relocation Switch */}
-            <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/30 border border-border">
-              <div className="space-y-0.5">
+            <label className="flex items-center justify-between p-3.5 rounded-lg bg-secondary/30 border border-border cursor-pointer hover:bg-secondary/50 transition-colors">
+              <div className="space-y-0.5 pr-3">
                 <span className="text-xs font-semibold text-foreground block">
-                  Larang Relokasi (Strict Relocation Prohibition)
+                  Strict Relocation Prohibition
                 </span>
                 <p className="text-[11px] text-muted-foreground">
-                  Hanya terima lowongan lokal atau remote. Tolak tawaran yang
-                  mewajibkan pindah kota/negara.
+                  Only consider local or remote positions. Exclude roles
+                  requiring relocation.
                 </p>
               </div>
 
@@ -375,9 +370,9 @@ export function EditPreferencesDialog({
                 type="checkbox"
                 checked={relocationProhibited}
                 onChange={(e) => setRelocationProhibited(e.target.checked)}
-                className="w-4 h-4 accent-primary cursor-pointer"
+                className="w-5 h-5 accent-primary cursor-pointer shrink-0"
               />
-            </div>
+            </label>
           </div>
 
           {/* Section 3: Salary Expectation */}
@@ -387,28 +382,25 @@ export function EditPreferencesDialog({
               Salary Expectation
             </label>
 
-            <div className="flex items-center gap-2">
+            <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 id="salary-not-specified"
                 checked={salaryNotSpecified}
                 onChange={(e) => setSalaryNotSpecified(e.target.checked)}
-                className="w-4 h-4 accent-primary cursor-pointer"
+                className="w-5 h-5 accent-primary cursor-pointer"
               />
-              <label
-                htmlFor="salary-not-specified"
-                className="text-xs text-foreground font-medium cursor-pointer"
-              >
-                Not specified (Fleksibel / Netral — Jangan membatasi matching)
-              </label>
-            </div>
+              <span className="text-xs text-foreground font-medium">
+                No minimum constraint (keep recommendations open)
+              </span>
+            </label>
 
             {!salaryNotSpecified && (
               <div className="flex gap-2 animate-in fade-in duration-150">
                 <select
                   value={salaryCurrency}
                   onChange={(e) => setSalaryCurrency(e.target.value)}
-                  className="w-24 bg-card border border-border rounded-md px-2 py-1.5 text-xs text-foreground focus:outline-none"
+                  className="w-24 bg-card border border-border rounded-md px-2 py-2 text-xs text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   <option value="USD">USD ($)</option>
                   <option value="IDR">IDR (Rp)</option>
@@ -422,8 +414,8 @@ export function EditPreferencesDialog({
                   onChange={(e) =>
                     setSalaryMin(e.target.value ? Number(e.target.value) : null)
                   }
-                  placeholder="Jumlah minimum bulanan..."
-                  className="flex-1 bg-secondary/30 border border-border rounded-md px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
+                  placeholder="Minimum monthly amount..."
+                  className="flex-1 bg-secondary/30 border border-border rounded-md px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 />
               </div>
             )}
@@ -433,7 +425,7 @@ export function EditPreferencesDialog({
           <div className="space-y-2 pt-2 border-t border-border/60">
             <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-primary" />
-              Prioritas Nilai Karir
+              Career Priorities
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {PRESET_PRIORITIES.map((p) => {
@@ -443,7 +435,7 @@ export function EditPreferencesDialog({
                     key={p.id}
                     type="button"
                     onClick={() => handleTogglePriority(p.id)}
-                    className={`p-2 rounded-lg border text-left transition-colors cursor-pointer ${
+                    className={`min-h-[44px] p-2.5 rounded-lg border text-left transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ${
                       isSelected
                         ? "bg-primary/10 border-primary text-foreground"
                         : "bg-secondary/40 border-border text-muted-foreground hover:bg-secondary"
@@ -451,7 +443,9 @@ export function EditPreferencesDialog({
                   >
                     <span className="text-xs font-bold block flex items-center justify-between">
                       <span>{p.label}</span>
-                      {isSelected && <Check className="w-3 h-3 text-primary" />}
+                      {isSelected && (
+                        <Check className="w-3.5 h-3.5 text-primary" />
+                      )}
                     </span>
                     <span className="text-[10px] text-muted-foreground line-clamp-1">
                       {p.description}
@@ -469,8 +463,8 @@ export function EditPreferencesDialog({
               Negative Preferences (Anti-Matches)
             </label>
             <p className="text-[11px] text-muted-foreground">
-              Finder akan mengurangi skor rekomendasi dengan rumus diminishing
-              penalty (P_neg) untuk lowongan yang mengandung kriteria ini.
+              Positions matching these criteria will receive a lower
+              recommendation score.
             </p>
 
             <div className="flex flex-wrap gap-1.5">
@@ -483,7 +477,7 @@ export function EditPreferencesDialog({
                     key={`neg-${neg.token}`}
                     type="button"
                     onClick={() => handleToggleNegativePreset(neg)}
-                    className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors cursor-pointer ${
+                    className={`min-h-[36px] px-3 py-1.5 rounded-md text-xs font-medium border transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ${
                       isSelected
                         ? "bg-destructive/15 text-destructive border-destructive/30 font-bold"
                         : "bg-secondary/40 text-muted-foreground border-border hover:bg-secondary"
@@ -501,8 +495,8 @@ export function EditPreferencesDialog({
                 type="text"
                 value={customNegativeToken}
                 onChange={(e) => setCustomNegativeToken(e.target.value)}
-                placeholder="+ Tambah anti-match kustom (contoh: legacy-php, crypto)..."
-                className="flex-1 bg-secondary/30 border border-border rounded-md px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
+                placeholder="+ Add custom anti-match (e.g. legacy-tech, overtime)..."
+                className="flex-1 bg-secondary/30 border border-border rounded-md px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               />
               <Button
                 type="button"
@@ -510,10 +504,10 @@ export function EditPreferencesDialog({
                 variant="outline"
                 onClick={handleAddCustomNegative}
                 disabled={!customNegativeToken.trim()}
-                className="text-xs h-8"
+                className="min-h-[40px] px-3 text-xs"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>Tambah</span>
+                <span>Add</span>
               </Button>
             </div>
           </div>
@@ -524,23 +518,21 @@ export function EditPreferencesDialog({
           <Button
             type="button"
             variant="outline"
-            size="sm"
             onClick={onClose}
             disabled={isSaving}
-            className="text-xs"
+            className="min-h-[44px] h-11 px-4 text-xs font-medium"
           >
-            Batal
+            Cancel
           </Button>
 
           <Button
             type="submit"
             form="preferences-form"
-            size="sm"
             disabled={isSaving}
-            className="text-xs gap-1.5"
+            className="min-h-[44px] h-11 px-5 text-xs font-semibold gap-1.5"
           >
-            {isSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-            <span>Simpan Perubahan</span>
+            {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+            <span>Save Preferences</span>
           </Button>
         </div>
       </div>

@@ -1,8 +1,3 @@
-// ==============================================================================
-// SHEET: ManageSkillsSheet
-// Module: @/features/profile/components/dialogs/ManageSkillsSheet
-// ==============================================================================
-
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -16,9 +11,7 @@ import {
   CheckCircle2,
   Sparkles,
   FileText,
-  Sliders,
   CheckCheck,
-  EyeOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -143,7 +136,7 @@ export function ManageSkillsSheet({
     }));
 
     await onSyncSkills(updatedSkills);
-    toast.success("Semua keahlian berhasil dikonfirmasi.");
+    toast.success("All skills confirmed.");
   };
 
   return (
@@ -171,8 +164,8 @@ export function ManageSkillsSheet({
                 Manage Skills & Capabilities
               </h2>
               <p className="text-[11px] text-muted-foreground">
-                Kategorisasi, tingkat kemahiran, konfirmasi, dan pengelolaan
-                skill yang disembunyikan
+                Categories, proficiency levels, confirmation status, and
+                suppressed skills
               </p>
             </div>
           </div>
@@ -180,7 +173,8 @@ export function ManageSkillsSheet({
             type="button"
             onClick={onClose}
             disabled={isMutating}
-            className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors cursor-pointer"
+            aria-label="Close skills dialog"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary focus-visible:ring-2 focus-visible:ring-primary transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -194,8 +188,8 @@ export function ManageSkillsSheet({
               type="text"
               value={newSkillName}
               onChange={(e) => setNewSkillName(e.target.value)}
-              placeholder="+ Tambah keahlian baru..."
-              className="flex-1 bg-card border border-border rounded-md px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
+              placeholder="+ Add new skill..."
+              className="flex-1 bg-card border border-border rounded-md px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             />
 
             <select
@@ -203,7 +197,7 @@ export function ManageSkillsSheet({
               onChange={(e) =>
                 setNewSkillCategory(e.target.value as SkillCategory)
               }
-              className="bg-card border border-border rounded-md px-2 py-1.5 text-xs text-foreground focus:outline-none"
+              className="bg-card border border-border rounded-md px-2 py-2 text-xs text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               <option value="core">Core</option>
               <option value="supporting">Supporting</option>
@@ -214,10 +208,10 @@ export function ManageSkillsSheet({
               type="submit"
               size="sm"
               disabled={!newSkillName.trim() || isMutating}
-              className="text-xs h-8"
+              className="min-h-[40px] px-3 text-xs"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Tambah</span>
+              <span>Add</span>
             </Button>
           </form>
 
@@ -284,13 +278,13 @@ export function ManageSkillsSheet({
 
             {/* Search Input */}
             <div className="relative sm:w-48">
-              <Search className="w-3.5 h-3.5 absolute left-2.5 top-2 text-muted-foreground" />
+              <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-muted-foreground" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Cari skill..."
-                className="w-full bg-card border border-border rounded-md pl-8 pr-3 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
+                placeholder="Search skills..."
+                className="w-full bg-card border border-border rounded-md pl-8 pr-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               />
             </div>
           </div>
@@ -301,18 +295,18 @@ export function ManageSkillsSheet({
           <div className="px-5 py-2.5 bg-blue-500/10 border-b border-blue-500/20 flex items-center justify-between text-xs shrink-0">
             <span className="text-blue-600 dark:text-blue-400 font-medium flex items-center gap-1.5">
               <FileText className="w-3.5 h-3.5" />
-              Terdapat {unconfirmedCount} skill terdeteksi dari CV yang belum
-              dikonfirmasi.
+              {unconfirmedCount} skills extracted from your resume are awaiting
+              confirmation.
             </span>
             <Button
               size="xs"
               variant="outline"
               onClick={handleConfirmAll}
               disabled={isMutating}
-              className="text-xs h-7 gap-1 border-blue-500/30 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10"
+              className="text-xs min-h-[32px] h-8 px-2.5 gap-1 border-blue-500/30 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 cursor-pointer"
             >
               <CheckCheck className="w-3.5 h-3.5" />
-              <span>Konfirmasi Semua</span>
+              <span>Confirm All</span>
             </Button>
           </div>
         )}
@@ -332,8 +326,15 @@ export function ManageSkillsSheet({
                       {item.skill}
                     </span>
                     <p className="text-[10px] text-muted-foreground">
-                      Disembunyikan pada:{" "}
-                      {new Date(item.suppressed_at).toLocaleDateString("id-ID")}
+                      Suppressed on:{" "}
+                      {new Date(item.suppressed_at).toLocaleDateString(
+                        "en-US",
+                        {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        },
+                      )}
                     </p>
                   </div>
 
@@ -342,7 +343,7 @@ export function ManageSkillsSheet({
                     variant="outline"
                     onClick={() => onRestoreSkill(item.skill)}
                     disabled={isMutating}
-                    className="text-xs gap-1 text-primary hover:bg-primary/10"
+                    className="text-xs min-h-[36px] h-9 px-3 gap-1 text-primary hover:bg-primary/10 cursor-pointer"
                   >
                     <RotateCcw className="w-3 h-3" />
                     <span>Restore</span>
@@ -351,7 +352,7 @@ export function ManageSkillsSheet({
               ))
             ) : (
               <p className="text-xs text-muted-foreground italic text-center py-8">
-                Tidak ada skill yang disembunyikan.
+                No suppressed skills.
               </p>
             )
           ) : /* Active Skills List */
@@ -386,8 +387,8 @@ export function ManageSkillsSheet({
                           })
                         }
                         disabled={isMutating}
-                        className="text-[10px] text-blue-600 dark:text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded flex items-center gap-1 hover:underline cursor-pointer"
-                        title="Klik untuk konfirmasi"
+                        className="text-[10px] text-blue-600 dark:text-blue-400 bg-blue-500/10 px-2 py-1 rounded flex items-center gap-1 hover:underline cursor-pointer"
+                        title="Click to confirm"
                       >
                         <FileText className="w-2.5 h-2.5" />
                         <span>Confirm?</span>
@@ -395,7 +396,7 @@ export function ManageSkillsSheet({
                     ) : (
                       <span className="text-[10px] text-purple-600 dark:text-purple-400 flex items-center gap-0.5">
                         <Sparkles className="w-2.5 h-2.5" />
-                        <span>AI</span>
+                        <span>Inferred</span>
                       </span>
                     )}
                   </div>
@@ -411,7 +412,8 @@ export function ManageSkillsSheet({
                         })
                       }
                       disabled={isMutating}
-                      className="text-[11px] bg-secondary border border-border rounded px-2 py-1 text-foreground focus:outline-none"
+                      aria-label={`Category for ${item.skill}`}
+                      className="text-[11px] bg-secondary border border-border rounded px-2 py-1.5 text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     >
                       <option value="core">Core</option>
                       <option value="supporting">Supporting</option>
@@ -428,7 +430,8 @@ export function ManageSkillsSheet({
                         })
                       }
                       disabled={isMutating}
-                      className="text-[11px] bg-secondary border border-border rounded px-2 py-1 text-foreground focus:outline-none"
+                      aria-label={`Proficiency claim for ${item.skill}`}
+                      className="text-[11px] bg-secondary border border-border rounded px-2 py-1.5 text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     >
                       <option value="foundational">Foundational</option>
                       <option value="competent">Competent</option>
@@ -440,10 +443,11 @@ export function ManageSkillsSheet({
                       type="button"
                       onClick={() => onSuppressSkill(item.skill)}
                       disabled={isMutating}
-                      className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
-                      title="Sembunyikan skill ini dari pencocokan"
+                      className="min-h-[36px] min-w-[36px] flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                      title="Suppress skill from matching"
+                      aria-label={`Suppress ${item.skill}`}
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
@@ -451,16 +455,20 @@ export function ManageSkillsSheet({
             })
           ) : (
             <p className="text-xs text-muted-foreground italic text-center py-8">
-              Tidak ada keahlian yang cocok dengan pencarian.
+              No skills match your search query.
             </p>
           )}
         </div>
 
         {/* Footer */}
         <div className="flex items-center justify-between p-4 border-t border-border/80 bg-card shrink-0 text-xs text-muted-foreground">
-          <span>Total {skills.length} keahlian aktif</span>
-          <Button size="sm" onClick={onClose} className="text-xs">
-            Tutup
+          <span>{skills.length} active skills</span>
+          <Button
+            size="sm"
+            onClick={onClose}
+            className="min-h-[44px] h-11 px-5 text-xs font-semibold"
+          >
+            Close
           </Button>
         </div>
       </div>

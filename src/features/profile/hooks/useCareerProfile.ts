@@ -93,7 +93,7 @@ export function useCareerProfile(): UseCareerProfileResult {
         setProfile(data);
         return data;
       } catch (err) {
-        const msg = (err as Error).message || "Gagal memuat profil";
+        const msg = (err as Error).message || "Failed to load profile.";
         setError(msg);
         return null;
       } finally {
@@ -224,7 +224,7 @@ export function useCareerProfile(): UseCareerProfileResult {
       successMessage: string,
     ): Promise<boolean> => {
       if (!profile) {
-        toast.error("Profil belum dimuat.");
+        toast.error("Profile not loaded.");
         return false;
       }
 
@@ -237,13 +237,13 @@ export function useCareerProfile(): UseCareerProfileResult {
       } catch (err) {
         if (err instanceof ProfileClientVersionConflictError) {
           toast.warning(
-            "Profil telah diperbarui di sesi lain. Memuat data terbaru...",
+            "Profile was updated in another session. Loading latest data...",
           );
           await refreshProfile();
           return false;
         }
 
-        const msg = (err as Error).message || "Gagal memperbarui profil";
+        const msg = (err as Error).message || "Failed to update profile.";
         toast.error(msg);
         return false;
       } finally {
@@ -261,7 +261,7 @@ export function useCareerProfile(): UseCareerProfileResult {
     }) => {
       return executeMutation(
         (version) => profileClientService.updateCareerIntent(intent, version),
-        "Target karir berhasil diperbarui.",
+        "Career goals updated.",
       );
     },
     [executeMutation],
@@ -276,7 +276,7 @@ export function useCareerProfile(): UseCareerProfileResult {
             constraints,
             version,
           ),
-        "Preferensi kerja berhasil diperbarui.",
+        "Work preferences updated.",
       );
     },
     [executeMutation],
@@ -297,7 +297,7 @@ export function useCareerProfile(): UseCareerProfileResult {
             category,
             proficiency_claim: proficiency,
           }),
-        `Keahlian "${skill}" berhasil ditambahkan.`,
+        `Skill "${skill}" added.`,
       );
     },
     [executeMutation],
@@ -316,7 +316,7 @@ export function useCareerProfile(): UseCareerProfileResult {
             skill,
             reason,
           }),
-        `Keahlian "${skill}" telah disembunyikan.`,
+        `Skill "${skill}" removed.`,
       );
     },
     [executeMutation],
@@ -332,7 +332,7 @@ export function useCareerProfile(): UseCareerProfileResult {
             skill,
             category,
           }),
-        `Keahlian "${skill}" berhasil dipulihkan.`,
+        `Skill "${skill}" restored.`,
       );
     },
     [executeMutation],
@@ -355,7 +355,7 @@ export function useCareerProfile(): UseCareerProfileResult {
             skill,
             ...updates,
           }),
-        `Keahlian "${skill}" berhasil diperbarui.`,
+        `Skill "${skill}" updated.`,
       );
     },
     [executeMutation],
@@ -374,7 +374,7 @@ export function useCareerProfile(): UseCareerProfileResult {
             skills,
             suppressed_skills: suppressedSkills,
           }),
-        "Daftar keahlian berhasil disinkronkan.",
+        "Skills synchronized.",
       );
     },
     [executeMutation],
@@ -384,7 +384,7 @@ export function useCareerProfile(): UseCareerProfileResult {
     async (background: BackgroundEvidence) => {
       return executeMutation(
         (version) => profileClientService.updateBackground(background, version),
-        "Riwayat latar belakang berhasil diperbarui.",
+        "Background history updated.",
       );
     },
     [executeMutation],

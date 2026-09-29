@@ -1,8 +1,3 @@
-// ==============================================================================
-// DIALOG: EditBackgroundDialog
-// Module: @/features/profile/components/dialogs/EditBackgroundDialog
-// ==============================================================================
-
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -119,7 +114,7 @@ export function EditBackgroundDialog({
   const handleAddExperience = (e: React.FormEvent) => {
     e.preventDefault();
     if (!expCompany.trim() || !expRole.trim()) {
-      toast.warning("Nama perusahaan dan role/jabatan wajib diisi.");
+      toast.warning("Company name and job title are required.");
       return;
     }
 
@@ -150,7 +145,7 @@ export function EditBackgroundDialog({
     setExpIsCurrent(false);
     setExpSummary("");
     setExpTech("");
-    toast.success("Pengalaman kerja ditambahkan ke daftar.");
+    toast.success("Work experience added to list.");
   };
 
   const handleRemoveExperience = (id: string) => {
@@ -161,7 +156,7 @@ export function EditBackgroundDialog({
   const handleAddEducation = (e: React.FormEvent) => {
     e.preventDefault();
     if (!eduInstitution.trim()) {
-      toast.warning("Nama institusi wajib diisi.");
+      toast.warning("Institution name is required.");
       return;
     }
 
@@ -183,7 +178,7 @@ export function EditBackgroundDialog({
     setEduDegree("");
     setEduField("");
     setEduYear("");
-    toast.success("Riwayat pendidikan ditambahkan.");
+    toast.success("Education record added.");
   };
 
   const handleRemoveEducation = (id: string) => {
@@ -194,7 +189,7 @@ export function EditBackgroundDialog({
   const handleAddProject = (e: React.FormEvent) => {
     e.preventDefault();
     if (!projTitle.trim()) {
-      toast.warning("Judul proyek wajib diisi.");
+      toast.warning("Project title is required.");
       return;
     }
 
@@ -219,7 +214,7 @@ export function EditBackgroundDialog({
     setProjDesc("");
     setProjTech("");
     setProjUrl("");
-    toast.success("Proyek ditambahkan.");
+    toast.success("Project added.");
   };
 
   const handleRemoveProject = (id: string) => {
@@ -269,7 +264,7 @@ export function EditBackgroundDialog({
                 Edit Career Background & Evidence
               </h2>
               <p className="text-[11px] text-muted-foreground">
-                Pengalaman kerja, riwayat pendidikan, dan portofolio proyek
+                Work experience, educational history, and portfolio projects
               </p>
             </div>
           </div>
@@ -277,7 +272,8 @@ export function EditBackgroundDialog({
             type="button"
             onClick={onClose}
             disabled={isSaving}
-            className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors cursor-pointer"
+            aria-label="Close background dialog"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary focus-visible:ring-2 focus-visible:ring-primary transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -288,40 +284,40 @@ export function EditBackgroundDialog({
           <button
             type="button"
             onClick={() => setActiveTab("experience")}
-            className={`py-3 px-4 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors cursor-pointer ${
+            className={`min-h-[44px] py-2.5 px-4 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ${
               activeTab === "experience"
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
             <Building2 className="w-3.5 h-3.5" />
-            <span>Pengalaman ({experienceList.length})</span>
+            <span>Experience ({experienceList.length})</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab("education")}
-            className={`py-3 px-4 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors cursor-pointer ${
+            className={`min-h-[44px] py-2.5 px-4 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ${
               activeTab === "education"
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
             <GraduationCap className="w-3.5 h-3.5" />
-            <span>Pendidikan ({educationList.length})</span>
+            <span>Education ({educationList.length})</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab("projects")}
-            className={`py-3 px-4 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors cursor-pointer ${
+            className={`min-h-[44px] py-2.5 px-4 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ${
               activeTab === "projects"
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
             <FolderGit2 className="w-3.5 h-3.5" />
-            <span>Proyek ({projectList.length})</span>
+            <span>Projects ({projectList.length})</span>
           </button>
         </div>
 
@@ -330,14 +326,13 @@ export function EditBackgroundDialog({
           {/* TAB 1: WORK EXPERIENCE */}
           {activeTab === "experience" && (
             <div className="space-y-6">
-              {/* Form Tambah Pengalaman */}
               <form
                 onSubmit={handleAddExperience}
                 className="p-4 rounded-xl bg-secondary/20 border border-border/80 space-y-3"
               >
                 <h3 className="text-xs font-bold text-foreground flex items-center gap-1">
                   <Plus className="w-3.5 h-3.5 text-primary" />
-                  Tambah Pengalaman Kerja Baru
+                  Add Work Experience
                 </h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -345,15 +340,15 @@ export function EditBackgroundDialog({
                     type="text"
                     value={expCompany}
                     onChange={(e) => setExpCompany(e.target.value)}
-                    placeholder="Nama Perusahaan *"
-                    className="bg-card border border-border rounded-md px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
+                    placeholder="Company Name *"
+                    className="bg-card border border-border rounded-md px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   />
                   <input
                     type="text"
                     value={expRole}
                     onChange={(e) => setExpRole(e.target.value)}
-                    placeholder="Role / Jabatan *"
-                    className="bg-card border border-border rounded-md px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
+                    placeholder="Job Title / Role *"
+                    className="bg-card border border-border rounded-md px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   />
                 </div>
 
@@ -362,8 +357,8 @@ export function EditBackgroundDialog({
                     type="text"
                     value={expStartDate}
                     onChange={(e) => setExpStartDate(e.target.value)}
-                    placeholder="Tanggal Mulai (e.g. Jan 2023)"
-                    className="bg-card border border-border rounded-md px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
+                    placeholder="Start Date (e.g. Jan 2023)"
+                    className="bg-card border border-border rounded-md px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   />
                   <input
                     type="text"
@@ -372,55 +367,56 @@ export function EditBackgroundDialog({
                     disabled={expIsCurrent}
                     placeholder={
                       expIsCurrent
-                        ? "Sekarang"
-                        : "Tanggal Selesai (e.g. Des 2024)"
+                        ? "Present"
+                        : "End Date (e.g. Dec 2024)"
                     }
-                    className="bg-card border border-border rounded-md px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50"
+                    className="bg-card border border-border rounded-md px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
                   />
                 </div>
 
-                <div className="flex items-center gap-2">
+                <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
                     id="exp-is-current"
                     checked={expIsCurrent}
                     onChange={(e) => setExpIsCurrent(e.target.checked)}
-                    className="w-3.5 h-3.5 accent-primary cursor-pointer"
+                    className="w-5 h-5 accent-primary cursor-pointer shrink-0"
                   />
-                  <label
-                    htmlFor="exp-is-current"
-                    className="text-xs text-muted-foreground cursor-pointer"
-                  >
-                    Saya saat ini masih bekerja di sini
-                  </label>
-                </div>
+                  <span className="text-xs text-muted-foreground">
+                    I currently work here
+                  </span>
+                </label>
 
                 <textarea
                   value={expSummary}
                   onChange={(e) => setExpSummary(e.target.value)}
-                  placeholder="Ringkasan tanggung jawab & pencapaian utama..."
+                  placeholder="Key responsibilities and achievements..."
                   rows={2}
-                  className="w-full bg-card border border-border rounded-md px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none resize-none"
+                  className="w-full bg-card border border-border rounded-md px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary resize-none"
                 />
 
                 <input
                   type="text"
                   value={expTech}
                   onChange={(e) => setExpTech(e.target.value)}
-                  placeholder="Teknologi yang digunakan (pisahkan dengan koma: React, TypeScript, Docker)..."
-                  className="w-full bg-card border border-border rounded-md px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
+                  placeholder="Technologies used (comma-separated: React, TypeScript, Docker)..."
+                  className="w-full bg-card border border-border rounded-md px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 />
 
-                <Button type="submit" size="sm" className="text-xs gap-1">
+                <Button
+                  type="submit"
+                  size="sm"
+                  className="min-h-[44px] h-11 px-4 text-xs font-semibold gap-1"
+                >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>Tambahkan Pengalaman</span>
+                  <span>Add Experience</span>
                 </Button>
               </form>
 
-              {/* Daftar Pengalaman Tersimpan */}
+              {/* Saved Work Experience List */}
               <div className="space-y-3">
                 <span className="text-xs font-bold text-foreground block">
-                  Daftar Pengalaman Tersimpan
+                  Saved Work Experience
                 </span>
 
                 {experienceList.length > 0 ? (
@@ -439,7 +435,7 @@ export function EditBackgroundDialog({
                         <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
                           {exp.start_date || "N/A"} -{" "}
-                          {exp.is_current ? "Sekarang" : exp.end_date || "N/A"}
+                          {exp.is_current ? "Present" : exp.end_date || "N/A"}
                         </span>
                         {exp.description_summary && (
                           <p className="text-xs text-muted-foreground line-clamp-2">
@@ -451,16 +447,17 @@ export function EditBackgroundDialog({
                       <button
                         type="button"
                         onClick={() => handleRemoveExperience(exp.id)}
-                        className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
-                        title="Hapus pengalaman ini"
+                        className="min-h-[36px] min-w-[36px] flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                        title="Remove this experience"
+                        aria-label="Remove this experience"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   ))
                 ) : (
                   <p className="text-xs text-muted-foreground italic">
-                    Belum ada pengalaman kerja terdaftar.
+                    No work experience listed yet.
                   </p>
                 )}
               </div>
@@ -470,22 +467,21 @@ export function EditBackgroundDialog({
           {/* TAB 2: EDUCATION */}
           {activeTab === "education" && (
             <div className="space-y-6">
-              {/* Form Tambah Pendidikan */}
               <form
                 onSubmit={handleAddEducation}
                 className="p-4 rounded-xl bg-secondary/20 border border-border/80 space-y-3"
               >
                 <h3 className="text-xs font-bold text-foreground flex items-center gap-1">
                   <Plus className="w-3.5 h-3.5 text-primary" />
-                  Tambah Riwayat Pendidikan Baru
+                  Add Education Record
                 </h3>
 
                 <input
                   type="text"
                   value={eduInstitution}
                   onChange={(e) => setEduInstitution(e.target.value)}
-                  placeholder="Nama Institusi / Universitas *"
-                  className="w-full bg-card border border-border rounded-md px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
+                  placeholder="Institution or University *"
+                  className="w-full bg-card border border-border rounded-md px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 />
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -493,35 +489,39 @@ export function EditBackgroundDialog({
                     type="text"
                     value={eduDegree}
                     onChange={(e) => setEduDegree(e.target.value)}
-                    placeholder="Gelar (e.g. S1 / Bachelor)"
-                    className="bg-card border border-border rounded-md px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
+                    placeholder="Degree (e.g. Bachelor's, Master's)"
+                    className="bg-card border border-border rounded-md px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   />
                   <input
                     type="text"
                     value={eduField}
                     onChange={(e) => setEduField(e.target.value)}
-                    placeholder="Jurusan / Bidang Studi"
-                    className="bg-card border border-border rounded-md px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
+                    placeholder="Field of Study / Major"
+                    className="bg-card border border-border rounded-md px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   />
                   <input
                     type="number"
                     value={eduYear}
                     onChange={(e) => setEduYear(e.target.value)}
-                    placeholder="Tahun Lulus (e.g. 2024)"
-                    className="bg-card border border-border rounded-md px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
+                    placeholder="Graduation Year (e.g. 2024)"
+                    className="bg-card border border-border rounded-md px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   />
                 </div>
 
-                <Button type="submit" size="sm" className="text-xs gap-1">
+                <Button
+                  type="submit"
+                  size="sm"
+                  className="min-h-[44px] h-11 px-4 text-xs font-semibold gap-1"
+                >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>Tambahkan Pendidikan</span>
+                  <span>Add Education</span>
                 </Button>
               </form>
 
-              {/* Daftar Pendidikan Tersimpan */}
+              {/* Saved Education History */}
               <div className="space-y-3">
                 <span className="text-xs font-bold text-foreground block">
-                  Daftar Pendidikan Tersimpan
+                  Saved Education History
                 </span>
 
                 {educationList.length > 0 ? (
@@ -540,7 +540,7 @@ export function EditBackgroundDialog({
                         </p>
                         {edu.graduation_year && (
                           <span className="text-[10px] text-primary font-mono block">
-                            Lulus: {edu.graduation_year}
+                            Graduated: {edu.graduation_year}
                           </span>
                         )}
                       </div>
@@ -548,16 +548,17 @@ export function EditBackgroundDialog({
                       <button
                         type="button"
                         onClick={() => handleRemoveEducation(edu.id)}
-                        className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
-                        title="Hapus pendidikan ini"
+                        className="min-h-[36px] min-w-[36px] flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                        title="Remove this education"
+                        aria-label="Remove this education"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   ))
                 ) : (
                   <p className="text-xs text-muted-foreground italic">
-                    Belum ada riwayat pendidikan terdaftar.
+                    No education records listed yet.
                   </p>
                 )}
               </div>
@@ -567,30 +568,29 @@ export function EditBackgroundDialog({
           {/* TAB 3: PROJECTS */}
           {activeTab === "projects" && (
             <div className="space-y-6">
-              {/* Form Tambah Proyek */}
               <form
                 onSubmit={handleAddProject}
                 className="p-4 rounded-xl bg-secondary/20 border border-border/80 space-y-3"
               >
                 <h3 className="text-xs font-bold text-foreground flex items-center gap-1">
                   <Plus className="w-3.5 h-3.5 text-primary" />
-                  Tambah Proyek Baru
+                  Add Project
                 </h3>
 
                 <input
                   type="text"
                   value={projTitle}
                   onChange={(e) => setProjTitle(e.target.value)}
-                  placeholder="Judul Proyek *"
-                  className="w-full bg-card border border-border rounded-md px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
+                  placeholder="Project Title *"
+                  className="w-full bg-card border border-border rounded-md px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 />
 
                 <textarea
                   value={projDesc}
                   onChange={(e) => setProjDesc(e.target.value)}
-                  placeholder="Deskripsi singkat proyek..."
+                  placeholder="Brief description of the project..."
                   rows={2}
-                  className="w-full bg-card border border-border rounded-md px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none resize-none"
+                  className="w-full bg-card border border-border rounded-md px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary resize-none"
                 />
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -598,28 +598,32 @@ export function EditBackgroundDialog({
                     type="text"
                     value={projTech}
                     onChange={(e) => setProjTech(e.target.value)}
-                    placeholder="Teknologi (e.g. Next.js, PostgreSQL)"
-                    className="bg-card border border-border rounded-md px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
+                    placeholder="Technologies (e.g. Next.js, PostgreSQL)"
+                    className="bg-card border border-border rounded-md px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   />
                   <input
                     type="text"
                     value={projUrl}
                     onChange={(e) => setProjUrl(e.target.value)}
-                    placeholder="URL Proyek (e.g. https://...)"
-                    className="bg-card border border-border rounded-md px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
+                    placeholder="Project URL (e.g. https://...)"
+                    className="bg-card border border-border rounded-md px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   />
                 </div>
 
-                <Button type="submit" size="sm" className="text-xs gap-1">
+                <Button
+                  type="submit"
+                  size="sm"
+                  className="min-h-[44px] h-11 px-4 text-xs font-semibold gap-1"
+                >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>Tambahkan Proyek</span>
+                  <span>Add Project</span>
                 </Button>
               </form>
 
-              {/* Daftar Proyek Tersimpan */}
+              {/* Saved Projects List */}
               <div className="space-y-3">
                 <span className="text-xs font-bold text-foreground block">
-                  Daftar Proyek Tersimpan
+                  Saved Projects
                 </span>
 
                 {projectList.length > 0 ? (
@@ -655,16 +659,17 @@ export function EditBackgroundDialog({
                       <button
                         type="button"
                         onClick={() => handleRemoveProject(proj.id)}
-                        className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
-                        title="Hapus proyek ini"
+                        className="min-h-[36px] min-w-[36px] flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                        title="Remove this project"
+                        aria-label="Remove this project"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   ))
                 ) : (
                   <p className="text-xs text-muted-foreground italic">
-                    Belum ada proyek portofolio terdaftar.
+                    No projects listed yet.
                   </p>
                 )}
               </div>
@@ -677,23 +682,21 @@ export function EditBackgroundDialog({
           <Button
             type="button"
             variant="outline"
-            size="sm"
             onClick={onClose}
             disabled={isSaving}
-            className="text-xs"
+            className="min-h-[44px] h-11 px-4 text-xs font-medium"
           >
-            Batal
+            Cancel
           </Button>
 
           <Button
             type="button"
             onClick={handleSubmit}
-            size="sm"
             disabled={isSaving}
-            className="text-xs gap-1.5"
+            className="min-h-[44px] h-11 px-5 text-xs font-semibold gap-1.5"
           >
-            {isSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-            <span>Simpan Semua Latar Belakang</span>
+            {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+            <span>Save Career Background</span>
           </Button>
         </div>
       </div>

@@ -1,8 +1,3 @@
-// ==============================================================================
-// COMPONENT: ProfileBackgroundCard
-// Module: @/features/profile/components/ProfileBackgroundCard
-// ==============================================================================
-
 "use client";
 
 import React from "react";
@@ -13,6 +8,7 @@ import {
   ExternalLink,
   Edit3,
   Calendar,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BackgroundEvidence } from "../types/career-profile.types";
@@ -33,28 +29,29 @@ export function ProfileBackgroundCard({
   return (
     <div className="rounded-xl border border-border bg-card p-5 space-y-6 shadow-2xs">
       {/* Header */}
-      <div className="flex items-center justify-between gap-3 pb-3 border-b border-border/80">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/80">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
             <GraduationCap className="w-4 h-4" />
           </div>
           <div>
             <h2 className="text-sm font-semibold font-heading text-foreground">
-              Career Background & Evidence
+              Work History & Credentials
             </h2>
             <p className="text-[11px] text-muted-foreground">
-              Bukti kontekstual riwayat kerja, studi, dan portofolio
+              Contextual timeline of your professional experience and education.
             </p>
           </div>
         </div>
 
         <Button
+          type="button"
           variant="outline"
           size="sm"
           onClick={onEdit}
-          className="text-xs h-8 gap-1.5"
+          className="text-xs h-9 min-h-[36px] sm:h-8 gap-1.5 border-border hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-primary self-start sm:self-auto"
         >
-          <Edit3 className="w-3.5 h-3.5" />
+          <Edit3 className="w-3.5 h-3.5 text-primary" />
           <span>Edit Background</span>
         </Button>
       </div>
@@ -82,10 +79,10 @@ export function ProfileBackgroundCard({
                       {exp.company_name}
                     </p>
                   </div>
-                  <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                  <span className="text-[10px] text-muted-foreground flex items-center gap-1 font-sans">
                     <Calendar className="w-3 h-3" />
                     {exp.start_date || "N/A"} -{" "}
-                    {exp.is_current ? "Sekarang" : exp.end_date || "N/A"}
+                    {exp.is_current ? "Present" : exp.end_date || "N/A"}
                   </span>
                 </div>
 
@@ -112,7 +109,7 @@ export function ProfileBackgroundCard({
           </div>
         ) : (
           <p className="text-xs text-muted-foreground italic">
-            Belum ada pengalaman kerja terdaftar.
+            No work experience listed yet.
           </p>
         )}
       </div>
@@ -140,7 +137,7 @@ export function ProfileBackgroundCard({
                 </p>
                 {edu.graduation_year && (
                   <span className="text-[10px] text-primary font-mono block">
-                    Lulus: {edu.graduation_year}
+                    Graduated: {edu.graduation_year}
                   </span>
                 )}
               </div>
@@ -148,7 +145,7 @@ export function ProfileBackgroundCard({
           </div>
         ) : (
           <p className="text-xs text-muted-foreground italic">
-            Belum ada data pendidikan terdaftar.
+            No education listed yet.
           </p>
         )}
       </div>
@@ -178,7 +175,7 @@ export function ProfileBackgroundCard({
                       rel="noreferrer"
                       className="text-primary hover:underline text-[10px] flex items-center gap-0.5"
                     >
-                      <span>Link</span>
+                      <span>View</span>
                       <ExternalLink className="w-2.5 h-2.5" />
                     </a>
                   )}
@@ -208,7 +205,7 @@ export function ProfileBackgroundCard({
           </div>
         ) : (
           <p className="text-xs text-muted-foreground italic">
-            Belum ada proyek portofolio terdaftar.
+            No projects listed yet.
           </p>
         )}
       </div>

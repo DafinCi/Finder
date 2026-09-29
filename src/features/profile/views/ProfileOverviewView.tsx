@@ -1,8 +1,3 @@
-// ==============================================================================
-// VIEW: ProfileOverviewView
-// Module: @/features/profile/views/ProfileOverviewView
-// ==============================================================================
-
 "use client";
 
 import React, { useState } from "react";
@@ -11,8 +6,8 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useCareerProfile } from "../hooks/useCareerProfile";
 import { ProfileHeader } from "../components/ProfileHeader";
-import { ProfileIntentCard } from "../components/ProfileIntentCard";
-import { ProfilePreferencesCard } from "../components/ProfilePreferencesCard";
+import { ProfileTargetPreferencesCard } from "../components/ProfileTargetPreferencesCard";
+import { ProfileResumeCard } from "../components/ProfileResumeCard";
 import { ProfileSkillsCard } from "../components/ProfileSkillsCard";
 import { ProfileBackgroundCard } from "../components/ProfileBackgroundCard";
 import { ProfilePageSkeleton } from "../components/ProfilePageSkeleton";
@@ -67,18 +62,17 @@ export default function ProfileOverviewView() {
 
           <div className="space-y-2">
             <h2 className="text-lg font-bold font-heading text-foreground">
-              Profil Karir Belum Dibuat
+              No Career Profile Found
             </h2>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Anda belum memiliki Canonical Career Profile. Selesaikan wizard
-              onboarding untuk mendapatkan rekomendasi lowongan yang
-              dipersonalisasi oleh AI Finder.
+              Complete onboarding to configure your career targets, work
+              preferences, and resume for high-accuracy job recommendations.
             </p>
           </div>
 
           <Link href="/onboarding" className="block">
-            <Button className="w-full gap-2 text-xs">
-              <span>Mulai Onboarding Karir</span>
+            <Button className="w-full min-h-[44px] h-11 gap-2 text-xs font-semibold cursor-pointer">
+              <span>Start Career Onboarding</span>
               <ArrowRight className="w-4 h-4" />
             </Button>
           </Link>
@@ -103,25 +97,32 @@ export default function ProfileOverviewView() {
           onRefresh={refreshProfile}
         />
 
-        {/* Bento Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Card 1: Career Intent */}
-          <ProfileIntentCard
-            careerIntent={profile.careerIntent}
-            primaryRole={primaryRole}
-            secondaryRoles={secondaryRoles}
-            onEdit={() => setActiveModal("intent")}
-          />
+        {/* Bento Grid 2.0 */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Row 1, Col 1-2: Consolidated Target Roles & Match Preferences */}
+          <div className="lg:col-span-2">
+            <ProfileTargetPreferencesCard
+              careerIntent={profile.careerIntent}
+              preferences={profile.preferences}
+              constraints={profile.constraints}
+              primaryRole={primaryRole}
+              secondaryRoles={secondaryRoles}
+              onEditIntent={() => setActiveModal("intent")}
+              onEditPreferences={() => setActiveModal("preferences")}
+            />
+          </div>
 
-          {/* Card 2: Career Preferences & Constraints */}
-          <ProfilePreferencesCard
-            preferences={profile.preferences}
-            constraints={profile.constraints}
-            onEdit={() => setActiveModal("preferences")}
-          />
+          {/* Row 1, Col 3: Active Resume & Document Source */}
+          <div className="lg:col-span-1">
+            <ProfileResumeCard
+              resumeId={profile.resumeId}
+              expectedVersion={profile.profileVersion}
+              onProfileUpdated={refreshProfile}
+            />
+          </div>
 
-          {/* Card 3: Skills & Capabilities (Spans 2 columns on desktop) */}
-          <div className="md:col-span-2">
+          {/* Row 2: Skills & Capabilities (Spans 3 cols) */}
+          <div className="lg:col-span-3">
             <ProfileSkillsCard
               coreSkills={coreSkills}
               supportingSkills={supportingSkills}
@@ -136,8 +137,8 @@ export default function ProfileOverviewView() {
             />
           </div>
 
-          {/* Card 4: Career Background (Spans 2 columns on desktop) */}
-          <div className="md:col-span-2">
+          {/* Row 3: Career Background (Spans 3 cols) */}
+          <div className="lg:col-span-3">
             <ProfileBackgroundCard
               background={profile.background}
               onEdit={() => setActiveModal("background")}
