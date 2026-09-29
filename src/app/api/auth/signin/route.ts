@@ -39,11 +39,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
+    let onboardingCompleted = false;
+    if (data.user) {
+      const { data: profile } = await supabase
+        .from("career_profiles")
+        .select("onboarding_completed")
+        .eq("profile_id", data.user.id)
+        .maybeSingle();
+      onboardingCompleted = Boolean(profile?.onboarding_completed);
+    }
+
     return NextResponse.json(
       {
         success: true,
         message: "Sign in successful.",
         user: data.user,
+        onboardingCompleted,
       },
       { status: 200 },
     );

@@ -1,4 +1,13 @@
 import { supabase } from "@/lib/supabase/client";
+import {
+  MatchScoreBreakdown,
+  QualitativeAnalysis,
+  RecommendedJobOpportunity,
+} from "@/features/matching/types/matching.types";
+import {
+  FeedbackReason,
+  InteractionType,
+} from "@/features/feedback/schemas/feedback.schema";
 
 export interface FormattedJobMatch {
   matchId: string;
@@ -10,7 +19,9 @@ export interface FormattedJobMatch {
   description: string;
   requirements: string[];
   location: string;
+  workMode?: "remote" | "hybrid" | "onsite" | "unknown";
   experienceLevel: string;
+  salaryRange?: string | null;
   companyId?: string;
   companyName?: string;
   companyLogo?: string | null;
@@ -18,9 +29,199 @@ export interface FormattedJobMatch {
   applyUrl?: string | null;
   sourceUrl?: string | null;
   source?: string;
+  isSaved?: boolean;
+  scoreBreakdown?: MatchScoreBreakdown;
+  qualitative?: QualitativeAnalysis;
 }
 
 export const jobsApi = {
+  /**
+   * Fetches V2 deterministic recommendations from /api/recommendations
+   */
+  getV2Recommendations: async (
+    limit = 10,
+  ): Promise<{
+    recommendations: FormattedJobMatch[];
+    requiresOnboarding?: boolean;
+  }> => {
+    const res = await fetch(`/api/recommendations?limit=${limit}`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (res.status === 404) {
+      const data = await res.json().catch(() => ({}));
+      if (data?.requiresOnboarding) {
+        return { recommendations: [], requiresOnboarding: true };
+      }
+    }
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data?.error || "Gagal memuat rekomendasi pekerjaan.");
+    }
+
+    const { recommendations = [] } = (await res.json()) as {
+      recommendations: RecommendedJobOpportunity[];
+    };
+
+    // Parallel fetch saved job IDs to mark saved state
+    let savedJobIds: string[] = [];
+    try {
+      savedJobIds = await jobsApi.getSavedJobIds();
+    } catch {
+      // Non-blocking if feedback endpoint fails
+    }
+
+    const formatted: FormattedJobMatch[] = recommendations.map((rec) => ({
+      matchId: rec.job_id,
+      jobId: rec.job_id,
+      matchScore: rec.match_score,
+      reason:
+        rec.qualitative?.fit_rationale || "Strong alignment with your profile",
+      missingSkills: rec.qualitative?.missing_skills || [],
+      title: rec.title,
+      description: rec.description || "",
+      requirements: rec.requirements || [],
+      location: rec.location,
+      workMode: rec.work_mode,
+      experienceLevel: rec.experience_level || "Not specified",
+      salaryRange: rec.salary_range,
+      companyName: rec.company_name,
+      companyLogo: rec.company_logo,
+      applyUrl: rec.apply_url,
+      sourceUrl: rec.source_url,
+      source: rec.source || "manual",
+      isSaved: savedJobIds.includes(rec.job_id),
+      scoreBreakdown: rec.score_breakdown,
+      qualitative: rec.qualitative,
+    }));
+
+    return { recommendations: formatted, requiresOnboarding: false };
+  },
+
+  /**
+   * Retrieves list of saved job IDs for current candidate
+   */
+  getSavedJobIds: async (): Promise<string[]> => {
+    const res = await fetch("/api/feedback", {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data?.savedJobIds) ? data.savedJobIds : [];
+  },
+
+  /**
+   * Saves / bookmarks a job
+   */
+  saveJob: async (jobId: string, notes?: string): Promise<boolean> => {
+    const res = await fetch("/api/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jobId,
+        eventType: "save",
+        metadata: notes ? { notes } : undefined,
+      }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data?.error || "Gagal menyimpan pekerjaan.");
+    }
+    return true;
+  },
+
+  /**
+   * Unsaves / removes bookmark for a job
+   */
+  unsaveJob: async (jobId: string): Promise<boolean> => {
+    const res = await fetch("/api/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jobId,
+        eventType: "unsave",
+      }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data?.error || "Gagal membatalkan simpan pekerjaan.");
+    }
+    return true;
+  },
+
+  /**
+   * Rejects / marks job as not interested
+   */
+  rejectJob: async (
+    jobId: string,
+    reason?: FeedbackReason,
+  ): Promise<boolean> => {
+    const res = await fetch("/api/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jobId,
+        eventType: "reject",
+        reason: reason || "not_interested",
+      }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data?.error || "Gagal mencatat preferensi pekerjaan.");
+    }
+    return true;
+  },
+
+  /**
+   * Records external apply button click
+   */
+  recordApplyClick: async (jobId: string): Promise<boolean> => {
+    try {
+      const res = await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jobId,
+          eventType: "external_apply_clicked",
+        }),
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  },
+
+  /**
+   * Records quarantined user telemetry event
+   */
+  recordTelemetry: async (
+    jobId: string,
+    interactionType: InteractionType,
+    durationMs?: number,
+  ): Promise<boolean> => {
+    try {
+      const res = await fetch("/api/telemetry", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jobId,
+          interactionType,
+          durationMs,
+          timestamp: new Date().toISOString(),
+        }),
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  },
+
+  /**
+   * Legacy V1 fallback (deprecated)
+   */
   getJobMatches: async (analysisId: string): Promise<FormattedJobMatch[]> => {
     const { data, error } = await supabase
       .from("job_matches")

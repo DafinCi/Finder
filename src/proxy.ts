@@ -37,7 +37,7 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isProtected = ["/c", "/jobs", "/settings"].some((p) =>
+  const isProtected = ["/c", "/jobs", "/settings", "/onboarding"].some((p) =>
     request.nextUrl.pathname.startsWith(p),
   );
 
@@ -52,8 +52,14 @@ export async function proxy(request: NextRequest) {
     request.nextUrl.pathname === "/register";
 
   if (user && isAuthPage) {
+    const { data: profile } = await supabase
+      .from("career_profiles")
+      .select("onboarding_completed")
+      .eq("profile_id", user.id)
+      .maybeSingle();
+
     const url = request.nextUrl.clone();
-    url.pathname = "/c";
+    url.pathname = profile?.onboarding_completed ? "/c" : "/onboarding";
     return NextResponse.redirect(url);
   }
 

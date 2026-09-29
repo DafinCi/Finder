@@ -21,8 +21,9 @@ export default function LoginPage() {
     setError("");
 
     try {
-      await login(email, password);
-      router.push("/c");
+      const result = await login(email, password);
+      const shouldOnboard = !result?.onboardingCompleted;
+      router.push(shouldOnboard ? "/onboarding" : "/c");
       router.refresh();
     } catch (err: unknown) {
       const errorObj = err as Error;
@@ -118,7 +119,7 @@ export default function LoginPage() {
           <Button
             type="submit"
             disabled={loading}
-            className="w-full h-10 text-xs font-semibold"
+            className="w-full min-h-[44px] h-11 text-xs font-semibold"
           >
             <span>{loading ? "Signing in..." : "Sign in"}</span>
             <ArrowRight className="w-3.5 h-3.5 ml-1" />
@@ -134,7 +135,7 @@ export default function LoginPage() {
         </div>
 
         {/* Sui Wallet SIWS Login */}
-        <SuiSignInButton />
+        <SuiSignInButton mode="signin" />
 
         {/* Footer Navigation */}
         <p className="text-center text-xs text-muted-foreground font-sans pt-2 border-t border-border/60">
