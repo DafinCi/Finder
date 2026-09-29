@@ -1,8 +1,3 @@
-// ==============================================================================
-// ONBOARDING WIZARD ORCHESTRATOR
-// Module: @/features/onboarding/components/OnboardingWizard
-// ==============================================================================
-
 "use client";
 
 import React from "react";
@@ -10,10 +5,11 @@ import { useRouter } from "next/navigation";
 import { Loader2, AlertCircle } from "lucide-react";
 import { useOnboardingProfile } from "../hooks/useOnboardingProfile";
 import { OnboardingHeader } from "./OnboardingHeader";
-import { Step1BackgroundCv } from "./Step1BackgroundCv";
-import { Step2CareerIntent } from "./Step2CareerIntent";
-import { Step3PreferencesConstraints } from "./Step3PreferencesConstraints";
-import { Step4ReviewBento } from "./Step4ReviewBento";
+import { StepWelcomeChoice } from "./StepWelcomeChoice";
+import { StepCvQuickReview } from "./StepCvQuickReview";
+import { StepManualRole } from "./StepManualRole";
+import { StepManualPreferences } from "./StepManualPreferences";
+import { StepManualSkills } from "./StepManualSkills";
 import { Button } from "@/components/ui/button";
 
 export function OnboardingWizard() {
@@ -24,35 +20,35 @@ export function OnboardingWizard() {
     isSaving,
     error,
     goToStep,
-    handleUploadAndAnalyzeResume,
-    handleContinueWithoutCv,
-    handleSaveStep2,
-    handleSaveStep3,
-    handleConfirmProfile,
-    suppressSkill,
-    restoreSkill,
+    setFlowMode,
+    setPrimaryRole,
+    toggleSkill,
+    removeSkill,
     addCustomSkill,
-    setTargetRoles,
+    handleUploadAndAnalyzeResume,
+    handleQuickCvConfirm,
+    handleSaveManualStep1,
+    handleSaveManualStep2,
+    handleConfirmProfile,
     setTargetLevel,
     setEmploymentTypes,
     setWorkModes,
-    setWorkModeStrict,
     setLocations,
-    setRelocationProhibited,
-    setSalaryMin,
-    setSalaryCurrency,
-    setPriorities,
-    setNegativePreferences,
     reloadProfile,
   } = useOnboardingProfile();
 
-  // On confirmation complete, redirect to /jobs
   const handleFinalConfirm = async () => {
     const confirmed = await handleConfirmProfile();
     if (confirmed) {
       router.push("/jobs");
     }
-    return confirmed;
+  };
+
+  const handleQuickCvExplore = async () => {
+    const confirmed = await handleQuickCvConfirm();
+    if (confirmed) {
+      router.push("/jobs");
+    }
   };
 
   if (loading) {
@@ -90,65 +86,88 @@ export function OnboardingWizard() {
   }
 
   return (
-    <div className="w-full max-w-3xl mx-auto space-y-8 py-6 px-4">
-      {/* Header with step indicators */}
+    <div className="w-full max-w-3xl mx-auto space-y-6 py-6 px-4">
+      {/* Dynamic Header */}
       <OnboardingHeader
         currentStep={state.currentStep}
+        flowMode={state.flowMode}
         isExistingActiveProfile={state.isExistingActiveProfile}
       />
 
-      {/* Main Form Container */}
+      {/* Main Screen Container */}
       <main className="rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-xs">
-        {state.currentStep === 1 && (
-          <Step1BackgroundCv
+        {state.flowMode === "choice" && (
+          <StepWelcomeChoice
             state={state}
             onUploadAndAnalyze={handleUploadAndAnalyzeResume}
-            onContinueWithoutCv={handleContinueWithoutCv}
-            onContinueToStep2={() => goToStep(2)}
+            onStartManual={() => {
+              setFlowMode("manual");
+              goToStep(1);
+            }}
+            onGoToCvReview={() => setFlowMode("cv_magic")}
             isSaving={isSaving}
           />
         )}
 
-        {state.currentStep === 2 && (
-          <Step2CareerIntent
+        {state.flowMode === "cv_magic" && (
+          <StepCvQuickReview
             state={state}
-            setTargetRoles={setTargetRoles}
+            setPrimaryRole={setPrimaryRole}
             setTargetLevel={setTargetLevel}
-            setEmploymentTypes={setEmploymentTypes}
-            onSaveAndContinue={handleSaveStep2}
-            onBack={() => goToStep(1)}
-            isSaving={isSaving}
-          />
-        )}
-
-        {state.currentStep === 3 && (
-          <Step3PreferencesConstraints
-            state={state}
             setWorkModes={setWorkModes}
-            setWorkModeStrict={setWorkModeStrict}
-            setLocations={setLocations}
-            setRelocationProhibited={setRelocationProhibited}
-            setSalaryMin={setSalaryMin}
-            setSalaryCurrency={setSalaryCurrency}
-            setPriorities={setPriorities}
-            setNegativePreferences={setNegativePreferences}
-            onSaveAndContinue={handleSaveStep3}
-            onBack={() => goToStep(2)}
+            removeSkill={removeSkill}
+            addCustomSkill={addCustomSkill}
+            onConfirmAndExplore={handleQuickCvExplore}
+            onSwitchToManual={() => {
+              setFlowMode("manual");
+              goToStep(1);
+            }}
+            onUploadDifferentResume={() => setFlowMode("choice")}
             isSaving={isSaving}
           />
         )}
 
-        {state.currentStep === 4 && (
-          <Step4ReviewBento
-            state={state}
-            goToStep={goToStep}
-            suppressSkill={suppressSkill}
-            restoreSkill={restoreSkill}
-            addCustomSkill={addCustomSkill}
-            onConfirm={handleFinalConfirm}
-            onBack={() => goToStep(3)}
-            isSaving={isSaving}
-          />
+        {state.flowMode === "manual" && (
+          <>
+            {state.currentStep === 1 && (
+              <StepManualRole
+                state={state}
+                setPrimaryRole={setPrimaryRole}
+                setTargetLevel={setTargetLevel}
+                setEmploymentTypes={setEmploymentTypes}
+                onNext={async () => {
+                  await handleSaveManualStep1();
+                }}
+                onBack={() => setFlowMode("choice")}
+                isSaving={isSaving}
+              />
+            )}
+
+            {state.currentStep === 2 && (
+              <StepManualPreferences
+                state={state}
+                setWorkModes={setWorkModes}
+                setLocations={setLocations}
+                onNext={async () => {
+                  await handleSaveManualStep2();
+                }}
+                onBack={() => goToStep(1)}
+                isSaving={isSaving}
+              />
+            )}
+
+            {state.currentStep >= 3 && (
+              <StepManualSkills
+                state={state}
+                toggleSkill={toggleSkill}
+                removeSkill={removeSkill}
+                addCustomSkill={addCustomSkill}
+                onFinish={handleFinalConfirm}
+                onBack={() => goToStep(2)}
+                isSaving={isSaving}
+              />
+            )}
+          </>
         )}
       </main>
     </div>

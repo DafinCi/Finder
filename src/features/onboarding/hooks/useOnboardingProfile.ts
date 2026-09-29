@@ -527,6 +527,137 @@ export function useOnboardingProfile() {
     handleVersionConflict,
   ]);
 
+  // Manual Flow Step 1: Save Role & Advance to Preferences
+  const handleSaveManualStep1 = useCallback(async () => {
+    if (state.targetRoles.length === 0) {
+      toast.error("Please enter or select at least one target role.");
+      return false;
+    }
+    let rolesToSave = state.targetRoles;
+    if (!rolesToSave.some((r) => r.priority === "primary")) {
+      rolesToSave = [
+        { ...rolesToSave[0], priority: "primary" },
+        ...rolesToSave.slice(1).map((r) => ({
+          ...r,
+          priority: "secondary" as const,
+        })),
+      ];
+    }
+    const levelToSave = state.targetLevel || "mid_level";
+    const employmentToSave =
+      state.employmentTypes.length > 0
+        ? state.employmentTypes
+        : (["full_time"] as EmploymentType[]);
+
+    try {
+      setIsSaving(true);
+      setError(null);
+      const updatedProfile = await onboardingService.saveDraftStep({
+        expected_version: state.expectedVersion,
+        current_step: 2,
+        career_intent: {
+          target_roles: rolesToSave,
+          target_level: levelToSave,
+          employment_types: employmentToSave,
+        },
+      });
+
+      setState((prev) => ({
+        ...prev,
+        targetRoles: rolesToSave,
+        targetLevel: levelToSave,
+        employmentTypes: employmentToSave,
+        currentStep: 2,
+        expectedVersion: updatedProfile.profileVersion,
+      }));
+      return true;
+    } catch (err) {
+      if (err instanceof OnboardingVersionConflictError) {
+        await handleVersionConflict(err);
+      } else {
+        const msg =
+          err instanceof Error ? err.message : "Failed to save career intent";
+        setError(msg);
+        toast.error(msg);
+      }
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  }, [
+    state.targetRoles,
+    state.targetLevel,
+    state.employmentTypes,
+    state.expectedVersion,
+    handleVersionConflict,
+  ]);
+
+  // Manual Flow Step 2: Save Preferences & Advance to Skills
+  const handleSaveManualStep2 = useCallback(async () => {
+    if (state.workModes.length === 0) {
+      toast.error("Please select at least one preferred work mode.");
+      return false;
+    }
+
+    try {
+      setIsSaving(true);
+      setError(null);
+      const updatedProfile = await onboardingService.saveDraftStep({
+        expected_version: state.expectedVersion,
+        current_step: 3,
+        preferences: {
+          locations: state.locations,
+          work_modes: state.workModes,
+          priorities: state.priorities,
+          salary:
+            state.salaryMin !== null
+              ? {
+                  min_amount: state.salaryMin,
+                  currency: state.salaryCurrency,
+                }
+              : null,
+          negative_preferences: state.negativePreferences,
+        },
+        constraints: {
+          work_mode_strict: state.workModeStrict,
+          relocation_prohibited: state.relocationProhibited,
+        },
+      });
+
+      setState((prev) => ({
+        ...prev,
+        currentStep: 3,
+        expectedVersion: updatedProfile.profileVersion,
+      }));
+      return true;
+    } catch (err) {
+      if (err instanceof OnboardingVersionConflictError) {
+        await handleVersionConflict(err);
+      } else {
+        const msg =
+          err instanceof Error
+            ? err.message
+            : "Failed to save work preferences";
+        setError(msg);
+        toast.error(msg);
+      }
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  }, [
+    state.workModes,
+    state.locations,
+    state.priorities,
+    state.salaryMin,
+    state.salaryCurrency,
+    state.negativePreferences,
+    state.workModeStrict,
+    state.relocationProhibited,
+    state.expectedVersion,
+    handleVersionConflict,
+  ]);
+
   // Step 4: Final Confirmation
   const handleConfirmProfile =
     useCallback(async (): Promise<CareerProfile | null> => {
@@ -954,6 +1085,8 @@ export function useOnboardingProfile() {
     handleUploadAndAnalyzeResume,
     handleContinueWithoutCv,
     handleQuickCvConfirm,
+    handleSaveManualStep1,
+    handleSaveManualStep2,
     handleSaveStep2,
     handleSaveStep3,
     handleConfirmProfile,

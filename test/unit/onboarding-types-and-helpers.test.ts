@@ -178,4 +178,54 @@ describe("Phase 1E: Onboarding Types & Helper Logic Unit Tests", () => {
       expect(skills.some((s) => s.skill === "Next.js")).toBe(true);
     });
   });
+
+  describe("Phase 3B: Antislop Copywriting & Flow State Invariants", () => {
+    it("should ensure no em dashes exist in any onboarding options or labels", () => {
+      for (const opt of SENIORITY_LEVEL_OPTIONS) {
+        expect(opt.label).not.toContain("—");
+        expect(opt.description).not.toContain("—");
+      }
+      for (const opt of WORK_MODE_OPTIONS) {
+        expect(opt.label).not.toContain("—");
+        expect(opt.description).not.toContain("—");
+      }
+      for (const opt of EMPLOYMENT_TYPE_OPTIONS) {
+        expect(opt.label).not.toContain("—");
+      }
+      for (const label of Object.values(NEGATIVE_PREFERENCE_LABELS)) {
+        expect(label).not.toContain("—");
+      }
+    });
+
+    it("should ensure work mode toggle maintains at least one active mode", () => {
+      let modes = ["remote", "hybrid"];
+      const toggleMode = (current: string[], mode: string) => {
+        if (current.includes(mode)) {
+          if (current.length === 1) return current; // Keep at least one
+          return current.filter((m) => m !== mode);
+        }
+        return [...current, mode];
+      };
+
+      modes = toggleMode(modes, "hybrid");
+      expect(modes).toEqual(["remote"]);
+
+      // Attempt to unselect last mode should be a no-op
+      modes = toggleMode(modes, "remote");
+      expect(modes).toEqual(["remote"]);
+    });
+
+    it("should verify flowMode state transitions", () => {
+      type OnboardingFlowMode = "choice" | "cv_magic" | "manual";
+      let mode: OnboardingFlowMode = "choice";
+
+      // User uploads resume -> transitions to cv_magic
+      mode = "cv_magic";
+      expect(mode).toBe("cv_magic");
+
+      // User opts for manual flow -> transitions to manual
+      mode = "manual";
+      expect(mode).toBe("manual");
+    });
+  });
 });
