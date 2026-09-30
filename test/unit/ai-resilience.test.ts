@@ -10,44 +10,48 @@ describe("Unit: AI Resilience & Error Normalization", () => {
   describe("normalizeGroqError", () => {
     it("should return default message if error is falsy", () => {
       expect(normalizeGroqError(null)).toBe(
-        "Terjadi kesalahan pada layanan AI.",
+        "An error occurred with the AI service.",
       );
       expect(normalizeGroqError(undefined)).toBe(
-        "Terjadi kesalahan pada layanan AI.",
+        "An error occurred with the AI service.",
       );
     });
 
     it("should detect 429 rate limit errors and return user-friendly guidance", () => {
       const errWithStatus = { status: 429, message: "Rate limit reached" };
-      expect(normalizeGroqError(errWithStatus)).toContain("Rate Limit");
+      expect(normalizeGroqError(errWithStatus)).toContain(
+        "traffic limit reached",
+      );
 
       const errWithMessage = new Error("429 Too Many Requests");
-      expect(normalizeGroqError(errWithMessage)).toContain("Rate Limit");
+      expect(normalizeGroqError(errWithMessage)).toContain(
+        "traffic limit reached",
+      );
 
       const errWithTpm = new Error("TPM quota exceeded");
-      expect(normalizeGroqError(errWithTpm)).toContain("Rate Limit");
+      expect(normalizeGroqError(errWithTpm)).toContain("traffic limit reached");
     });
 
     it("should detect timeout errors and return timeout guidance", () => {
       const timeoutErr = new Error("Request timed out after 30000ms");
-      expect(normalizeGroqError(timeoutErr)).toContain("timeout 30s");
+      expect(normalizeGroqError(timeoutErr)).toContain("timed out (30s)");
 
       const etimedoutErr = new Error("ETIMEDOUT connection failed");
-      expect(normalizeGroqError(etimedoutErr)).toContain("timeout 30s");
+      expect(normalizeGroqError(etimedoutErr)).toContain("timed out (30s)");
     });
 
     it("should detect 503 service unavailable or overloaded errors", () => {
       const err503 = { status: 503, message: "Service Unavailable" };
-      expect(normalizeGroqError(err503)).toContain("beban tinggi");
+      expect(normalizeGroqError(err503)).toContain("temporary high load");
 
       const errOverloaded = new Error("Model is overloaded");
-      expect(normalizeGroqError(errOverloaded)).toContain("beban tinggi");
+      expect(normalizeGroqError(errOverloaded)).toContain("temporary high load");
     });
 
     it("should detect 401 unauthorized / invalid api key errors", () => {
       const err401 = { status: 401, message: "Invalid API Key" };
       expect(normalizeGroqError(err401)).toContain(
-        "Kredensial API AI tidak valid",
+        "AI API credentials are invalid or unconfigured",
       );
     });
 
