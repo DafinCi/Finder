@@ -12,10 +12,35 @@ import {
   CAREER_COPILOT_PROMPT_VERSION,
 } from "@/lib/groq/prompts/career-copilot.prompt";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { careerMemoryService } from "@/features/memory/services/career-memory.service";
+import { AGENT_TOOL_DEFINITIONS } from "@/features/agent/tools/agent-tool.definitions";
+import {
+  agentToolDispatcher,
+  ActionProposalData,
+} from "@/features/agent/services/agent-tool-dispatcher.service";
 
 export const dynamic = "force-dynamic";
 
 const MAX_PROMPT_CHARS = 2000;
+
+function getToolStartLabel(toolName: string): string {
+  switch (toolName) {
+    case "get_career_recommendations":
+      return "Mencari dan menganalisis lowongan kerja yang cocok...";
+    case "inspect_job_details":
+      return "Membaca detail lengkap lowongan pekerjaan...";
+    case "save_job":
+      return "Menyimpan lowongan ke daftar bookmark...";
+    case "reject_job":
+      return "Mencatat feedback penolakan lowongan...";
+    case "remember_fact":
+      return "Menyimpan fakta ke memori karir berdaulat...";
+    case "propose_preference_update":
+      return "Menyiapkan usulan pembaruan preferensi profil...";
+    default:
+      return "Menjalankan tindakan...";
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -295,10 +320,25 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Load durable sovereign career memories for personalized agent reasoning
+    let memoryContext = "";
+    try {
+      memoryContext = await careerMemoryService.getDurableContextSummary(
+        user.id,
+        5,
+      );
+    } catch (memErr) {
+      console.warn(
+        `[CareerMemory] Failed to load durable context for user ${user.id}:`,
+        (memErr as Error).message,
+      );
+    }
+
     const systemPromptContent = buildCareerCopilotSystemPrompt({
       candidateContext,
       matchesContext,
       specificJobContext,
+      memoryContext,
     });
 
     const messagesForGroq: Array<{
@@ -336,7 +376,17 @@ export async function POST(req: NextRequest) {
     interface ChatCompletionChunk {
       choices: Array<{
         delta?: {
+          role?: string;
           content?: string | null;
+          tool_calls?: Array<{
+            index: number;
+            id?: string;
+            type?: "function";
+            function?: {
+              name?: string;
+              arguments?: string;
+            };
+          }>;
         };
       }>;
       usage?: TokenUsageStats;
@@ -351,6 +401,8 @@ export async function POST(req: NextRequest) {
       stream = (await groq.chat.completions.create({
         model: modelUsed,
         messages: messagesForGroq,
+        tools: AGENT_TOOL_DEFINITIONS as any,
+        tool_choice: "auto",
         temperature: 0.6,
         max_tokens: maxTokensLimit,
         stream: true,
@@ -374,6 +426,8 @@ export async function POST(req: NextRequest) {
         stream = (await groq.chat.completions.create({
           model: modelUsed,
           messages: messagesForGroq,
+          tools: AGENT_TOOL_DEFINITIONS as any,
+          tool_choice: "auto",
           temperature: 0.6,
           max_tokens: maxTokensLimit,
           stream: true,
@@ -390,16 +444,38 @@ export async function POST(req: NextRequest) {
       async start(controller) {
         let fullAssistantContent = "";
         let tokenUsage: TokenUsageStats | null = null;
+        const toolCallsMap = new Map<
+          number,
+          { id: string; name: string; arguments: string }
+        >();
 
         try {
           for await (const chunk of stream) {
-            const token = chunk.choices[0]?.delta?.content || "";
+            const delta = chunk.choices[0]?.delta;
+            const token = delta?.content || "";
             if (token) {
               fullAssistantContent += token;
               controller.enqueue(
                 encoder.encode(`data: ${JSON.stringify({ token })}\n\n`),
               );
             }
+
+            if (delta?.tool_calls && Array.isArray(delta.tool_calls)) {
+              for (const tc of delta.tool_calls) {
+                const idx = tc.index ?? 0;
+                const existing = toolCallsMap.get(idx) || {
+                  id: "",
+                  name: "",
+                  arguments: "",
+                };
+                if (tc.id) existing.id = tc.id;
+                if (tc.function?.name) existing.name += tc.function.name;
+                if (tc.function?.arguments)
+                  existing.arguments += tc.function.arguments;
+                toolCallsMap.set(idx, existing);
+              }
+            }
+
             const chunkWithUsage = chunk as unknown as {
               usage?: TokenUsageStats;
             };
@@ -408,9 +484,156 @@ export async function POST(req: NextRequest) {
             }
           }
 
+          let lastActionProposal: ActionProposalData | null = null;
+          let memoryUpdated = false;
+          const executedToolCallsSummary: Array<{
+            name: string;
+            args: unknown;
+            success: boolean;
+          }> = [];
+
+          // 1-Turn Tool Execution (Strict 1-Turn Cap)
+          if (toolCallsMap.size > 0) {
+            const toolCallList = Array.from(toolCallsMap.values()).map(
+              (tc, idx) => ({
+                id: tc.id || `call_${Date.now()}_${idx}`,
+                name: tc.name,
+                arguments: tc.arguments,
+              }),
+            );
+
+            const toolResultMessages: Array<{
+              role: "tool";
+              tool_call_id: string;
+              name: string;
+              content: string;
+            }> = [];
+
+            for (const tc of toolCallList) {
+              const startLabel = getToolStartLabel(tc.name);
+              controller.enqueue(
+                encoder.encode(
+                  `data: ${JSON.stringify({
+                    type: "tool_start",
+                    tool: tc.name,
+                    label: startLabel,
+                  })}\n\n`,
+                ),
+              );
+
+              let parsedArgs: Record<string, unknown> = {};
+              try {
+                parsedArgs = JSON.parse(tc.arguments || "{}");
+              } catch (parseErr) {
+                console.warn(
+                  `[AgentTool] Failed to parse arguments for ${tc.name}:`,
+                  tc.arguments,
+                );
+              }
+
+              const toolResult = await agentToolDispatcher.executeTool(
+                user.id,
+                tc.name,
+                parsedArgs,
+              );
+
+              executedToolCallsSummary.push({
+                name: tc.name,
+                args: parsedArgs,
+                success: toolResult.success,
+              });
+
+              if (toolResult.actionProposal) {
+                lastActionProposal = toolResult.actionProposal;
+              }
+              if (toolResult.memoryUpdated) {
+                memoryUpdated = true;
+              }
+
+              controller.enqueue(
+                encoder.encode(
+                  `data: ${JSON.stringify({
+                    type: "tool_end",
+                    tool: tc.name,
+                    success: toolResult.success,
+                  })}\n\n`,
+                ),
+              );
+
+              toolResultMessages.push({
+                role: "tool",
+                tool_call_id: tc.id,
+                name: tc.name,
+                content: JSON.stringify(
+                  toolResult.data ?? {
+                    success: toolResult.success,
+                    error: toolResult.error,
+                  },
+                ),
+              });
+            }
+
+            // Turn 2: Synthesize final answer based on tool outputs (capped to 1 cycle)
+            const assistantToolCallMsg = {
+              role: "assistant" as const,
+              content: fullAssistantContent || null,
+              tool_calls: toolCallList.map((tc) => ({
+                id: tc.id,
+                type: "function" as const,
+                function: {
+                  name: tc.name,
+                  arguments: tc.arguments,
+                },
+              })),
+            };
+
+            const turn2Messages = [
+              ...messagesForGroq,
+              assistantToolCallMsg,
+              ...toolResultMessages,
+            ];
+
+            try {
+              const turn2Stream = (await groq.chat.completions.create({
+                model: modelUsed,
+                messages: turn2Messages as any,
+                temperature: 0.6,
+                max_tokens: maxTokensLimit,
+                stream: true,
+                stream_options: { include_usage: true },
+              } as any)) as unknown as AsyncIterable<ChatCompletionChunk>;
+
+              for await (const chunk of turn2Stream) {
+                const token = chunk.choices[0]?.delta?.content || "";
+                if (token) {
+                  fullAssistantContent += token;
+                  controller.enqueue(
+                    encoder.encode(`data: ${JSON.stringify({ token })}\n\n`),
+                  );
+                }
+                const chunkWithUsage = chunk as unknown as {
+                  usage?: TokenUsageStats;
+                };
+                if (chunkWithUsage.usage) {
+                  tokenUsage = chunkWithUsage.usage;
+                }
+              }
+            } catch (turn2Error) {
+              console.error("[AgentTool:Turn2Error]", turn2Error);
+              const fallbackNotice =
+                "\n\n(Tindakan berhasil diproses oleh sistem.)";
+              fullAssistantContent += fallbackNotice;
+              controller.enqueue(
+                encoder.encode(
+                  `data: ${JSON.stringify({ token: fallbackNotice })}\n\n`,
+                ),
+              );
+            }
+          }
+
           const durationMs = Date.now() - startTime;
           console.log(
-            `[AI:Telemetry] op=ChatStream model=${modelUsed} status=success duration=${durationMs}ms chars=${fullAssistantContent.length} prompt_tokens=${tokenUsage?.prompt_tokens ?? "N/A"} completion_tokens=${tokenUsage?.completion_tokens ?? "N/A"} total_tokens=${tokenUsage?.total_tokens ?? "N/A"}`,
+            `[AI:Telemetry] op=ChatStream model=${modelUsed} status=success duration=${durationMs}ms chars=${fullAssistantContent.length} tools=${executedToolCallsSummary.length} prompt_tokens=${tokenUsage?.prompt_tokens ?? "N/A"} completion_tokens=${tokenUsage?.completion_tokens ?? "N/A"} total_tokens=${tokenUsage?.total_tokens ?? "N/A"}`,
           );
 
           const finalContent =
@@ -430,6 +653,12 @@ export async function POST(req: NextRequest) {
                 prompt_version: CAREER_COPILOT_PROMPT_VERSION,
                 total_chars: finalContent.length,
                 token_usage: tokenUsage,
+                tool_calls:
+                  executedToolCallsSummary.length > 0
+                    ? executedToolCallsSummary
+                    : undefined,
+                action_proposal: lastActionProposal || undefined,
+                memory_updated: memoryUpdated || undefined,
               },
             })
             .select()
@@ -452,12 +681,37 @@ export async function POST(req: NextRequest) {
             .update({ updated_at: new Date().toISOString() })
             .eq("id", session_id);
 
+          // Emit action_proposal event if available
+          if (lastActionProposal) {
+            controller.enqueue(
+              encoder.encode(
+                `data: ${JSON.stringify({
+                  type: "action_proposal",
+                  proposal: lastActionProposal,
+                })}\n\n`,
+              ),
+            );
+          }
+
+          // Emit memory_updated event if available
+          if (memoryUpdated) {
+            controller.enqueue(
+              encoder.encode(
+                `data: ${JSON.stringify({
+                  type: "memory_updated",
+                })}\n\n`,
+              ),
+            );
+          }
+
           controller.enqueue(
             encoder.encode(
               `data: ${JSON.stringify({
                 done: true,
                 userMessage: userMsg,
                 assistantMessage: assistantMsg,
+                actionProposal: lastActionProposal,
+                memoryUpdated: memoryUpdated,
               })}\n\n`,
             ),
           );
