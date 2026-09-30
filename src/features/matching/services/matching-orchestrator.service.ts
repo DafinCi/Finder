@@ -24,6 +24,12 @@ import { MATCHING_WEIGHTS } from "../constants/matching-weights";
 export interface MatchQueryOptions {
   limit?: number;
   offset?: number;
+  overrideFilters?: {
+    targetRoles?: string[];
+    workMode?: ("remote" | "hybrid" | "onsite")[];
+    minSalary?: number;
+    excludeTechnologies?: string[];
+  };
 }
 
 export class MatchingOrchestratorService {
@@ -64,7 +70,7 @@ export class MatchingOrchestratorService {
       throw error;
     }
 
-    const candidateJobs: JobMatchCandidate[] = (rawJobs || []).map(
+    let candidateJobs: JobMatchCandidate[] = (rawJobs || []).map(
       (j: Record<string, unknown>) => ({
         id: j.id as string,
         title: (j.title as string) || "",
@@ -89,17 +95,65 @@ export class MatchingOrchestratorService {
       }),
     );
 
+    let effectiveProfile = profile;
+    if (options?.overrideFilters) {
+      const overrides = options.overrideFilters;
+      effectiveProfile = {
+        ...profile,
+        preferences: {
+          ...profile.preferences,
+          work_modes:
+            overrides.workMode && overrides.workMode.length > 0
+              ? overrides.workMode
+              : profile.preferences.work_modes,
+          salary: overrides.minSalary
+            ? { min_amount: overrides.minSalary, currency: "USD" }
+            : profile.preferences.salary,
+        },
+        careerIntent: {
+          ...profile.careerIntent,
+          target_roles:
+            overrides.targetRoles && overrides.targetRoles.length > 0
+              ? overrides.targetRoles.map((r, idx) => ({
+                  role: r,
+                  priority: idx === 0 ? "primary" : "secondary",
+                }))
+              : profile.careerIntent.target_roles,
+        },
+      };
+    }
+
+    // Apply ad-hoc technology exclusions if requested
+    if (
+      options?.overrideFilters?.excludeTechnologies &&
+      options.overrideFilters.excludeTechnologies.length > 0
+    ) {
+      const excludes = options.overrideFilters.excludeTechnologies.map((t) =>
+        t.toLowerCase().trim(),
+      );
+      candidateJobs = candidateJobs.filter((job) => {
+        const text = (
+          job.title +
+          " " +
+          job.description +
+          " " +
+          job.requirements.join(" ")
+        ).toLowerCase();
+        return !excludes.some((tech) => text.includes(tech));
+      });
+    }
+
     // Stage 1: Filter hard constraints
     const stage1Pool = filterConstraintCompliantJobs(
       candidateJobs,
-      profile,
+      effectiveProfile,
       excludedJobIds,
       MATCHING_WEIGHTS.STAGE1_CANDIDATE_POOL_LIMIT,
     );
 
     // Stage 2: Deterministic scoring and ranking
     const scoredList = stage1Pool.map((job) => {
-      const scoring = scoreJobOpportunity(job, profile);
+      const scoring = scoreJobOpportunity(job, effectiveProfile);
       return {
         job,
         scoring,
