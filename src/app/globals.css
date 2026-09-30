@@ -7,31 +7,31 @@
 @theme inline {
   /* Sui Official Identity */
   --color-sui-black: #000000;
-  --color-sui-white: #ffffff;
-  --color-sui-gray-500: #6c7584;
-  --color-sui-blue-500: #298dff;
-  --color-sui-blue-600: #1759c4;
+  --color-sui-white: #FFFFFF;
+  --color-sui-gray-500: #6C7584;
+  --color-sui-blue-500: #298DFF;
+  --color-sui-blue-600: #1759C4;
 
   /* Slush Official Palette */
-  --color-slush-blue: #4da2ff;
-  --color-slush-glacier: #dceeff;
-  --color-slush-violet: #5c4ade;
-  --color-slush-lavender: #e9ccff;
-  --color-slush-ember: #fb4903;
-  --color-slush-yellow: #ffd731;
-  --color-slush-mint: #55db9c;
-  --color-slush-white: #ffffff;
+  --color-slush-blue: #4DA2FF;
+  --color-slush-glacier: #DCEEFF;
+  --color-slush-violet: #5C4ADE;
+  --color-slush-lavender: #E9CCFF;
+  --color-slush-ember: #FB4903;
+  --color-slush-yellow: #FFD731;
+  --color-slush-mint: #55DB9C;
+  --color-slush-white: #FFFFFF;
   --color-slush-black: #000000;
 
   /* Finder Dark Primitives */
-  --color-finder-bg: #0b0d10;
+  --color-finder-bg: #0B0D10;
   --color-finder-surface-1: #111419;
-  --color-finder-surface-2: #171b22;
-  --color-finder-surface-3: #1d222b;
+  --color-finder-surface-2: #171B22;
+  --color-finder-surface-3: #1D222B;
 
-  --color-finder-text-primary: #f7f8fa;
-  --color-finder-text-secondary: #b5bbc5;
-  --color-finder-text-tertiary: #858c98;
+  --color-finder-text-primary: #F7F8FA;
+  --color-finder-text-secondary: #B5BBC5;
+  --color-finder-text-tertiary: #858C98;
   --color-finder-text-disabled: #626975;
 
   --color-finder-border-subtle: rgba(255, 255, 255, 0.08);
@@ -39,13 +39,13 @@
   --color-finder-border-strong: rgba(255, 255, 255, 0.18);
 
   /* Semantic Utilities */
-  --color-action-primary: #298dff;
-  --color-action-primary-hover: #4da2ff;
-  --color-state-success: #55db9c;
-  --color-state-warning: #ffd731;
-  --color-state-danger: #fb4903;
-  --color-state-special: #5c4ade;
-  --color-state-special-foreground: #e9ccff;
+  --color-action-primary: #298DFF;
+  --color-action-primary-hover: #4DA2FF;
+  --color-state-success: #55DB9C;
+  --color-state-warning: #FFD731;
+  --color-state-danger: #FB4903;
+  --color-state-special: #5C4ADE;
+  --color-state-special-foreground: #E9CCFF;
 
   /* Framework / Shadcn Token Mapping */
   --color-background: var(--background);
@@ -91,72 +91,67 @@
   --radius-pill: 9999px;
 
   /* Typography */
-  --font-sans:
-    var(--font-sans), "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-heading:
-    var(--font-heading), "Plus Jakarta Sans", ui-sans-serif, system-ui,
-    sans-serif;
-  --font-mono:
-    var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco,
-    Consolas, monospace;
+  --font-sans: var(--font-sans), "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-heading), "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 :root {
   /* Finder Base (Dark-Only Specification) */
-  --background: #0b0d10;
-  --foreground: #f7f8fa;
+  --background: #0B0D10;
+  --foreground: #F7F8FA;
 
   /* Surfaces */
   --card: #111419;
-  --card-foreground: #f7f8fa;
+  --card-foreground: #F7F8FA;
 
-  --popover: #171b22;
-  --popover-foreground: #f7f8fa;
+  --popover: #171B22;
+  --popover-foreground: #F7F8FA;
 
   /* Brand / Action Primary (Sui Blue 500) */
-  --primary: #298dff;
-  --primary-foreground: #ffffff;
+  --primary: #298DFF;
+  --primary-foreground: #FFFFFF;
 
   /* Secondary & Muted Surfaces (Finder Surface 2 & 3) */
-  --secondary: #171b22;
-  --secondary-foreground: #b5bbc5;
+  --secondary: #171B22;
+  --secondary-foreground: #B5BBC5;
 
-  --muted: #171b22;
-  --muted-foreground: #858c98;
+  --muted: #171B22;
+  --muted-foreground: #858C98;
 
-  --accent: #171b22;
-  --accent-foreground: #f7f8fa;
+  --accent: #171B22;
+  --accent-foreground: #F7F8FA;
 
   /* Status Colors */
-  --destructive: #fb4903;
-  --destructive-foreground: #ffffff;
-  --success: #55db9c;
-  --warning: #ffd731;
+  --destructive: #FB4903;
+  --destructive-foreground: #FFFFFF;
+  --success: #55DB9C;
+  --warning: #FFD731;
 
   /* UI Borders & Rings */
   --border: rgba(255, 255, 255, 0.12);
   --input: rgba(255, 255, 255, 0.08);
-  --ring: #298dff;
+  --ring: #298DFF;
 
   /* Radius base */
   --radius: 0.75rem;
 
   /* Charts */
-  --chart-1: #298dff;
-  --chart-2: #4da2ff;
-  --chart-3: #55db9c;
-  --chart-4: #ffd731;
-  --chart-5: #5c4ade;
+  --chart-1: #298DFF;
+  --chart-2: #4DA2FF;
+  --chart-3: #55DB9C;
+  --chart-4: #FFD731;
+  --chart-5: #5C4ADE;
 
   /* Sidebar */
-  --sidebar: #0b0d10;
-  --sidebar-foreground: #f7f8fa;
-  --sidebar-primary: #298dff;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #171b22;
-  --sidebar-accent-foreground: #f7f8fa;
+  --sidebar: #0B0D10;
+  --sidebar-foreground: #F7F8FA;
+  --sidebar-primary: #298DFF;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #171B22;
+  --sidebar-accent-foreground: #F7F8FA;
   --sidebar-border: rgba(255, 255, 255, 0.12);
-  --sidebar-ring: #298dff;
+  --sidebar-ring: #298DFF;
 }
 
 /* Custom utility from docs/finder-design-system.md Section 45 */
