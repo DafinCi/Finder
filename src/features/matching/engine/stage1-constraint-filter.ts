@@ -1,14 +1,13 @@
-// ==============================================================================
-// STAGE 1: Hard Constraints SQL & Candidate Pool Filter
+// Stage 1: Hard Constraints SQL and Candidate Pool Filter
 // Module: @/features/matching/engine/stage1-constraint-filter
-// ==============================================================================
 
 import {
   CareerProfile,
   WorkMode,
 } from "@/features/profile/types/career-profile.types";
 import { MATCHING_WEIGHTS } from "../constants/matching-weights";
-import { parseSalaryRange } from "../utils/salary-parser";
+import { parseSalaryRange, convertSalary } from "../utils/salary-parser";
+import { evaluateLocationCompatibility } from "../utils/location-matcher";
 
 export interface JobMatchCandidate {
   id: string;
@@ -24,6 +23,7 @@ export interface JobMatchCandidate {
   salary_range?: string | null;
   salary_min?: number | null;
   salary_max?: number | null;
+  salary_currency?: string | null;
   experience_level?: string | null;
   is_active?: boolean;
   apply_url?: string | null;
@@ -109,21 +109,17 @@ export function isJobConstraintCompliant(
     }
   }
 
-  // 4. Relocation Prohibited Constraint
+  // 4. Relocation & Geolocation Constraint
   if (profile.constraints.relocation_prohibited) {
-    const isRemote = resolvedWorkMode === "remote";
-    if (!isRemote) {
-      const preferredLocations = profile.preferences.locations || [];
-      if (preferredLocations.length > 0) {
-        const jobLoc = (job.location || "").toLowerCase();
-        const matchesLocation = preferredLocations.some((prefLoc) => {
-          const cleanPref = prefLoc.toLowerCase().trim();
-          return jobLoc.includes(cleanPref) || cleanPref.includes(jobLoc);
-        });
-
-        if (!matchesLocation) {
-          return { compliant: false, rejectionReason: "relocation_prohibited" };
-        }
+    const preferredLocations = profile.preferences.locations || [];
+    if (preferredLocations.length > 0) {
+      const locationCheck = evaluateLocationCompatibility(
+        job.location || "",
+        resolvedWorkMode === "remote",
+        preferredLocations,
+      );
+      if (!locationCheck.isCompatible) {
+        return { compliant: false, rejectionReason: "relocation_prohibited" };
       }
     }
   }
@@ -131,16 +127,28 @@ export function isJobConstraintCompliant(
   // 5. Salary Floor Constraint (if stated)
   if (profile.preferences.salary?.min_amount) {
     const candidateMin = profile.preferences.salary.min_amount;
+    const candidateCurrency = profile.preferences.salary.currency || "USD";
     let jobMax: number | null = job.salary_max ?? null;
+    let jobCurrency = job.salary_currency || "USD";
 
     if (jobMax === null && job.salary_range) {
       const parsed = parseSalaryRange(job.salary_range);
       jobMax = parsed.max;
+      if (parsed.currency) {
+        jobCurrency = parsed.currency;
+      }
     }
 
-    // Only filter if job explicitly declared a salary max and it is below candidate minimum
-    if (jobMax !== null && jobMax < candidateMin) {
-      return { compliant: false, rejectionReason: "below_minimum_salary" };
+    // Convert job salary to candidate currency before comparison to prevent currency mismatch errors
+    if (jobMax !== null) {
+      const normalizedJobMax = convertSalary(
+        jobMax,
+        jobCurrency,
+        candidateCurrency,
+      );
+      if (normalizedJobMax < candidateMin) {
+        return { compliant: false, rejectionReason: "below_minimum_salary" };
+      }
     }
   }
 

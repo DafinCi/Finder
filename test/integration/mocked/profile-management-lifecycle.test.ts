@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   CareerProfileRepository,
   CareerProfileDbRow,
@@ -798,14 +798,14 @@ describe("Phase 2E: Profile Management Lifecycle, Invariants & CAS Integration T
       (globalThis.fetch as any).mockResolvedValueOnce(mockConflictResponse);
 
       await expect(
-        profileClientService.updateCareerIntent({
-          expected_version: 3,
-          career_intent: {
+        profileClientService.updateCareerIntent(
+          {
             target_roles: [{ role: "Frontend Engineer", priority: "primary" }],
             target_level: "mid_level",
             employment_types: ["full_time"],
           },
-        }),
+          3,
+        ),
       ).rejects.toThrow(ProfileClientVersionConflictError);
     });
 

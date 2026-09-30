@@ -95,7 +95,7 @@ describe("Unit: Jobs V2 Recommendations & Feedback API", () => {
         ok: false,
         status: 404,
         json: async () => ({
-          error: "Profil karir belum ditemukan.",
+          error: "Career profile not found. Please complete onboarding first.",
           requiresOnboarding: true,
         }),
       });

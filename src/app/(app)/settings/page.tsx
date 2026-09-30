@@ -4,6 +4,8 @@ import React from "react";
 import { User, Shield, Wallet, Mail } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { SuiWalletLinkCard } from "@/features/sui/components/SuiWalletLinkCard";
+import { WalrusStorageCard } from "@/features/walrus/components/WalrusStorageCard";
+import { MemoryManagementCard } from "@/features/memory/components/MemoryManagementCard";
 import { isSyntheticSuiEmail } from "@/lib/sui/auth-abstraction";
 
 export default function SettingsPage() {
@@ -87,6 +89,16 @@ export default function SettingsPage() {
           </h2>
         </div>
         <SuiWalletLinkCard />
+      </div>
+
+      {/* Sovereign Career Memory Management Section */}
+      <div className="space-y-2">
+        <MemoryManagementCard />
+      </div>
+
+      {/* Walrus Decentralized Storage Section */}
+      <div className="space-y-2">
+        <WalrusStorageCard />
       </div>
     </div>
   );

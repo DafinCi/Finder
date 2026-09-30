@@ -321,6 +321,7 @@ export function useOnboardingProfile() {
         const updatedProfile = await onboardingService.saveDraftStep({
           expected_version: state.expectedVersion,
           current_step: 1,
+          resume_id: resumeId,
           background: newBackground,
           capabilities: {
             extraction_status: "success",
@@ -332,6 +333,7 @@ export function useOnboardingProfile() {
         setState((prev) => ({
           ...prev,
           expectedVersion: updatedProfile.profileVersion,
+          resumeId,
           resumeExtracted: true,
           flowMode: "cv_magic",
           background: newBackground,

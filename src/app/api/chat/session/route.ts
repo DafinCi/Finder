@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
 
       if (resumeErr || !resumeRecord) {
         return NextResponse.json(
-          { error: "Dokumen resume tidak ditemukan." },
+          { error: "Resume document not found." },
           { status: 404 },
         );
       }
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(
           {
             error:
-              "Forbidden! Anda tidak memiliki izin untuk mengaitkan resume ini.",
+              "Forbidden! You do not have permission to attach this resume.",
           },
           { status: 403 },
         );
@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
       title ||
       (attachment?.name
         ? `CV analysis: ${attachment.name}`
-        : "Obrolan Karir Baru");
+        : "New Career Chat");
 
     let { data: session, error: sessionError } = await supabase
       .from("chat_sessions")

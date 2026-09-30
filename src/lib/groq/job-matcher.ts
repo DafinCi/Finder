@@ -17,7 +17,7 @@ export const JobMatchResultItemSchema = z.object({
     .string()
     .trim()
     .default(
-      "Kecocokan profil dievaluasi berdasarkan keselarasan tech stack dan pengalaman.",
+      "Profile fit evaluated based on tech stack and experience alignment.",
     ),
   missing_skills: z.array(z.string().trim()).default([]),
 });
@@ -65,7 +65,7 @@ export async function analyzeJobMatches(
 
       const content = completion.choices[0]?.message?.content;
       if (!content) {
-        throw new Error("Tidak menerima respon teks dari model Groq.");
+        throw new Error("No text response received from Groq model.");
       }
 
       const validated = parseAndValidateJson(content, JobMatchResponseSchema);

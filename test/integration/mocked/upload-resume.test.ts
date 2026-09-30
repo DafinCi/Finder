@@ -117,7 +117,7 @@ describe("Integration (Mock-Based): /api/upload-resume", () => {
     const res = await POST(req);
     expect(res.status).toBe(400);
     const json = await res.json();
-    expect(json.error).toContain("wajib dikirim");
+    expect(json.error).toContain("PDF file is required");
   });
 
   it("should return 400 when file has fake PDF extension with invalid magic bytes", async () => {
@@ -141,7 +141,7 @@ describe("Integration (Mock-Based): /api/upload-resume", () => {
 
     expect(res.status).toBe(400);
     const json = await res.json();
-    expect(json.error).toContain("Format file tidak valid");
+    expect(json.error).toContain("Invalid file format");
   });
 
   it("should return 413 when file size exceeds 5MB limit", async () => {
@@ -171,7 +171,7 @@ describe("Integration (Mock-Based): /api/upload-resume", () => {
 
     expect(res.status).toBe(413);
     const json = await res.json();
-    expect(json.error).toContain("Maksimal ukuran file resume adalah 5 MB");
+    expect(json.error).toContain("Maximum resume file size is 5 MB");
   });
 
   it("should return 403 Forbidden when user attempts to attach to another user's session", async () => {
@@ -204,7 +204,7 @@ describe("Integration (Mock-Based): /api/upload-resume", () => {
 
     expect(res.status).toBe(403);
     const json = await res.json();
-    expect(json.error).toContain("bukan milik Anda");
+    expect(json.error).toContain("does not belong to you");
   });
 
   it("should succeed for valid PDF, owner session, and extract text", async () => {

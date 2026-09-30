@@ -1,8 +1,3 @@
-// ==============================================================================
-// DIALOG: EditCareerIntentDialog
-// Module: @/features/profile/components/dialogs/EditCareerIntentDialog
-// ==============================================================================
-
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -339,7 +334,7 @@ export function EditCareerIntentDialog({
                 type="text"
                 value={customRoleInput}
                 onChange={(e) => setCustomRoleInput(e.target.value)}
-                placeholder="+ Tambah role kustom..."
+                placeholder="+ Add custom role..."
                 className="flex-1 bg-secondary/30 border border-border rounded-md px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
               />
               <Button
@@ -351,7 +346,7 @@ export function EditCareerIntentDialog({
                 className="text-xs h-8"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>Tambah</span>
+                <span>Add</span>
               </Button>
             </div>
           </div>

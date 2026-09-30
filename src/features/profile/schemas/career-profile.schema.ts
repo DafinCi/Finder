@@ -176,6 +176,7 @@ export const CareerProfileDbRowSchema = z.object({
 export const SaveDraftProfileRequestSchema = z.object({
   expected_version: z.number().int().min(1),
   current_step: z.number().int().min(1).max(4).optional(),
+  resume_id: z.string().uuid().nullable().optional(),
   background: BackgroundEvidenceSchema.partial().optional(),
   capabilities: CapabilityEvidenceSchema.partial().optional(),
   career_intent: CareerIntentSchema.partial().optional(),

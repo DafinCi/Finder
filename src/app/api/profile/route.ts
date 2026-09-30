@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
 
     if (authError || !user) {
       return NextResponse.json(
-        { error: "Unauthorized! Sesi telah habis, silakan login kembali." },
+        { error: "Unauthorized. Please sign in again." },
         { status: 401 },
       );
     }
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     console.error("[API:Profile:GET] Error retrieving profile:", error);
     return NextResponse.json(
-      { error: "Terjadi kesalahan saat memuat profil karir." },
+      { error: "An error occurred while loading career profile." },
       { status: 500 },
     );
   }
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
 
     if (authError || !user) {
       return NextResponse.json(
-        { error: "Unauthorized! Sesi telah habis, silakan login kembali." },
+        { error: "Unauthorized. Please sign in again." },
         { status: 401 },
       );
     }
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("[API:Profile:POST] Error initializing profile:", error);
     return NextResponse.json(
-      { error: "Terjadi kesalahan saat menginisialisasi profil karir." },
+      { error: "An error occurred while initializing career profile." },
       { status: 500 },
     );
   }

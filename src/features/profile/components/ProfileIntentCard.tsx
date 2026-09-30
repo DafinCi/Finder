@@ -1,8 +1,3 @@
-// ==============================================================================
-// COMPONENT: ProfileIntentCard
-// Module: @/features/profile/components/ProfileIntentCard
-// ==============================================================================
-
 "use client";
 
 import React from "react";
@@ -42,7 +37,7 @@ export function ProfileIntentCard({
 }: ProfileIntentCardProps) {
   const levelLabel = careerIntent?.target_level
     ? LEVEL_LABELS[careerIntent.target_level] || careerIntent.target_level
-    : "Belum ditentukan";
+    : "Not specified";
 
   return (
     <div className="rounded-xl border border-border bg-card p-5 space-y-5 shadow-2xs">
@@ -57,7 +52,7 @@ export function ProfileIntentCard({
               Career Intent
             </h2>
             <p className="text-[11px] text-muted-foreground">
-              Arah karir & target posisi untuk scoring rekomendasi (S_role)
+              Career trajectory and target roles for recommendation matching
             </p>
           </div>
         </div>
@@ -85,12 +80,12 @@ export function ProfileIntentCard({
               {primaryRole.role}
             </span>
             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary text-primary-foreground shadow-2xs">
-              Primary Role (S_role: 1.0)
+              Primary Role (Weight: 1.0)
             </span>
           </div>
         ) : (
           <div className="p-3 rounded-lg bg-secondary/30 border border-dashed border-border text-xs text-muted-foreground">
-            Belum ada primary role yang dipilih. Klik tombol edit untuk memilih.
+            No primary role selected. Select the edit button to choose one.
           </div>
         )}
       </div>
@@ -116,7 +111,7 @@ export function ProfileIntentCard({
           </div>
         ) : (
           <p className="text-xs text-muted-foreground italic">
-            Tidak ada secondary role. (Hanya mencocokkan terhadap primary role).
+            No secondary roles selected. Matching against primary role only.
           </p>
         )}
       </div>
@@ -148,7 +143,7 @@ export function ProfileIntentCard({
                 </span>
               ))
             ) : (
-              <span className="text-muted-foreground">Belum ditentukan</span>
+              <span className="text-muted-foreground">Not specified</span>
             )}
           </div>
         </div>
@@ -159,11 +154,11 @@ export function ProfileIntentCard({
         <div className="pt-2 text-[11px] text-muted-foreground flex items-center gap-1.5">
           <ShieldCheck className="w-3.5 h-3.5 text-primary" />
           <span>
-            Sumber intent:{" "}
+            Goal source:{" "}
             {careerIntent.provenance.source === "user_explicit" ||
             careerIntent.provenance.source === "user_confirmed"
-              ? "Dikonfirmasi langsung oleh Anda"
-              : "Dianalisis dari CV"}
+              ? "Directly confirmed by you"
+              : "Derived from resume extraction"}
           </span>
         </div>
       )}

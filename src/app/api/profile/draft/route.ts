@@ -24,7 +24,7 @@ export async function PATCH(req: NextRequest) {
 
     if (authError || !user) {
       return NextResponse.json(
-        { error: "Unauthorized! Sesi telah habis, silakan login kembali." },
+        { error: "Unauthorized. Please sign in again." },
         { status: 401 },
       );
     }
@@ -79,7 +79,7 @@ export async function PATCH(req: NextRequest) {
 
     console.error("[API:Profile:Draft:PATCH] Unexpected error:", error);
     return NextResponse.json(
-      { error: "Terjadi kesalahan internal saat memperbarui draft profil." },
+      { error: "An internal error occurred while updating profile draft." },
       { status: 500 },
     );
   }

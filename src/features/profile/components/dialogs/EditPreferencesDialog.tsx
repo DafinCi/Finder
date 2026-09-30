@@ -400,12 +400,15 @@ export function EditPreferencesDialog({
                 <select
                   value={salaryCurrency}
                   onChange={(e) => setSalaryCurrency(e.target.value)}
-                  className="w-24 bg-card border border-border rounded-md px-2 py-2 text-xs text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  className="w-28 bg-card border border-border rounded-md px-2 py-2 text-xs text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   <option value="USD">USD ($)</option>
-                  <option value="IDR">IDR (Rp)</option>
                   <option value="EUR">EUR (€)</option>
+                  <option value="GBP">GBP (£)</option>
+                  <option value="CAD">CAD (C$)</option>
+                  <option value="AUD">AUD (A$)</option>
                   <option value="SGD">SGD (S$)</option>
+                  <option value="IDR">IDR (Rp)</option>
                 </select>
 
                 <input

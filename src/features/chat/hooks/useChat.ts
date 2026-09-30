@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
 import { ChatSession, ChatMessage } from "@/types/chat";
 import { chatService } from "../services/chat.service";
 
@@ -201,14 +202,44 @@ export function useChat(sessionId?: string) {
             session_id: sessionId,
             content: prompt,
           },
-          (token: string) => {
-            setMessages((prev) =>
-              prev.map((msg) =>
-                msg.id === tempAssistantId
-                  ? { ...msg, content: msg.content + token }
-                  : msg,
-              ),
-            );
+          {
+            onToken: (token: string) => {
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === tempAssistantId
+                    ? { ...msg, content: msg.content + token }
+                    : msg,
+                ),
+              );
+            },
+            onToolEvent: (event) => {
+              if (event.type === "tool_start") {
+                setThinkingStatus(event.label || "Executing agent tool...");
+              } else if (event.type === "tool_end") {
+                setThinkingStatus("");
+              }
+            },
+            onActionProposal: (proposal) => {
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === tempAssistantId
+                    ? {
+                        ...msg,
+                        metadata: {
+                          ...msg.metadata,
+                          action_proposal: proposal,
+                        },
+                      }
+                    : msg,
+                ),
+              );
+            },
+            onMemoryUpdated: () => {
+              toast.success("Sovereign memory updated", {
+                description:
+                  "Finder safely recorded your career fact to decentralized memory.",
+              });
+            },
           },
         );
 

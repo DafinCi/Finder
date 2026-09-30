@@ -12,10 +12,37 @@ import {
   CAREER_COPILOT_PROMPT_VERSION,
 } from "@/lib/groq/prompts/career-copilot.prompt";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { careerMemoryService } from "@/features/memory/services/career-memory.service";
+import { AGENT_TOOL_DEFINITIONS } from "@/features/agent/tools/agent-tool.definitions";
+import {
+  agentToolDispatcher,
+  ActionProposalData,
+} from "@/features/agent/services/agent-tool-dispatcher.service";
 
 export const dynamic = "force-dynamic";
 
 const MAX_PROMPT_CHARS = 2000;
+
+function getToolStartLabel(toolName: string): string {
+  switch (toolName) {
+    case "get_career_recommendations":
+      return "Searching and analyzing matching career opportunities...";
+    case "inspect_job_details":
+      return "Retrieving detailed job opportunity specifications...";
+    case "save_job":
+      return "Saving opportunity to bookmarks...";
+    case "reject_job":
+      return "Recording rejection feedback...";
+    case "remember_fact":
+      return "Saving fact to sovereign career memory...";
+    case "propose_preference_update":
+      return "Preparing profile preference update proposal...";
+    case "read_candidate_cv":
+      return "Reading and analyzing resume document...";
+    default:
+      return "Executing agent action...";
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -39,7 +66,7 @@ export async function POST(req: NextRequest) {
     if (!rateLimit.success) {
       return NextResponse.json(
         {
-          error: `Terlalu banyak pesan dalam waktu singkat. Mohon tunggu ${rateLimit.resetInSeconds} detik sebelum mengirim lagi.`,
+          error: `Too many requests. Please wait ${rateLimit.resetInSeconds} seconds before sending another message.`,
         },
         {
           status: 429,
@@ -55,7 +82,7 @@ export async function POST(req: NextRequest) {
 
     if (!session_id || !content?.trim()) {
       return NextResponse.json(
-        { error: "session_id dan content wajib diisi" },
+        { error: "session_id and content are required." },
         { status: 400 },
       );
     }
@@ -66,7 +93,7 @@ export async function POST(req: NextRequest) {
     if (cleanContent.length > MAX_PROMPT_CHARS) {
       return NextResponse.json(
         {
-          error: `Pesan terlalu panjang. Maksimal ${MAX_PROMPT_CHARS} karakter per pesan.`,
+          error: `Message too long. Maximum ${MAX_PROMPT_CHARS} characters per message.`,
         },
         { status: 400 },
       );
@@ -82,7 +109,7 @@ export async function POST(req: NextRequest) {
 
     if (sessionError || !session) {
       return NextResponse.json(
-        { error: "Sesi percakapan tidak ditemukan" },
+        { error: "Conversation session not found." },
         { status: 404 },
       );
     }
@@ -100,125 +127,224 @@ export async function POST(req: NextRequest) {
 
     if (userMsgError) throw userMsgError;
 
-    // 1. Load candidate profile context in compressed format to preserve Groq TPM budget
+    // 1. Resolve candidate profile & active resume with dual-source fallback
     let candidateContext = "";
     let matchesContext = "";
+    let activeResumeId = session.resume_id;
+    let candidateProfile: any = null;
+    let activeResumeRecord: any = null;
 
-    if (session.resume_id) {
-      // Security P0: Verify linked resume actually belongs to current user to prevent cross-tenant data leakage
-      const { data: resumeOwnership } = await supabaseAdmin
-        .from("resumes")
-        .select("id, profile_id")
-        .eq("id", session.resume_id)
-        .maybeSingle();
-
-      const isResumeOwner =
-        resumeOwnership && resumeOwnership.profile_id === user.id;
-
-      if (!isResumeOwner) {
-        console.warn(
-          `[SECURITY ALERT] Blocked candidate context leakage: Session ${session_id} has resume_id ${session.resume_id} not owned by user ${user.id}`,
-        );
-      } else {
-        const { data: analysis } = await supabaseAdmin
-          .from("resume_analysis")
-          .select("id, candidate_data, extracted_skills")
-          .eq("resume_id", session.resume_id)
-          .order("created_at", { ascending: false })
+    if (!activeResumeId) {
+      const [cpRes, latestResumeRes] = await Promise.all([
+        supabaseAdmin
+          .from("career_profiles")
+          .select("resume_id, background, capabilities, career_intent, preferences")
+          .eq("profile_id", user.id)
+          .maybeSingle(),
+        supabaseAdmin
+          .from("resumes")
+          .select("id, file_name, raw_text")
+          .eq("profile_id", user.id)
+          .neq("status", "failed")
+          .order("uploaded_at", { ascending: false })
           .limit(1)
-          .maybeSingle();
+          .maybeSingle(),
+      ]);
 
-        if (analysis?.candidate_data) {
-          interface CompressedCandidate {
-            name?: string;
-            title?: string;
-            years_of_experience?: number;
-            skills?: { core?: string[] };
+      candidateProfile = cpRes.data;
+      activeResumeRecord = latestResumeRes.data;
+      activeResumeId =
+        candidateProfile?.resume_id || activeResumeRecord?.id || null;
+
+      if (activeResumeId) {
+        // Non-blocking auto-link to session
+        (async () => {
+          try {
+            await supabaseAdmin
+              .from("chat_sessions")
+              .update({ resume_id: activeResumeId })
+              .eq("id", session_id);
+          } catch (e) {
+            console.warn("Failed to auto-link resume to session:", e);
           }
-          interface CompressedCareer {
-            career_level?: string;
-            strengths?: string[];
-          }
-          interface RawData {
-            candidate?: CompressedCandidate;
-            career?: CompressedCareer;
-            name?: string;
-            title?: string;
-            years_of_experience?: number;
-            skills?: { core?: string[] };
-            career_level?: string;
-            strengths?: string[];
-          }
+        })().catch(() => {});
+      }
+    } else {
+      // Security P0: Verify linked resume belongs to current user
+      const [ownershipRes, cpRes] = await Promise.all([
+        supabaseAdmin
+          .from("resumes")
+          .select("id, profile_id, file_name")
+          .eq("id", activeResumeId)
+          .maybeSingle(),
+        supabaseAdmin
+          .from("career_profiles")
+          .select("resume_id, background, capabilities, career_intent, preferences")
+          .eq("profile_id", user.id)
+          .maybeSingle(),
+      ]);
 
-          const raw = analysis.candidate_data as RawData;
-          const c = raw.candidate || raw;
-          const career = raw.career || raw;
-          const coreSkills = Array.isArray(c?.skills?.core)
-            ? c.skills.core.join(", ")
-            : (analysis.extracted_skills || []).slice(0, 15).join(", ");
-          const strengths = Array.isArray(career?.strengths)
-            ? career.strengths.slice(0, 3).join("; ")
-            : "";
+      const isOwner =
+        ownershipRes.data && ownershipRes.data.profile_id === user.id;
+      if (!isOwner) {
+        console.warn(
+          `[SECURITY ALERT] Blocked candidate context leakage: Session ${session_id} has resume_id ${activeResumeId} not owned by user ${user.id}`,
+        );
+        activeResumeId = null;
+      } else {
+        activeResumeRecord = ownershipRes.data;
+      }
+      candidateProfile = cpRes.data;
+    }
 
-          candidateContext = `\n\n<untrusted_career_data>\n[RINGKASAN PROFIL KANDIDAT AKTIF]:
-- Nama & Title: ${c?.name || "Kandidat"} | ${c?.title || "Professional"}
-- Pengalaman: ${c?.years_of_experience ?? 0} tahun
-- Keahlian Utama: ${coreSkills || "General"}
-- Kekuatan: ${strengths || "Teknis & Adaptif"}
-- Level Karir: ${career?.career_level || "Mid-Level"}\n</untrusted_career_data>`;
+    let analysis: any = null;
+    if (activeResumeId) {
+      const analysisRes = await supabaseAdmin
+        .from("resume_analysis")
+        .select("id, candidate_data, extracted_skills")
+        .eq("resume_id", activeResumeId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      analysis = analysisRes.data;
+    }
 
-          // Grounding: Load candidate's top matched jobs for this session
-          if (analysis.id) {
-            const { data: topMatches } = await supabaseAdmin
-              .from("job_matches")
-              .select(
-                `
-              match_score,
-              missing_skills,
-              jobs:job_id (
-                id,
-                title,
-                location,
-                experience_level,
-                companies:company_id (
-                  name
-                )
-              )
-            `,
-              )
-              .eq("analysis_id", analysis.id)
-              .order("match_score", { ascending: false })
-              .limit(3);
+    if (activeResumeId || candidateProfile) {
+      interface CompressedCandidate {
+        name?: string;
+        title?: string;
+        years_of_experience?: number;
+        skills?: { core?: string[] };
+      }
+      interface CompressedCareer {
+        career_level?: string;
+        strengths?: string[];
+      }
+      interface RawData {
+        candidate?: CompressedCandidate;
+        career?: CompressedCareer;
+        name?: string;
+        title?: string;
+        years_of_experience?: number;
+        skills?: { core?: string[] };
+        career_level?: string;
+        strengths?: string[];
+      }
 
-            interface MatchJoinRow {
-              match_score: number;
-              missing_skills: string[];
-              jobs: {
-                id: string;
-                title: string;
-                location: string;
-                experience_level: string;
-                companies: { name: string } | null;
-              } | null;
-            }
+      const raw = (analysis?.candidate_data as RawData) || {};
+      const c = raw.candidate || raw;
+      const career = raw.career || raw;
 
-            if (topMatches && topMatches.length > 0) {
-              const typedMatches = topMatches as unknown as MatchJoinRow[];
-              const listStr = typedMatches
-                .map(
-                  (m) =>
-                    `- ${m.jobs?.title || "Peran"} di ${
-                      m.jobs?.companies?.name || "Perusahaan Mitra"
-                    } (Kecocokan: ${m.match_score}%, Missing Skills: ${
-                      (m.missing_skills || []).slice(0, 3).join(", ") || "None"
-                    })`,
-                )
-                .join("\n");
-              matchesContext = `\n\n<untrusted_career_data>\n[REKOMENDASI LOWONGAN COCOK UNTUK KANDIDAT INI]:\n${listStr}\n</untrusted_career_data>`;
-            }
-          }
+      const resumeFileName = activeResumeRecord?.file_name || "Resume Document";
+      const candidateName = c?.name || "Candidate";
+      const candidateTitle =
+        c?.title ||
+        candidateProfile?.career_intent?.target_roles?.[0]?.role ||
+        "Professional";
+      const yearsExp = c?.years_of_experience ?? 0;
+      const careerLevel =
+        career?.career_level ||
+        candidateProfile?.career_intent?.target_level ||
+        "Mid-Level";
+
+      const coreSkills = Array.isArray(c?.skills?.core)
+        ? c.skills.core.join(", ")
+        : (analysis?.extracted_skills || []).slice(0, 10).join(", ") ||
+          (candidateProfile?.capabilities?.skills || [])
+            .slice(0, 10)
+            .map((s: any) => s.skill)
+            .join(", ") ||
+          "General";
+
+      const experiences = (candidateProfile?.background?.experience || [])
+        .slice(0, 2)
+        .map((exp: any) => `${exp.role_title} at ${exp.company_name}`)
+        .join("; ");
+
+      const education = (candidateProfile?.background?.education || [])
+        .slice(0, 1)
+        .map((edu: any) => `${edu.degree} at ${edu.institution}`)
+        .join("; ");
+
+      const targetRoles = (
+        candidateProfile?.career_intent?.target_roles || []
+      )
+        .map((r: any) => r.role)
+        .join(", ");
+
+      const workModes = (candidateProfile?.preferences?.work_modes || []).join(
+        ", ",
+      );
+
+      const expStr = experiences
+        ? `\n- Recent Experience: ${experiences}`
+        : "";
+      const eduStr = education ? `\n- Education: ${education}` : "";
+      const targetRolesStr = targetRoles
+        ? `\n- Target Roles: ${targetRoles}`
+        : "";
+      const workModesStr = workModes
+        ? `\n- Work Mode Preferences: ${workModes}`
+        : "";
+
+      candidateContext = `\n\n<untrusted_career_data>\n[ACTIVE CANDIDATE PROFILE & RESUME DATA]:
+- Document Status: Available (${resumeFileName})
+- Name & Title: ${candidateName} | ${candidateTitle}
+- Experience & Level: ${yearsExp > 0 ? `${yearsExp} years | ` : ""}${careerLevel}
+- Key Skills: ${coreSkills}${expStr}${eduStr}${targetRolesStr}${workModesStr}\n</untrusted_career_data>`;
+
+      // Grounding: Load candidate's top matched jobs for this session
+      if (analysis?.id) {
+        const { data: topMatches } = await supabaseAdmin
+          .from("job_matches")
+          .select(
+            `
+          match_score,
+          missing_skills,
+          jobs:job_id (
+            id,
+            title,
+            location,
+            experience_level,
+            companies:company_id (
+              name
+            )
+          )
+        `,
+          )
+          .eq("analysis_id", analysis.id)
+          .order("match_score", { ascending: false })
+          .limit(3);
+
+        interface MatchJoinRow {
+          match_score: number;
+          missing_skills: string[];
+          jobs: {
+            id: string;
+            title: string;
+            location: string;
+            experience_level: string;
+            companies: { name: string } | null;
+          } | null;
+        }
+
+        if (topMatches && topMatches.length > 0) {
+          const typedMatches = topMatches as unknown as MatchJoinRow[];
+          const listStr = typedMatches
+            .map(
+              (m) =>
+                `- ${m.jobs?.title || "Role"} at ${
+                  m.jobs?.companies?.name || "Partner Company"
+                } (Match Score: ${m.match_score}%, Missing Skills: ${
+                  (m.missing_skills || []).slice(0, 3).join(", ") || "None"
+                })`,
+            )
+            .join("\n");
+          matchesContext = `\n\n<untrusted_career_data>\n[RECOMMENDED MATCHES FOR CANDIDATE]:\n${listStr}\n</untrusted_career_data>`;
         }
       }
+    } else {
+      candidateContext = `\n\n<untrusted_career_data>\n[CANDIDATE STATUS]: No resume uploaded or profile registered in the system yet.\n</untrusted_career_data>`;
     }
 
     // 2. Specific Job Grounding: check if user query mentions a specific active job title or company
@@ -253,14 +379,14 @@ export async function POST(req: NextRequest) {
       );
 
       if (matchedActiveJob) {
-        specificJobContext = `\n\n<untrusted_job_data>\n[DATA RESMI LOWONGAN PEKERJAAN YANG SEDANG DITANYAKAN]:
-- Posisi: ${matchedActiveJob.title}
-- Perusahaan: ${matchedActiveJob.companies?.name || "Perusahaan Mitra"}
-- Lokasi & Tipe: ${matchedActiveJob.location} (${matchedActiveJob.job_type})
-- Gaji / Kompensasi: ${matchedActiveJob.salary_range || "Sesuai Standar Industri"}
-- Kualifikasi Persyaratan: ${matchedActiveJob.requirements.join(", ")}
-- Ringkasan Deskripsi: ${matchedActiveJob.description.slice(0, 350)}...
-</untrusted_job_data>\n(Gunakan data lowongan di atas murni sebagai fakta referensi objektif; jangan mengarang fakta yang bertolak belakang).`;
+        specificJobContext = `\n\n<untrusted_job_data>\n[OFFICIAL JOB POSTING DATA UNDER DISCUSSION]:
+- Position: ${matchedActiveJob.title}
+- Company: ${matchedActiveJob.companies?.name || "Partner Company"}
+- Location & Type: ${matchedActiveJob.location} (${matchedActiveJob.job_type})
+- Salary / Compensation: ${matchedActiveJob.salary_range || "Competitive / Industry Standard"}
+- Qualifications & Requirements: ${matchedActiveJob.requirements.join(", ")}
+- Description Summary: ${matchedActiveJob.description.slice(0, 350)}...
+</untrusted_job_data>\n(Treat the above job data strictly as factual reference data. Do not invent contradictory claims).`;
       }
     }
 
@@ -295,10 +421,25 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Load durable sovereign career memories for personalized agent reasoning
+    let memoryContext = "";
+    try {
+      memoryContext = await careerMemoryService.getDurableContextSummary(
+        user.id,
+        5,
+      );
+    } catch (memErr) {
+      console.warn(
+        `[CareerMemory] Failed to load durable context for user ${user.id}:`,
+        (memErr as Error).message,
+      );
+    }
+
     const systemPromptContent = buildCareerCopilotSystemPrompt({
       candidateContext,
       matchesContext,
       specificJobContext,
+      memoryContext,
     });
 
     const messagesForGroq: Array<{
@@ -336,7 +477,17 @@ export async function POST(req: NextRequest) {
     interface ChatCompletionChunk {
       choices: Array<{
         delta?: {
+          role?: string;
           content?: string | null;
+          tool_calls?: Array<{
+            index: number;
+            id?: string;
+            type?: "function";
+            function?: {
+              name?: string;
+              arguments?: string;
+            };
+          }>;
         };
       }>;
       usage?: TokenUsageStats;
@@ -351,6 +502,8 @@ export async function POST(req: NextRequest) {
       stream = (await groq.chat.completions.create({
         model: modelUsed,
         messages: messagesForGroq,
+        tools: AGENT_TOOL_DEFINITIONS as any,
+        tool_choice: "auto",
         temperature: 0.6,
         max_tokens: maxTokensLimit,
         stream: true,
@@ -374,6 +527,8 @@ export async function POST(req: NextRequest) {
         stream = (await groq.chat.completions.create({
           model: modelUsed,
           messages: messagesForGroq,
+          tools: AGENT_TOOL_DEFINITIONS as any,
+          tool_choice: "auto",
           temperature: 0.6,
           max_tokens: maxTokensLimit,
           stream: true,
@@ -390,16 +545,38 @@ export async function POST(req: NextRequest) {
       async start(controller) {
         let fullAssistantContent = "";
         let tokenUsage: TokenUsageStats | null = null;
+        const toolCallsMap = new Map<
+          number,
+          { id: string; name: string; arguments: string }
+        >();
 
         try {
           for await (const chunk of stream) {
-            const token = chunk.choices[0]?.delta?.content || "";
+            const delta = chunk.choices[0]?.delta;
+            const token = delta?.content || "";
             if (token) {
               fullAssistantContent += token;
               controller.enqueue(
                 encoder.encode(`data: ${JSON.stringify({ token })}\n\n`),
               );
             }
+
+            if (delta?.tool_calls && Array.isArray(delta.tool_calls)) {
+              for (const tc of delta.tool_calls) {
+                const idx = tc.index ?? 0;
+                const existing = toolCallsMap.get(idx) || {
+                  id: "",
+                  name: "",
+                  arguments: "",
+                };
+                if (tc.id) existing.id = tc.id;
+                if (tc.function?.name) existing.name += tc.function.name;
+                if (tc.function?.arguments)
+                  existing.arguments += tc.function.arguments;
+                toolCallsMap.set(idx, existing);
+              }
+            }
+
             const chunkWithUsage = chunk as unknown as {
               usage?: TokenUsageStats;
             };
@@ -408,14 +585,161 @@ export async function POST(req: NextRequest) {
             }
           }
 
+          let lastActionProposal: ActionProposalData | null = null;
+          let memoryUpdated = false;
+          const executedToolCallsSummary: Array<{
+            name: string;
+            args: unknown;
+            success: boolean;
+          }> = [];
+
+          // 1-Turn Tool Execution (Strict 1-Turn Cap)
+          if (toolCallsMap.size > 0) {
+            const toolCallList = Array.from(toolCallsMap.values()).map(
+              (tc, idx) => ({
+                id: tc.id || `call_${Date.now()}_${idx}`,
+                name: tc.name,
+                arguments: tc.arguments,
+              }),
+            );
+
+            const toolResultMessages: Array<{
+              role: "tool";
+              tool_call_id: string;
+              name: string;
+              content: string;
+            }> = [];
+
+            for (const tc of toolCallList) {
+              const startLabel = getToolStartLabel(tc.name);
+              controller.enqueue(
+                encoder.encode(
+                  `data: ${JSON.stringify({
+                    type: "tool_start",
+                    tool: tc.name,
+                    label: startLabel,
+                  })}\n\n`,
+                ),
+              );
+
+              let parsedArgs: Record<string, unknown> = {};
+              try {
+                parsedArgs = JSON.parse(tc.arguments || "{}");
+              } catch (parseErr) {
+                console.warn(
+                  `[AgentTool] Failed to parse arguments for ${tc.name}:`,
+                  tc.arguments,
+                );
+              }
+
+              const toolResult = await agentToolDispatcher.executeTool(
+                user.id,
+                tc.name,
+                parsedArgs,
+              );
+
+              executedToolCallsSummary.push({
+                name: tc.name,
+                args: parsedArgs,
+                success: toolResult.success,
+              });
+
+              if (toolResult.actionProposal) {
+                lastActionProposal = toolResult.actionProposal;
+              }
+              if (toolResult.memoryUpdated) {
+                memoryUpdated = true;
+              }
+
+              controller.enqueue(
+                encoder.encode(
+                  `data: ${JSON.stringify({
+                    type: "tool_end",
+                    tool: tc.name,
+                    success: toolResult.success,
+                  })}\n\n`,
+                ),
+              );
+
+              toolResultMessages.push({
+                role: "tool",
+                tool_call_id: tc.id,
+                name: tc.name,
+                content: JSON.stringify(
+                  toolResult.data ?? {
+                    success: toolResult.success,
+                    error: toolResult.error,
+                  },
+                ),
+              });
+            }
+
+            // Turn 2: Synthesize final answer based on tool outputs (capped to 1 cycle)
+            const assistantToolCallMsg = {
+              role: "assistant" as const,
+              content: fullAssistantContent || null,
+              tool_calls: toolCallList.map((tc) => ({
+                id: tc.id,
+                type: "function" as const,
+                function: {
+                  name: tc.name,
+                  arguments: tc.arguments,
+                },
+              })),
+            };
+
+            const turn2Messages = [
+              ...messagesForGroq,
+              assistantToolCallMsg,
+              ...toolResultMessages,
+            ];
+
+            try {
+              const turn2Stream = (await groq.chat.completions.create({
+                model: modelUsed,
+                messages: turn2Messages as any,
+                temperature: 0.6,
+                max_tokens: maxTokensLimit,
+                stream: true,
+                stream_options: { include_usage: true },
+              } as any)) as unknown as AsyncIterable<ChatCompletionChunk>;
+
+              for await (const chunk of turn2Stream) {
+                const token = chunk.choices[0]?.delta?.content || "";
+                if (token) {
+                  fullAssistantContent += token;
+                  controller.enqueue(
+                    encoder.encode(`data: ${JSON.stringify({ token })}\n\n`),
+                  );
+                }
+                const chunkWithUsage = chunk as unknown as {
+                  usage?: TokenUsageStats;
+                };
+                if (chunkWithUsage.usage) {
+                  tokenUsage = chunkWithUsage.usage;
+                }
+              }
+            } catch (turn2Error) {
+              console.error("[AgentTool:Turn2Error]", turn2Error);
+              const fallbackNotice =
+                "\n\n(Action processed successfully by the system.)";
+              fullAssistantContent += fallbackNotice;
+              controller.enqueue(
+                encoder.encode(
+                  `data: ${JSON.stringify({ token: fallbackNotice })}\n\n`,
+                ),
+              );
+            }
+          }
+
           const durationMs = Date.now() - startTime;
           console.log(
-            `[AI:Telemetry] op=ChatStream model=${modelUsed} status=success duration=${durationMs}ms chars=${fullAssistantContent.length} prompt_tokens=${tokenUsage?.prompt_tokens ?? "N/A"} completion_tokens=${tokenUsage?.completion_tokens ?? "N/A"} total_tokens=${tokenUsage?.total_tokens ?? "N/A"}`,
+            `[AI:Telemetry] op=ChatStream model=${modelUsed} status=success duration=${durationMs}ms chars=${fullAssistantContent.length} tools=${executedToolCallsSummary.length} prompt_tokens=${tokenUsage?.prompt_tokens ?? "N/A"} completion_tokens=${tokenUsage?.completion_tokens ?? "N/A"} total_tokens=${tokenUsage?.total_tokens ?? "N/A"}`,
           );
 
           const finalContent =
             fullAssistantContent.trim() ||
-            "Maaf, saya tidak dapat memproses jawaban saat ini. Silakan coba kembali.";
+            "I apologize, but I am unable to process a response right now. Please try again.";
 
           // Save assistant response to database with telemetry metadata
           const { data: assistantMsg, error: insertError } = await supabaseAdmin
@@ -430,6 +754,12 @@ export async function POST(req: NextRequest) {
                 prompt_version: CAREER_COPILOT_PROMPT_VERSION,
                 total_chars: finalContent.length,
                 token_usage: tokenUsage,
+                tool_calls:
+                  executedToolCallsSummary.length > 0
+                    ? executedToolCallsSummary
+                    : undefined,
+                action_proposal: lastActionProposal || undefined,
+                memory_updated: memoryUpdated || undefined,
               },
             })
             .select()
@@ -452,12 +782,37 @@ export async function POST(req: NextRequest) {
             .update({ updated_at: new Date().toISOString() })
             .eq("id", session_id);
 
+          // Emit action_proposal event if available
+          if (lastActionProposal) {
+            controller.enqueue(
+              encoder.encode(
+                `data: ${JSON.stringify({
+                  type: "action_proposal",
+                  proposal: lastActionProposal,
+                })}\n\n`,
+              ),
+            );
+          }
+
+          // Emit memory_updated event if available
+          if (memoryUpdated) {
+            controller.enqueue(
+              encoder.encode(
+                `data: ${JSON.stringify({
+                  type: "memory_updated",
+                })}\n\n`,
+              ),
+            );
+          }
+
           controller.enqueue(
             encoder.encode(
               `data: ${JSON.stringify({
                 done: true,
                 userMessage: userMsg,
                 assistantMessage: assistantMsg,
+                actionProposal: lastActionProposal,
+                memoryUpdated: memoryUpdated,
               })}\n\n`,
             ),
           );
@@ -470,7 +825,7 @@ export async function POST(req: NextRequest) {
             await supabaseAdmin.from("chat_messages").insert({
               session_id,
               role: "assistant",
-              content: `⚠️ Maaf, terjadi kendala saat memproses balasan: ${friendlyMessage}`,
+              content: `⚠️ We encountered an issue while generating a response: ${friendlyMessage}`,
               metadata: {
                 error: true,
                 error_detail: (streamError as Error).message,

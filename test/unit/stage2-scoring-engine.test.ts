@@ -207,6 +207,34 @@ describe("Unit: Stage 2 Scoring Engine", () => {
       const score = computePreferenceScore(unstatedSalaryJob, salaryOnlyPref);
       expect(score).toBe(70); // Neutral score
     });
+
+    it("should penalize remote jobs with incompatible geographic restrictions", () => {
+      const idLocationPref: Preferences = {
+        locations: ["Jakarta, Indonesia"],
+        work_modes: ["remote"],
+        priorities: [],
+        salary: null,
+        negative_preferences: [],
+      };
+
+      const usOnlyRemoteJob = { ...sampleJob, location: "USA Only" };
+      const score = computePreferenceScore(usOnlyRemoteJob, idLocationPref);
+      expect(score).toBe(25); // Penalized from 100 to 25
+    });
+
+    it("should score cross-currency salaries accurately (IDR candidate with USD job)", () => {
+      const idrSalaryPref: Preferences = {
+        locations: [],
+        work_modes: [],
+        priorities: [],
+        salary: { min_amount: 15000000, currency: "IDR" }, // ~937 USD
+        negative_preferences: [],
+      };
+
+      // Job pays $90k - $110k USD, well above 15m IDR
+      const score = computePreferenceScore(sampleJob, idrSalaryPref);
+      expect(score).toBe(100);
+    });
   });
 
   describe("computeNegativePreferencePenalty", () => {

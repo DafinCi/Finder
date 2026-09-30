@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
 
     if (authError || !user) {
       return NextResponse.json(
-        { error: "Unauthorized! Silakan login kembali." },
+        { error: "Unauthorized. Please sign in again." },
         { status: 401 },
       );
     }
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
 
     if (!resumeId) {
       return NextResponse.json(
-        { error: "resumeId wajib dikirim." },
+        { error: "resumeId is required." },
         { status: 400 },
       );
     }
@@ -62,14 +62,14 @@ export async function POST(req: NextRequest) {
 
     if (resumeFetchError || !resumeRecord) {
       return NextResponse.json(
-        { error: "Dokumen resume tidak ditemukan" },
+        { error: "Resume document not found." },
         { status: 404 },
       );
     }
 
     if (resumeRecord.profile_id !== user.id) {
       return NextResponse.json(
-        { error: "Forbidden! Anda tidak memiliki izin untuk resume ini." },
+        { error: "Forbidden! You do not have permission to access this resume." },
         { status: 403 },
       );
     }
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error:
-            "Dokumen resume tidak memiliki teks yang valid di server. Silakan unggah ulang dokumen Anda.",
+            "Resume document does not contain valid text on the server. Please re-upload your document.",
         },
         { status: 400 },
       );
@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(
           {
             error:
-              "Forbidden! Sesi percakapan tidak valid atau bukan milik Anda.",
+              "Forbidden! Conversation session is invalid or does not belong to you.",
           },
           { status: 403 },
         );

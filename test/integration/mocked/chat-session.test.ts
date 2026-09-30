@@ -103,7 +103,7 @@ describe("Integration (Mock-Based): /api/chat/session/[id]", () => {
 
       expect(res.status).toBe(404);
       const json = await res.json();
-      expect(json.error).toContain("tidak ditemukan");
+      expect(json.error).toContain("not found");
     });
 
     it("should return session and messages for the rightful owner", async () => {
