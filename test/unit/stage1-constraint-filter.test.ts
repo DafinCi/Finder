@@ -185,6 +185,42 @@ describe("Unit: Stage 1 Constraint Filter", () => {
       const check = isJobConstraintCompliant(localOnsiteJob, profile);
       expect(check.compliant).toBe(true);
     });
+    it("should reject remote jobs with incompatible geographic restrictions when relocation is prohibited", () => {
+      const profile = {
+        ...baseProfile,
+        preferences: { ...baseProfile.preferences, locations: ["Jakarta, Indonesia"] },
+        constraints: {
+          ...baseProfile.constraints,
+          relocation_prohibited: true,
+        },
+      };
+      const usOnlyRemoteJob = {
+        ...sampleJob,
+        work_mode: "remote" as const,
+        location: "USA Only",
+      };
+      const check = isJobConstraintCompliant(usOnlyRemoteJob, profile);
+      expect(check.compliant).toBe(false);
+      expect(check.rejectionReason).toBe("relocation_prohibited");
+    });
+
+    it("should allow worldwide remote jobs regardless of candidate location when relocation is prohibited", () => {
+      const profile = {
+        ...baseProfile,
+        preferences: { ...baseProfile.preferences, locations: ["Jakarta, Indonesia"] },
+        constraints: {
+          ...baseProfile.constraints,
+          relocation_prohibited: true,
+        },
+      };
+      const worldwideJob = {
+        ...sampleJob,
+        work_mode: "remote" as const,
+        location: "Worldwide",
+      };
+      const check = isJobConstraintCompliant(worldwideJob, profile);
+      expect(check.compliant).toBe(true);
+    });
   });
 
   describe("Salary floor constraint", () => {
@@ -198,6 +234,45 @@ describe("Unit: Stage 1 Constraint Filter", () => {
       };
       const lowSalaryJob = { ...sampleJob, salary_range: "$60,000 - $75,000" };
       const check = isJobConstraintCompliant(lowSalaryJob, profile);
+      expect(check.compliant).toBe(false);
+      expect(check.rejectionReason).toBe("below_minimum_salary");
+    });
+
+    it("should accurately compare across currencies (e.g. IDR candidate with Remotive USD job)", () => {
+      // Candidate expects min 15,000,000 IDR (~$937 USD)
+      const profile = {
+        ...baseProfile,
+        preferences: {
+          ...baseProfile.preferences,
+          salary: { min_amount: 15000000, currency: "IDR" },
+        },
+      };
+      // Remotive USD job paying $60k - $80k (well above 15m IDR)
+      const usdJob = {
+        ...sampleJob,
+        salary_range: "$60,000 - $80,000",
+        salary_currency: "USD",
+      };
+      const check = isJobConstraintCompliant(usdJob, profile);
+      expect(check.compliant).toBe(true);
+    });
+
+    it("should filter out job when converted cross-currency salary is below candidate minimum", () => {
+      // Candidate expects min $100,000 USD
+      const profile = {
+        ...baseProfile,
+        preferences: {
+          ...baseProfile.preferences,
+          salary: { min_amount: 100000, currency: "USD" },
+        },
+      };
+      // Local job paying Rp 20,000,000 IDR (~$1,250 USD)
+      const lowIdrJob = {
+        ...sampleJob,
+        salary_range: "Rp 20.000.000",
+        salary_currency: "IDR",
+      };
+      const check = isJobConstraintCompliant(lowIdrJob, profile);
       expect(check.compliant).toBe(false);
       expect(check.rejectionReason).toBe("below_minimum_salary");
     });

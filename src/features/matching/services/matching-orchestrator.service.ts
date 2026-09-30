@@ -86,6 +86,7 @@ export class MatchingOrchestratorService {
           "unknown",
         job_type: (j.job_type as string) || null,
         salary_range: (j.salary_range as string) || null,
+        salary_currency: (j.salary_currency as string) || null,
         experience_level: (j.experience_level as string) || null,
         is_active: j.is_active as boolean,
         apply_url: (j.apply_url as string) || null,
@@ -107,7 +108,10 @@ export class MatchingOrchestratorService {
               ? overrides.workMode
               : profile.preferences.work_modes,
           salary: overrides.minSalary
-            ? { min_amount: overrides.minSalary, currency: "USD" }
+            ? {
+                min_amount: overrides.minSalary,
+                currency: profile.preferences.salary?.currency || "USD",
+              }
             : profile.preferences.salary,
         },
         careerIntent: {

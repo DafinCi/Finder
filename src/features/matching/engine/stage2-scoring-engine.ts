@@ -1,7 +1,5 @@
-// ==============================================================================
-// STAGE 2: Deterministic Scoring & Ranking Engine
+// Stage 2: Deterministic Scoring and Ranking Engine
 // Module: @/features/matching/engine/stage2-scoring-engine
-// ==============================================================================
 
 import {
   CareerProfile,
@@ -13,7 +11,8 @@ import {
 import { MatchScoreBreakdown } from "../types/matching.types";
 import { MATCHING_WEIGHTS } from "../constants/matching-weights";
 import { matchesSkill } from "../utils/skill-normalizer";
-import { parseSalaryRange } from "../utils/salary-parser";
+import { parseSalaryRange, convertSalary } from "../utils/salary-parser";
+import { evaluateLocationCompatibility } from "../utils/location-matcher";
 import {
   JobMatchCandidate,
   resolveJobWorkMode,
@@ -200,17 +199,15 @@ export function computePreferenceScore(
   let locScore = 70; // default neutral
   if (hasLocations) {
     const jobWorkMode = resolveJobWorkMode(job);
-    if (jobWorkMode === "remote") {
-      locScore = 100;
-    } else if (jobWorkMode === "unknown") {
-      locScore = 70; // neutral for unknown work mode
+    if (jobWorkMode === "unknown") {
+      locScore = 70; // neutral for unclassified work mode
     } else {
-      const jobLoc = (job.location || "").toLowerCase();
-      const matched = preferences.locations.some((prefLoc) => {
-        const clean = prefLoc.toLowerCase().trim();
-        return jobLoc.includes(clean) || clean.includes(jobLoc);
-      });
-      locScore = matched ? 100 : 20;
+      const compatibility = evaluateLocationCompatibility(
+        job.location || "",
+        jobWorkMode === "remote",
+        preferences.locations,
+      );
+      locScore = compatibility.score;
     }
   }
 
@@ -234,15 +231,25 @@ export function computePreferenceScore(
   let salScore = 70; // neutral default (never penalize unstated salary)
   if (hasSalary) {
     const candidateMin = preferences.salary!.min_amount!;
+    const candidateCurrency = preferences.salary!.currency || "USD";
     let jobMax: number | null = job.salary_max ?? null;
+    let jobCurrency = job.salary_currency || "USD";
 
     if (jobMax === null && job.salary_range) {
       const parsed = parseSalaryRange(job.salary_range);
       jobMax = parsed.max;
+      if (parsed.currency) {
+        jobCurrency = parsed.currency;
+      }
     }
 
     if (jobMax !== null) {
-      salScore = jobMax >= candidateMin ? 100 : 0;
+      const normalizedJobMax = convertSalary(
+        jobMax,
+        jobCurrency,
+        candidateCurrency,
+      );
+      salScore = normalizedJobMax >= candidateMin ? 100 : 0;
     } else {
       salScore = 70; // Neutral if job did not state salary
     }
