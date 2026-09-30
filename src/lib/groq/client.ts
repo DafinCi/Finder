@@ -63,7 +63,7 @@ export function parseAndValidateJson<T>(text: string, schema: z.ZodType<T>): T {
       .map((i) => `${i.path.join(".") || "root"}: ${i.message}`)
       .join("; ");
     throw new Error(
-      `Struktur respons AI tidak memenuhi skema yang diharapkan: ${issueSummary}`,
+      `AI response structure does not match expected schema: ${issueSummary}`,
     );
   }
 
@@ -71,7 +71,7 @@ export function parseAndValidateJson<T>(text: string, schema: z.ZodType<T>): T {
 }
 
 export function normalizeGroqError(error: unknown): string {
-  if (!error) return "Terjadi kesalahan pada layanan AI.";
+  if (!error) return "An error occurred with the AI service.";
   const err = error as { status?: number; message?: string; code?: string };
   const message = err.message || String(error);
 
@@ -81,14 +81,14 @@ export function normalizeGroqError(error: unknown): string {
     message.toLowerCase().includes("rate limit") ||
     message.toLowerCase().includes("tpm")
   ) {
-    return "Layanan AI sedang mencapai batas kapasitas trafik (Rate Limit). Sedang dialihkan atau silakan coba beberapa saat lagi.";
+    return "AI service traffic limit reached. Rerouting request or please try again shortly.";
   }
   if (
     message.toLowerCase().includes("timeout") ||
     message.toLowerCase().includes("timed out") ||
     message.toLowerCase().includes("etimedout")
   ) {
-    return "Koneksi ke layanan AI melebihi batas waktu (timeout 30s). Silakan periksa jaringan dan coba kembali.";
+    return "Connection to AI service timed out (30s). Please check your connection and try again.";
   }
   if (
     err.status === 503 ||
@@ -96,14 +96,14 @@ export function normalizeGroqError(error: unknown): string {
     message.toLowerCase().includes("overloaded") ||
     message.toLowerCase().includes("unavailable")
   ) {
-    return "Penyedia model AI sedang mengalami beban tinggi sementara. Silakan coba kembali sesaat lagi.";
+    return "AI model provider is experiencing temporary high load. Please try again in a moment.";
   }
   if (
     err.status === 401 ||
     message.includes("401") ||
     message.toLowerCase().includes("api key")
   ) {
-    return "Kredensial API AI tidak valid atau belum dikonfigurasi.";
+    return "AI API credentials are invalid or unconfigured.";
   }
 
   return message;

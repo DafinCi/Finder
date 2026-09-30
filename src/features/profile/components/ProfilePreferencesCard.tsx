@@ -1,8 +1,3 @@
-// ==============================================================================
-// COMPONENT: ProfilePreferencesCard
-// Module: @/features/profile/components/ProfilePreferencesCard
-// ==============================================================================
-
 "use client";
 
 import React from "react";
@@ -39,8 +34,8 @@ export function ProfilePreferencesCard({
   const isRelocationProhibited = Boolean(constraints?.relocation_prohibited);
 
   const formattedSalary = preferences?.salary?.min_amount
-    ? `${preferences.salary.currency} ${preferences.salary.min_amount.toLocaleString("id-ID")}`
-    : "Not specified (Fleksibel / Netral)";
+    ? `${preferences.salary.currency} ${preferences.salary.min_amount.toLocaleString("en-US")}`
+    : "Flexible (No minimum constraint)";
 
   return (
     <div className="rounded-xl border border-border bg-card p-5 space-y-5 shadow-2xs">
@@ -55,8 +50,7 @@ export function ProfilePreferencesCard({
               Career Preferences & Constraints
             </h2>
             <p className="text-[11px] text-muted-foreground">
-              Parameter filter ketat (Stage 1) dan preferensi fleksibel (Stage
-              2)
+              Strict constraints (Stage 1) and flexible preferences (Stage 2)
             </p>
           </div>
         </div>
@@ -86,8 +80,8 @@ export function ProfilePreferencesCard({
             }`}
           >
             {isWorkModeStrict
-              ? "Stage 1: Hard Filter (Ketat)"
-              : "Stage 2: Soft Preference (Fleksibel)"}
+              ? "Stage 1: Strict Constraint"
+              : "Stage 2: Flexible Preference"}
           </span>
         </div>
 
@@ -103,7 +97,7 @@ export function ProfilePreferencesCard({
             ))
           ) : (
             <span className="text-xs text-muted-foreground italic">
-              Belum ditentukan
+              Not specified
             </span>
           )}
         </div>
@@ -127,14 +121,14 @@ export function ProfilePreferencesCard({
                 </span>
               ))
             ) : (
-              <span className="text-muted-foreground">Seluruh lokasi</span>
+              <span className="text-muted-foreground">Any location</span>
             )}
           </div>
         </div>
 
         <div className="space-y-1">
           <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">
-            Kebijakan Relokasi
+            Relocation Policy
           </span>
           <span
             className={`inline-block px-2.5 py-1 rounded-md text-xs font-medium ${
@@ -144,8 +138,8 @@ export function ProfilePreferencesCard({
             }`}
           >
             {isRelocationProhibited
-              ? "Relokasi Ditolak (Strict)"
-              : "Terbuka untuk Relokasi"}
+              ? "Relocation Prohibited (Strict)"
+              : "Open to Relocation"}
           </span>
         </div>
       </div>
@@ -162,8 +156,8 @@ export function ProfilePreferencesCard({
           </span>
           <span className="text-[10px] text-muted-foreground">
             {preferences?.salary?.min_amount
-              ? "Min. ekspektasi"
-              : "Tidak membatasi rekomendasi"}
+              ? "Minimum expected"
+              : "No minimum constraint"}
           </span>
         </div>
       </div>
@@ -173,7 +167,7 @@ export function ProfilePreferencesCard({
         <div className="pt-2 border-t border-border/60 space-y-1.5">
           <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
             <Sparkles className="w-3 h-3 text-primary" />
-            Prioritas Kandidat
+            Candidate Priorities
           </span>
           <div className="flex flex-wrap gap-1.5">
             {preferences.priorities.map((p) => (
@@ -212,8 +206,8 @@ export function ProfilePreferencesCard({
           </div>
         ) : (
           <p className="text-xs text-muted-foreground italic">
-            Tidak ada kriteria negatif. Finder tidak akan memotong skor untuk
-            industri/teknologi tertentu.
+            No negative preferences declared. Finder will not apply score penalties for
+            specific domains or technologies.
           </p>
         )}
       </div>

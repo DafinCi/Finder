@@ -58,7 +58,7 @@ export class ProfileClientService {
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
       throw new ProfileClientError(
-        body.error || "Gagal memuat profil karir",
+        body.error || "Failed to load career profile",
         res.status,
         body.details,
       );
@@ -81,7 +81,7 @@ export class ProfileClientService {
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
       throw new ProfileClientError(
-        body.error || "Gagal menginisialisasi profil karir",
+        body.error || "Failed to initialize career profile",
         res.status,
         body.details,
       );
@@ -171,7 +171,7 @@ export class ProfileClientService {
 
     if (res.status === 409) {
       throw new ProfileClientVersionConflictError(
-        body.error || "Terjadi konflik versi profil. Silakan refresh data.",
+        body.error || "Profile version conflict occurred. Please refresh the page.",
         expectedVersion,
         body.currentVersion,
       );
@@ -179,7 +179,7 @@ export class ProfileClientService {
 
     if (!res.ok) {
       throw new ProfileClientError(
-        body.error || "Gagal memperbarui profil karir",
+        body.error || "Failed to update career profile",
         res.status,
         body.details,
       );

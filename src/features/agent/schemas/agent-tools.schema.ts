@@ -131,7 +131,7 @@ export const ProposePreferenceUpdateInputSchema = z.object({
     .min(5)
     .max(200)
     .describe(
-      "Clear, user-facing summary of the proposed preference change (e.g., 'Ubah preferensi kerja menjadi Remote & Hybrid')",
+      "Clear, user-facing summary of the proposed preference change (e.g., 'Update work mode preference to Remote & Hybrid')",
     ),
 });
 

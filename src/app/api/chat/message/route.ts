@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
     if (!rateLimit.success) {
       return NextResponse.json(
         {
-          error: `Terlalu banyak pesan dalam waktu singkat. Mohon tunggu ${rateLimit.resetInSeconds} detik sebelum mengirim lagi.`,
+          error: `Too many requests. Please wait ${rateLimit.resetInSeconds} seconds before sending another message.`,
         },
         {
           status: 429,
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
 
     if (!session_id || !content?.trim()) {
       return NextResponse.json(
-        { error: "session_id dan content wajib diisi" },
+        { error: "session_id and content are required." },
         { status: 400 },
       );
     }
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
     if (cleanContent.length > MAX_PROMPT_CHARS) {
       return NextResponse.json(
         {
-          error: `Pesan terlalu panjang. Maksimal ${MAX_PROMPT_CHARS} karakter per pesan.`,
+          error: `Message too long. Maximum ${MAX_PROMPT_CHARS} characters per message.`,
         },
         { status: 400 },
       );
@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
 
     if (sessionError || !session) {
       return NextResponse.json(
-        { error: "Sesi percakapan tidak ditemukan" },
+        { error: "Conversation session not found." },
         { status: 404 },
       );
     }
@@ -722,7 +722,7 @@ export async function POST(req: NextRequest) {
             } catch (turn2Error) {
               console.error("[AgentTool:Turn2Error]", turn2Error);
               const fallbackNotice =
-                "\n\n(Tindakan berhasil diproses oleh sistem.)";
+                "\n\n(Action processed successfully by the system.)";
               fullAssistantContent += fallbackNotice;
               controller.enqueue(
                 encoder.encode(
@@ -739,7 +739,7 @@ export async function POST(req: NextRequest) {
 
           const finalContent =
             fullAssistantContent.trim() ||
-            "Maaf, saya tidak dapat memproses jawaban saat ini. Silakan coba kembali.";
+            "I apologize, but I am unable to process a response right now. Please try again.";
 
           // Save assistant response to database with telemetry metadata
           const { data: assistantMsg, error: insertError } = await supabaseAdmin
@@ -825,7 +825,7 @@ export async function POST(req: NextRequest) {
             await supabaseAdmin.from("chat_messages").insert({
               session_id,
               role: "assistant",
-              content: `⚠️ Maaf, terjadi kendala saat memproses balasan: ${friendlyMessage}`,
+              content: `⚠️ We encountered an issue while generating a response: ${friendlyMessage}`,
               metadata: {
                 error: true,
                 error_detail: (streamError as Error).message,

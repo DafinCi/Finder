@@ -400,7 +400,7 @@ export class AgentToolDispatcher {
       return {
         success: false,
         toolName: "read_candidate_cv",
-        error: "Kandidat belum mengunggah dokumen CV atau melengkapi profil karir di sistem.",
+        error: "Candidate has not uploaded a resume or completed their career profile in the system yet.",
       };
     }
 

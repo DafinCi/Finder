@@ -3,9 +3,17 @@
  * Converts user prompt or CV upload metadata into a clean, concise, 3-6 word title.
  */
 export function generateSmartSessionTitle(prompt: string): string {
-  if (!prompt || typeof prompt !== "string") {
-    return "Konsultasi Karir";
+  if (!prompt || typeof prompt !== "string" || !prompt.trim()) {
+    return "Career Consultation";
   }
+
+  const isIndonesianContext =
+    /^(halo|hai|selamat\s+(pagi|siang|sore|malam)|permisi|tolong|mohon)\b/i.test(
+      prompt.trim(),
+    );
+  const fallbackTitle = isIndonesianContext
+    ? "Konsultasi Karir"
+    : "Career Consultation";
 
   // 1. Strip markdown code fences, urls, and special characters
   let cleaned = prompt
@@ -20,7 +28,7 @@ export function generateSmartSessionTitle(prompt: string): string {
     /^(halo|hai|hey|hi|hello)\s*(min|kak|bang|admin|copilot|ai)?[,.!]?\s*/i,
     /^(selamat\s+(pagi|siang|sore|malam))\s*(kak|min|bang|pak|bu)?[,.!]?\s*/i,
     /^(tolong\s+bantu\s+saya|bantu\s+saya|tolong|mohon|bisakah\s+anda|bisa\s+bantu|saya\s+mau|saya\s+ingin|mau\s+tanya|tanya\s+dong|tanya)\s*/i,
-    /^(can\s+you\s+please|could\s+you\s+please|can\s+you|could\s+you|please\s+help\s+me|please|help\s+me|i\s+want\s+to|i\s+need|i'd\s+like\s+to)\s*/i,
+    /^(can\s+you\s+please|could\s+you\s+please|can\s+you|could\s+you|please\s+help\s+me|please|help\s+me|i\s+want\s+to|i\s+need|i'd\s+like\s+to|tell\s+me\s+about)\s*/i,
     /^(bagaimana\s+cara|gimana\s+cara|cara\s+untuk|how\s+to)\s*/i,
     /^(kak|min|bang|admin|pak|bu|gan)[,.!]?\s*/i,
   ];
@@ -38,9 +46,9 @@ export function generateSmartSessionTitle(prompt: string): string {
     }
   }
 
-  // If after stripping prefixes there's nothing left, or it was just a greeting
+  // If after stripping prefixes there is nothing left, or it was just a greeting
   if (!cleaned || cleaned.length < 3) {
-    return "Konsultasi Karir";
+    return fallbackTitle;
   }
 
   // 3. Take up to the first sentence or question
@@ -65,5 +73,5 @@ export function generateSmartSessionTitle(prompt: string): string {
     cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
   }
 
-  return cleaned || "Konsultasi Karir";
+  return cleaned || fallbackTitle;
 }

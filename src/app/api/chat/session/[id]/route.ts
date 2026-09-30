@@ -27,7 +27,7 @@ export async function GET(
 
     if (sessionError || !session) {
       return NextResponse.json(
-        { error: "Sesi percakapan tidak ditemukan" },
+        { error: "Conversation session not found." },
         { status: 404 },
       );
     }
@@ -112,14 +112,14 @@ export async function PATCH(
 
     if (!rawTitle || rawTitle.length === 0) {
       return NextResponse.json(
-        { error: "Judul sesi percakapan tidak boleh kosong." },
+        { error: "Conversation session title cannot be empty." },
         { status: 400 },
       );
     }
 
     if (rawTitle.length > 100) {
       return NextResponse.json(
-        { error: "Judul sesi percakapan maksimal 100 karakter." },
+        { error: "Conversation session title cannot exceed 100 characters." },
         { status: 400 },
       );
     }
@@ -137,7 +137,7 @@ export async function PATCH(
 
     if (updateError || !updatedSession) {
       return NextResponse.json(
-        { error: "Sesi percakapan tidak ditemukan atau gagal diperbarui." },
+        { error: "Conversation session not found or failed to update." },
         { status: 404 },
       );
     }

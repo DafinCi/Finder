@@ -129,7 +129,7 @@ describe("Integration (Mock-Based): /api/chat/message", () => {
 
     expect(res.status).toBe(400);
     const json = await res.json();
-    expect(json.error).toMatch(/maksimal 2000 karakter/i);
+    expect(json.error).toMatch(/maximum 2000 characters/i);
   });
 
   it("should return 404 when session belongs to another user (IDOR prevention)", async () => {
@@ -151,7 +151,7 @@ describe("Integration (Mock-Based): /api/chat/message", () => {
 
     expect(res.status).toBe(404);
     const json = await res.json();
-    expect(json.error).toContain("tidak ditemukan");
+    expect(json.error).toContain("not found");
   });
 
   it("should switch to fallback model when primary model encounters 429 rate limit", async () => {

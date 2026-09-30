@@ -5,7 +5,7 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseServiceKey) {
   throw new Error(
-    "Supabase URL atau SUPABASE_SERVICE_ROLE_KEY kosong/tidak terbaca di environment variables.",
+    "Supabase URL or SUPABASE_SERVICE_ROLE_KEY is missing from environment variables.",
   );
 }
 

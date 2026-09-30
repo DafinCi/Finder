@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
 
     if (authError || !user) {
       return NextResponse.json(
-        { error: "Unauthorized! Sesi telah habis, silakan login kembali." },
+        { error: "Unauthorized. Please sign in again." },
         { status: 401 },
       );
     }
@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     console.error("[API:Feedback:GET] Unexpected error:", error);
     return NextResponse.json(
-      { error: "Gagal mengambil daftar pekerjaan tersimpan." },
+      { error: "Failed to retrieve saved jobs list." },
       { status: 500 },
     );
   }
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
 
     if (authError || !user) {
       return NextResponse.json(
-        { error: "Unauthorized! Sesi telah habis, silakan login kembali." },
+        { error: "Unauthorized. Please sign in again." },
         { status: 401 },
       );
     }
@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("[API:Feedback:POST] Unexpected error:", error);
     return NextResponse.json(
-      { error: "Terjadi kesalahan saat memproses feedback pekerjaan." },
+      { error: "An error occurred while processing job feedback." },
       { status: 500 },
     );
   }

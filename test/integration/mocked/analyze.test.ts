@@ -81,7 +81,7 @@ describe("Integration (Mock-Based): /api/analyze", () => {
 
     expect(res.status).toBe(400);
     const json = await res.json();
-    expect(json.error).toContain("resumeId wajib dikirim");
+    expect(json.error).toContain("resumeId is required");
   });
 
   it("should return 404 when resume is not found in database", async () => {
@@ -149,7 +149,7 @@ describe("Integration (Mock-Based): /api/analyze", () => {
 
     expect(res.status).toBe(400);
     const json = await res.json();
-    expect(json.error).toContain("tidak memiliki teks yang valid di server");
+    expect(json.error).toContain("does not contain valid text on the server");
   });
 
   it("should return 403 when sessionId is provided but belongs to another user", async () => {
@@ -181,7 +181,7 @@ describe("Integration (Mock-Based): /api/analyze", () => {
 
     expect(res.status).toBe(403);
     const json = await res.json();
-    expect(json.error).toContain("bukan milik Anda");
+    expect(json.error).toContain("does not belong to you");
   });
 
   it("should execute workflow and return 200 when all validation passes", async () => {

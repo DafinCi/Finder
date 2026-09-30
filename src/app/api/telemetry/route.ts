@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
 
     if (authError || !user) {
       return NextResponse.json(
-        { error: "Unauthorized! Sesi telah habis, silakan login kembali." },
+        { error: "Unauthorized. Please sign in again." },
         { status: 401 },
       );
     }
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("[API:Telemetry:POST] Unexpected error:", error);
     return NextResponse.json(
-      { error: "Terjadi kesalahan saat memproses telemetri interaksi." },
+      { error: "An error occurred while processing interaction telemetry." },
       { status: 500 },
     );
   }

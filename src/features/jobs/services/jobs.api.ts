@@ -58,7 +58,7 @@ export const jobsApi = {
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      throw new Error(data?.error || "Gagal memuat rekomendasi pekerjaan.");
+      throw new Error(data?.error || "Failed to load job recommendations.");
     }
 
     const { recommendations = [] } = (await res.json()) as {
@@ -128,7 +128,7 @@ export const jobsApi = {
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      throw new Error(data?.error || "Gagal menyimpan pekerjaan.");
+      throw new Error(data?.error || "Failed to save job.");
     }
     return true;
   },
@@ -147,7 +147,7 @@ export const jobsApi = {
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      throw new Error(data?.error || "Gagal membatalkan simpan pekerjaan.");
+      throw new Error(data?.error || "Failed to unsave job.");
     }
     return true;
   },
@@ -170,7 +170,7 @@ export const jobsApi = {
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      throw new Error(data?.error || "Gagal mencatat preferensi pekerjaan.");
+      throw new Error(data?.error || "Failed to record job preference.");
     }
     return true;
   },

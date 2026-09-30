@@ -46,13 +46,13 @@ export async function POST(req: NextRequest) {
     const file = formData.get("file") as File | null;
     if (!file) {
       return NextResponse.json(
-        { error: "File PDF wajib dikirim!" },
+        { error: "PDF file is required." },
         { status: 400 },
       );
     }
     if (file.type !== "application/pdf") {
       return NextResponse.json(
-        { error: "Format file harus PDF!" },
+        { error: "File format must be PDF." },
         { status: 400 },
       );
     }
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error:
-            "Ukuran file terlalu besar! Maksimal ukuran file resume adalah 5 MB.",
+            "File size too large. Maximum resume file size is 5 MB.",
         },
         { status: 413 },
       );
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error:
-            "Format file tidak valid. Dokumen harus berupa file PDF murni.",
+            "Invalid file format. Document must be a valid PDF.",
         },
         { status: 400 },
       );
@@ -220,7 +220,7 @@ export async function POST(req: NextRequest) {
 
       if (sessionFetchError || !sessionRecord) {
         return NextResponse.json(
-          { error: "Sesi percakapan tidak ditemukan." },
+          { error: "Conversation session not found." },
           { status: 404 },
         );
       }
@@ -230,7 +230,7 @@ export async function POST(req: NextRequest) {
           `[SECURITY ALERT] User ${userId} attempted to attach resume to unauthorized session ${sessionId} (owned by ${sessionRecord.user_id})`,
         );
         return NextResponse.json(
-          { error: "Forbidden! Sesi percakapan ini bukan milik Anda." },
+          { error: "Forbidden! This conversation session does not belong to you." },
           { status: 403 },
         );
       }

@@ -49,7 +49,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 
     if (msgError || !msg) {
       return NextResponse.json(
-        { error: "Pesan tidak ditemukan." },
+        { error: "Message not found." },
         { status: 404 },
       );
     }
@@ -62,7 +62,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 
     if (!session || session.user_id !== user.id) {
       return NextResponse.json(
-        { error: "Forbidden! Anda tidak memiliki izin untuk mengubah pesan ini." },
+        { error: "Forbidden! You do not have permission to modify this message." },
         { status: 403 },
       );
     }
@@ -88,7 +88,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
   } catch (error) {
     console.error("[API:ChatMessage:PATCH] Error updating message metadata:", error);
     return NextResponse.json(
-      { error: "Terjadi kesalahan saat memperbarui status proposal." },
+      { error: "An error occurred while updating the proposal status." },
       { status: 500 },
     );
   }

@@ -108,7 +108,7 @@ export async function extractCandidateProfile(
 
         const content = completion.choices[0]?.message?.content;
         if (!content) {
-          throw new Error("Tidak menerima respon teks dari model Groq.");
+          throw new Error("No text response received from Groq model.");
         }
 
         return parseAndValidateJson(content, ExtractedProfileResultSchema);

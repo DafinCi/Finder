@@ -394,7 +394,7 @@ describe("Phase 2: Agent Tool Layer & Dispatcher", () => {
       );
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain("belum mengunggah dokumen CV");
+      expect(result.error).toContain("Candidate has not uploaded a resume");
     });
   });
 });

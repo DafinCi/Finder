@@ -38,9 +38,10 @@ describe("Unit: Smart Session Title Generator", () => {
     expect(title.endsWith("...")).toBe(true);
   });
 
-  it("should fallback to 'Konsultasi Karir' when input is empty or only greetings", () => {
-    expect(generateSmartSessionTitle("")).toBe("Konsultasi Karir");
-    expect(generateSmartSessionTitle("   ")).toBe("Konsultasi Karir");
+  it("should fallback to 'Career Consultation' or language-appropriate title when input is empty or only greetings", () => {
+    expect(generateSmartSessionTitle("")).toBe("Career Consultation");
+    expect(generateSmartSessionTitle("   ")).toBe("Career Consultation");
+    expect(generateSmartSessionTitle("Hello")).toBe("Career Consultation");
     expect(generateSmartSessionTitle("Halo")).toBe("Konsultasi Karir");
     expect(generateSmartSessionTitle("Selamat pagi kak")).toBe(
       "Konsultasi Karir",
