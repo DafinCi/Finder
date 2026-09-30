@@ -1,14 +1,16 @@
 "use client";
 
-import React, { use, useState } from "react";
+import React, { use } from "react";
 import Link from "next/link";
-import { Plus, Bot, Pencil, Check, X, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { Plus, Bot } from "lucide-react";
 import { useSidebar } from "@/contexts/SidebarContext";
+import { useAgent } from "@/contexts/AgentContext";
 import { useChat } from "@/features/chat/hooks/useChat";
 import ChatTimeline from "@/features/chat/components/ChatTimeline";
 import OmniPromptInput from "@/features/chat/components/OmniPromptInput";
 import ChatTimelineSkeleton from "@/features/chat/skeletons/ChatTimelineSkeleton";
+import BotAvatar from "@/components/ui/BotAvatar";
+import AgentInfoDrawer from "@/features/chat/components/AgentInfoDrawer";
 
 export default function ChatSessionPage({
   params,
@@ -17,6 +19,7 @@ export default function ChatSessionPage({
 }) {
   const { id } = use(params);
   const { collapsed } = useSidebar();
+  const { agentName, isDrawerOpen, openDrawer, closeDrawer } = useAgent();
   const {
     session,
     messages,
@@ -26,32 +29,7 @@ export default function ChatSessionPage({
     error,
     sendMessage,
     retryLastMessage,
-    updateTitle,
   } = useChat(id);
-
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [newTitle, setNewTitle] = useState("");
-  const [isSavingTitle, setIsSavingTitle] = useState(false);
-
-  const handleSaveTitle = async () => {
-    const trimmed = newTitle.trim();
-    if (!trimmed || trimmed === session?.title) {
-      setIsEditingTitle(false);
-      return;
-    }
-    try {
-      setIsSavingTitle(true);
-      await updateTitle(trimmed);
-      toast.success("Session renamed");
-      setIsEditingTitle(false);
-    } catch (err) {
-      toast.error("Couldn't rename session", {
-        description: (err as Error).message,
-      });
-    } finally {
-      setIsSavingTitle(false);
-    }
-  };
 
   const handleAskAboutJob = (jobTitle: string, company: string) => {
     sendMessage(
@@ -70,75 +48,38 @@ export default function ChatSessionPage({
             collapsed ? "pl-14 pr-4 md:pr-6" : "px-4 md:px-6"
           }`}
         >
-          {/* Session Title */}
-          {isEditingTitle ? (
-            <div className="flex items-center gap-1.5 min-w-0 max-w-sm">
-              <input
-                type="text"
-                value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleSaveTitle();
-                  if (e.key === "Escape") setIsEditingTitle(false);
-                }}
-                autoFocus
-                maxLength={100}
-                disabled={isSavingTitle}
-                className="bg-secondary text-foreground text-xs px-2.5 py-1 rounded-md border border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary w-full"
-                aria-label="Edit chat session title"
-              />
-              <button
-                type="button"
-                disabled={isSavingTitle}
-                onClick={handleSaveTitle}
-                className="p-1 hover:text-primary rounded hover:bg-secondary text-primary cursor-pointer disabled:opacity-40"
-                title="Save"
-              >
-                {isSavingTitle ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          {/* Agent Contact Header: WhatsApp-style profile trigger */}
+          <button
+            type="button"
+            onClick={openDrawer}
+            className="flex items-center gap-2.5 p-1 -ml-1 rounded-xl hover:bg-secondary/60 transition-colors text-left group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 min-h-[44px]"
+            title="Click here for agent info"
+            aria-label="Click here for agent info"
+          >
+            <BotAvatar
+              name={agentName}
+              size="sm"
+              showStatusIndicator
+              indicatorStatus={isLoading ? "typing" : "online"}
+            />
+            <div className="flex flex-col min-w-0">
+              <span className="text-xs sm:text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors leading-tight">
+                {agentName}
+              </span>
+              <span className="text-[11px] truncate leading-tight transition-colors">
+                {isLoading ? (
+                  <span className="text-primary font-medium inline-flex items-center gap-1">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                    <span>{thinkingStatus || "Thinking..."}</span>
+                  </span>
                 ) : (
-                  <Check className="w-3.5 h-3.5" />
+                  <span className="text-muted-foreground group-hover:text-foreground/80">
+                    Click here for agent info
+                  </span>
                 )}
-              </button>
-              <button
-                type="button"
-                disabled={isSavingTitle}
-                onClick={() => setIsEditingTitle(false)}
-                className="p-1 hover:text-muted-foreground rounded hover:bg-secondary text-muted-foreground cursor-pointer disabled:opacity-40"
-                title="Cancel"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 min-w-0 max-w-md group">
-              <h2
-                className="text-sm font-semibold text-foreground truncate cursor-pointer hover:underline decoration-muted-foreground/40 underline-offset-4"
-                onClick={() => {
-                  setIsEditingTitle(true);
-                  setNewTitle(session?.title || "");
-                }}
-                title="Rename session"
-              >
-                {session?.title || "Chat session"}
-              </h2>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsEditingTitle(true);
-                  setNewTitle(session?.title || "");
-                }}
-                aria-label="Rename session"
-                className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-foreground hover:bg-secondary rounded transition-opacity cursor-pointer"
-                title="Rename session"
-              >
-                <Pencil className="w-3 h-3" />
-              </button>
-              <span className="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20 shrink-0">
-                Finder AI
               </span>
             </div>
-          )}
+          </button>
 
           {/* Quick New Chat Button */}
           <Link
@@ -194,6 +135,9 @@ export default function ChatSessionPage({
           />
         </div>
       </div>
+
+      {/* Agent Contact Info Right Drawer */}
+      <AgentInfoDrawer isOpen={isDrawerOpen} onClose={closeDrawer} />
     </div>
   );
 }
