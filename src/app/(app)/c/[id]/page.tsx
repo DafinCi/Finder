@@ -1,8 +1,7 @@
 "use client";
 
-import React, { use } from "react";
-import Link from "next/link";
-import { Plus, Bot } from "lucide-react";
+import React, { use, useEffect } from "react";
+import { Bot, ChevronRight } from "lucide-react";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { useAgent } from "@/contexts/AgentContext";
 import { useChat } from "@/features/chat/hooks/useChat";
@@ -19,7 +18,22 @@ export default function ChatSessionPage({
 }) {
   const { id } = use(params);
   const { collapsed } = useSidebar();
-  const { agentName, isDrawerOpen, openDrawer, closeDrawer } = useAgent();
+  const {
+    getAgentName,
+    setActiveSessionId,
+    isDrawerOpen,
+    openDrawer,
+    closeDrawer,
+  } = useAgent();
+
+  // Set active session in agent context
+  useEffect(() => {
+    setActiveSessionId(id);
+    return () => setActiveSessionId(null);
+  }, [id, setActiveSessionId]);
+
+  const currentAgentName = getAgentName(id);
+
   const {
     session,
     messages,
@@ -42,33 +56,38 @@ export default function ChatSessionPage({
     <div className="flex-1 relative h-full w-full overflow-hidden bg-background">
       {/* Full-Height Scrollable Stream */}
       <div className="h-full w-full overflow-y-auto custom-scrollbar">
-        {/* Session Topbar: Sticky inside scroll container so scrollbar spans full height */}
-        <div
-          className={`sticky top-0 z-20 h-14 border-b border-border/60 flex items-center justify-between bg-background/85 backdrop-blur-md shrink-0 transition-all duration-200 ${
+        {/* Session Topbar: Solid background header, full-bar click opens agent info drawer */}
+        <header
+          role="button"
+          tabIndex={0}
+          onClick={openDrawer}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              openDrawer();
+            }
+          }}
+          className={`sticky top-0 z-20 h-16 border-b border-border bg-card flex items-center justify-between shrink-0 transition-all duration-200 cursor-pointer select-none group hover:bg-secondary/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary ${
             collapsed ? "pl-14 pr-4 md:pr-6" : "px-4 md:px-6"
           }`}
+          title="Click anywhere for agent details"
+          aria-label="Click anywhere for agent details"
         >
-          {/* Agent Contact Header: WhatsApp-style profile trigger */}
-          <button
-            type="button"
-            onClick={openDrawer}
-            className="flex items-center gap-2.5 p-1 -ml-1 rounded-xl hover:bg-secondary/60 transition-colors text-left group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 min-h-[44px]"
-            title="Click here for agent info"
-            aria-label="Click here for agent info"
-          >
+          {/* Left: Bot Avatar + Agent Identity */}
+          <div className="flex items-center gap-3 min-w-0">
             <BotAvatar
-              name={agentName}
-              size="sm"
+              name={currentAgentName}
+              size="md"
               showStatusIndicator
               indicatorStatus={isLoading ? "typing" : "online"}
             />
             <div className="flex flex-col min-w-0">
-              <span className="text-xs sm:text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors leading-tight">
-                {agentName}
+              <span className="text-sm sm:text-base font-semibold text-foreground truncate group-hover:text-primary transition-colors leading-tight">
+                {currentAgentName}
               </span>
-              <span className="text-[11px] truncate leading-tight transition-colors">
+              <span className="text-xs sm:text-sm truncate leading-tight transition-colors mt-0.5">
                 {isLoading ? (
-                  <span className="text-primary font-medium inline-flex items-center gap-1">
+                  <span className="text-primary font-medium inline-flex items-center gap-1.5">
                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
                     <span>{thinkingStatus || "Thinking..."}</span>
                   </span>
@@ -79,18 +98,13 @@ export default function ChatSessionPage({
                 )}
               </span>
             </div>
-          </button>
+          </div>
 
-          {/* Quick New Chat Button */}
-          <Link
-            href="/"
-            className="p-1.5 px-2.5 rounded-xl border border-border/80 bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground text-xs font-medium inline-flex items-center gap-1.5 transition-colors"
-            title="New Chat"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">New Chat</span>
-          </Link>
-        </div>
+          {/* Right: Subtle Chevron Indicator */}
+          <div className="text-muted-foreground/60 group-hover:text-foreground transition-colors pr-1">
+            <ChevronRight className="w-5 h-5 opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+          </div>
+        </header>
 
         {/* Chat Content Body */}
         <div className="min-h-[calc(100%-3.5rem)] flex flex-col justify-between">
@@ -137,7 +151,11 @@ export default function ChatSessionPage({
       </div>
 
       {/* Agent Contact Info Right Drawer */}
-      <AgentInfoDrawer isOpen={isDrawerOpen} onClose={closeDrawer} />
+      <AgentInfoDrawer
+        isOpen={isDrawerOpen}
+        onClose={closeDrawer}
+        sessionId={id}
+      />
     </div>
   );
 }

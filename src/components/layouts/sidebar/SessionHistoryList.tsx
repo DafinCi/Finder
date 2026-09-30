@@ -38,7 +38,7 @@ export default function SessionHistoryList({
   onDeleteSession,
 }: SessionHistoryListProps) {
   const pathname = usePathname();
-  const { agentName } = useAgent();
+  const { getAgentName } = useAgent();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [isSavingRename, setIsSavingRename] = useState(false);
@@ -160,10 +160,12 @@ export default function SessionHistoryList({
             );
           }
 
+          const sessionAgentName = getAgentName(session.id);
+
           return (
             <div
               key={session.id}
-              className={`group relative flex items-center justify-between gap-2.5 px-2.5 py-2 rounded-xl text-xs transition-all cursor-pointer ${
+              className={`group relative flex items-center justify-between gap-3 px-3 py-2.5 rounded-sm transition-all cursor-pointer ${
                 isActive
                   ? "bg-secondary text-foreground font-semibold shadow-2xs"
                   : "text-muted-foreground hover:bg-secondary/70 hover:text-foreground"
@@ -171,22 +173,18 @@ export default function SessionHistoryList({
             >
               <Link
                 href={`/c/${session.id}`}
-                className="flex items-center gap-2.5 min-w-0 flex-1 overflow-hidden"
-                title={`${agentName} - ${session.title}`}
+                className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden"
+                title={`${sessionAgentName} - ${session.title}`}
               >
                 {/* Bot Avatar with dynamic Slush color derived from session.id */}
-                <BotAvatar
-                  name={session.id}
-                  size="sm"
-                  className="shrink-0"
-                />
+                <BotAvatar name={session.id} size="md" className="shrink-0" />
 
                 {/* Agent Name + Session Title Subtext */}
                 <div className="flex flex-col min-w-0 flex-1">
-                  <span className="text-xs font-semibold text-foreground truncate group-hover:text-primary transition-colors leading-tight">
-                    {agentName}
+                  <span className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors leading-tight">
+                    {sessionAgentName}
                   </span>
-                  <span className="text-[11px] text-muted-foreground truncate leading-tight mt-0.5">
+                  <span className="text-xs text-muted-foreground truncate leading-tight mt-0.5">
                     {session.title}
                   </span>
                 </div>

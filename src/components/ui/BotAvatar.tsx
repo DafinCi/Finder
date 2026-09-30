@@ -16,51 +16,51 @@ interface BotAvatarProps {
 const PALETTES = [
   {
     name: "violet",
-    bg: "bg-[#5C4ADE]/15",
-    border: "border-[#5C4ADE]/30",
-    text: "text-[#5C4ADE]",
-    fill: "#5C4ADE",
-    headFill: "#5C4ADE",
+    bg: "bg-[#221D38]",
+    border: "border-[#3D3363]",
+    botColor: "#8E7CF5",
+    visorColor: "#0B0D10",
+    eyeColor: "#FFFFFF",
   },
   {
     name: "mint",
-    bg: "bg-[#55DB9C]/15",
-    border: "border-[#55DB9C]/30",
-    text: "text-[#55DB9C]",
-    fill: "#55DB9C",
-    headFill: "#55DB9C",
+    bg: "bg-[#162920]",
+    border: "border-[#264737]",
+    botColor: "#3DB87E",
+    visorColor: "#0B0D10",
+    eyeColor: "#FFFFFF",
   },
   {
     name: "blue",
-    bg: "bg-[#4DA2FF]/15",
-    border: "border-[#4DA2FF]/30",
-    text: "text-[#4DA2FF]",
-    fill: "#4DA2FF",
-    headFill: "#4DA2FF",
+    bg: "bg-[#162338]",
+    border: "border-[#253D61]",
+    botColor: "#4B93E6",
+    visorColor: "#0B0D10",
+    eyeColor: "#FFFFFF",
   },
   {
     name: "ember",
-    bg: "bg-[#FB4903]/15",
-    border: "border-[#FB4903]/30",
-    text: "text-[#FB4903]",
-    fill: "#FB4903",
-    headFill: "#FB4903",
+    bg: "bg-[#2B1D19]",
+    border: "border-[#4A312A]",
+    botColor: "#DE6433",
+    visorColor: "#0B0D10",
+    eyeColor: "#FFFFFF",
   },
   {
     name: "lavender",
-    bg: "bg-[#E9CCFF]/15",
-    border: "border-[#E9CCFF]/30",
-    text: "text-[#E9CCFF]",
-    fill: "#E9CCFF",
-    headFill: "#E9CCFF",
+    bg: "bg-[#261C30]",
+    border: "border-[#422F55]",
+    botColor: "#A87DE8",
+    visorColor: "#0B0D10",
+    eyeColor: "#FFFFFF",
   },
   {
     name: "yellow",
-    bg: "bg-[#FFD731]/15",
-    border: "border-[#FFD731]/30",
-    text: "text-[#FFD731]",
-    fill: "#FFD731",
-    headFill: "#FFD731",
+    bg: "bg-[#282318]",
+    border: "border-[#453A26]",
+    botColor: "#CCA033",
+    visorColor: "#0B0D10",
+    eyeColor: "#FFFFFF",
   },
 ];
 
@@ -149,7 +149,7 @@ export default function BotAvatar({
       role="img"
       aria-label={ariaLabel || `${name} bot avatar`}
       style={customStyle}
-      className={`relative inline-flex items-center justify-center rounded-full shrink-0 select-none border transition-colors ${palette.bg} ${palette.border} ${palette.text} ${containerClass} ${className}`}
+      className={`relative inline-flex items-center justify-center rounded-full shrink-0 select-none border transition-colors ${palette.bg} ${palette.border} ${containerClass} ${className}`}
     >
       {/* Bot Bust Illustration (Head with half-body torso) */}
       <svg
@@ -164,11 +164,11 @@ export default function BotAvatar({
           y1="5"
           x2="20"
           y2="8"
-          stroke="currentColor"
-          strokeWidth="1.6"
+          stroke={palette.botColor}
+          strokeWidth="1.8"
           strokeLinecap="round"
         />
-        <circle cx="20" cy="4" r="1.6" fill="currentColor" />
+        <circle cx="20" cy="4" r="1.6" fill={palette.botColor} />
 
         {/* Ears / Side audio receivers */}
         <rect
@@ -177,8 +177,7 @@ export default function BotAvatar({
           width="2.5"
           height="6"
           rx="1.25"
-          fill="currentColor"
-          opacity="0.85"
+          fill={palette.botColor}
         />
         <rect
           x="30"
@@ -186,8 +185,7 @@ export default function BotAvatar({
           width="2.5"
           height="6"
           rx="1.25"
-          fill="currentColor"
-          opacity="0.85"
+          fill={palette.botColor}
         />
 
         {/* Head Shell */}
@@ -197,10 +195,7 @@ export default function BotAvatar({
           width="21"
           height="15"
           rx="5"
-          fill="currentColor"
-          fillOpacity="0.25"
-          stroke="currentColor"
-          strokeWidth="1.6"
+          fill={palette.botColor}
         />
 
         {/* Eyes Visor Screen */}
@@ -210,19 +205,18 @@ export default function BotAvatar({
           width="15"
           height="6"
           rx="3"
-          fill="currentColor"
-          fillOpacity="0.4"
+          fill={palette.visorColor}
         />
 
-        {/* Glowing Eye Pupils */}
-        <circle cx="16" cy="14.5" r="1.3" fill="currentColor" />
-        <circle cx="24" cy="14.5" r="1.3" fill="currentColor" />
+        {/* Solid Eye Pupils */}
+        <circle cx="16" cy="14.5" r="1.3" fill={palette.eyeColor} />
+        <circle cx="24" cy="14.5" r="1.3" fill={palette.eyeColor} />
 
         {/* Friendly Smile Arc */}
         <path
           d="M17.5 19.5 C18.5 21, 21.5 21, 22.5 19.5"
-          stroke="currentColor"
-          strokeWidth="1.3"
+          stroke={palette.visorColor}
+          strokeWidth="1.4"
           strokeLinecap="round"
           fill="none"
         />
@@ -234,30 +228,25 @@ export default function BotAvatar({
           width="4"
           height="3"
           rx="1"
-          fill="currentColor"
-          opacity="0.7"
+          fill={palette.botColor}
         />
 
         {/* Half-body Torso / Curved Robotic Shoulders */}
         <path
           d="M7 38 C7 28.5, 12.5 26, 20 26 C27.5 26, 33 28.5, 33 38 Z"
-          fill="currentColor"
-          fillOpacity="0.3"
-          stroke="currentColor"
-          strokeWidth="1.6"
-          strokeLinejoin="round"
+          fill={palette.botColor}
         />
 
         {/* Chest Core Indicator */}
-        <circle cx="20" cy="31" r="1.4" fill="currentColor" />
+        <circle cx="20" cy="31" r="1.4" fill={palette.visorColor} />
       </svg>
 
       {/* Optional Online / Activity Indicator */}
       {showStatusIndicator && (
         <span
-          className={`absolute bottom-0 right-0 rounded-full ring-2 ring-background ${indicatorSizeClass} ${
+          className={`absolute bottom-0 right-0 rounded-full ring-2 ring-card ${indicatorSizeClass} ${
             indicatorStatus === "online"
-              ? "bg-[#55DB9C]"
+              ? "bg-[#22C55E]"
               : indicatorStatus === "typing"
                 ? "bg-primary animate-pulse"
                 : "bg-muted-foreground/50"

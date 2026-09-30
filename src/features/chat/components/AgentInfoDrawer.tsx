@@ -9,20 +9,23 @@ import { useAgent } from "@/contexts/AgentContext";
 interface AgentInfoDrawerProps {
   isOpen: boolean;
   onClose: () => void;
+  sessionId?: string;
 }
 
 export default function AgentInfoDrawer({
   isOpen,
   onClose,
+  sessionId,
 }: AgentInfoDrawerProps) {
-  const { agentName, setAgentName } = useAgent();
+  const { getAgentName, setAgentName } = useAgent();
+  const currentAgentName = getAgentName(sessionId);
   const [isEditing, setIsEditing] = useState(false);
-  const [nameInput, setNameInput] = useState(agentName);
+  const [nameInput, setNameInput] = useState(currentAgentName);
 
-  // Synchronize local input whenever agentName changes
+  // Synchronize local input whenever currentAgentName changes
   useEffect(() => {
-    setNameInput(agentName);
-  }, [agentName]);
+    setNameInput(currentAgentName);
+  }, [currentAgentName]);
 
   // Handle escape key to close drawer
   useEffect(() => {
@@ -30,7 +33,7 @@ export default function AgentInfoDrawer({
       if (e.key === "Escape" && isOpen) {
         if (isEditing) {
           setIsEditing(false);
-          setNameInput(agentName);
+          setNameInput(currentAgentName);
         } else {
           onClose();
         }
@@ -38,7 +41,7 @@ export default function AgentInfoDrawer({
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, isEditing, agentName, onClose]);
+  }, [isOpen, isEditing, currentAgentName, onClose]);
 
   const handleSaveName = () => {
     const trimmed = nameInput.trim();
@@ -46,13 +49,13 @@ export default function AgentInfoDrawer({
       toast.error("Agent name cannot be blank");
       return;
     }
-    setAgentName(trimmed);
+    setAgentName(trimmed, sessionId);
     setIsEditing(false);
     toast.success("Agent nickname updated");
   };
 
   const handleCancelEdit = () => {
-    setNameInput(agentName);
+    setNameInput(currentAgentName);
     setIsEditing(false);
   };
 
@@ -81,7 +84,7 @@ export default function AgentInfoDrawer({
         }`}
       >
         {/* Drawer Header */}
-        <div className="h-14 border-b border-border/80 px-4 flex items-center justify-between shrink-0 bg-card/95">
+        <div className="h-14 border-b border-border px-4 flex items-center justify-between shrink-0 bg-card">
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-primary" />
             <h3 className="text-sm font-bold font-heading text-foreground">
@@ -92,7 +95,7 @@ export default function AgentInfoDrawer({
             type="button"
             onClick={onClose}
             aria-label="Close agent info"
-            className="min-h-[44px] min-w-[44px] p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary/80 flex items-center justify-center transition-colors cursor-pointer"
+            className="min-h-[44px] min-w-[44px] p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary flex items-center justify-center transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -101,9 +104,9 @@ export default function AgentInfoDrawer({
         {/* Drawer Content */}
         <div className="flex-1 overflow-y-auto p-5 space-y-6 custom-scrollbar">
           {/* Section 1: Hero Avatar & Name Personalisasi */}
-          <div className="flex flex-col items-center text-center p-5 rounded-2xl bg-secondary/40 border border-border/80 space-y-3.5">
+          <div className="flex flex-col items-center text-center p-5 rounded-2xl bg-secondary border border-border space-y-3.5">
             <BotAvatar
-              name={agentName}
+              name={currentAgentName}
               size="xl"
               showStatusIndicator
               indicatorStatus="online"
@@ -138,7 +141,7 @@ export default function AgentInfoDrawer({
                   <button
                     type="button"
                     onClick={handleCancelEdit}
-                    className="min-h-[36px] px-3.5 py-1.5 rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground text-xs font-medium transition-colors cursor-pointer"
+                    className="min-h-[36px] px-3.5 py-1.5 rounded-xl bg-card hover:bg-card/80 text-muted-foreground hover:text-foreground text-xs font-medium transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -148,14 +151,14 @@ export default function AgentInfoDrawer({
               <div className="space-y-1">
                 <div className="flex items-center justify-center gap-1.5">
                   <h4 className="text-lg font-bold font-heading text-foreground">
-                    {agentName}
+                    {currentAgentName}
                   </h4>
                   <button
                     type="button"
                     onClick={() => setIsEditing(true)}
                     aria-label="Edit agent nickname"
                     title="Edit agent nickname"
-                    className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors cursor-pointer"
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-card transition-colors cursor-pointer"
                   >
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
@@ -174,13 +177,13 @@ export default function AgentInfoDrawer({
               <span>Intelligence Architecture</span>
             </h5>
 
-            <div className="rounded-2xl border border-border/80 bg-secondary/30 p-4 space-y-3.5 text-xs">
+            <div className="rounded-2xl border border-border bg-secondary p-4 space-y-3.5 text-xs">
               {/* Active Model */}
               <div className="flex items-center justify-between gap-2">
                 <span className="text-muted-foreground font-medium">
                   Active Model
                 </span>
-                <span className="font-mono text-[11px] font-semibold text-foreground px-2 py-0.5 rounded-md bg-background border border-border/80">
+                <span className="font-mono text-[11px] font-semibold text-foreground px-2 py-0.5 rounded-md bg-background border border-border">
                   openai/gpt-oss-120b
                 </span>
               </div>
@@ -206,13 +209,13 @@ export default function AgentInfoDrawer({
               </div>
 
               {/* Status */}
-              <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/50">
+              <div className="flex items-center justify-between gap-2 pt-2 border-t border-border">
                 <span className="text-muted-foreground font-medium flex items-center gap-1">
-                  <Activity className="w-3 h-3 text-[#55DB9C]" />
+                  <Activity className="w-3 h-3 text-[#22C55E]" />
                   <span>Service Status</span>
                 </span>
-                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#55DB9C]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#55DB9C]" />
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#22C55E]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E]" />
                   Operational
                 </span>
               </div>

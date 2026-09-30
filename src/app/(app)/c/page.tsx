@@ -81,15 +81,15 @@ export default function AppChatHomePage() {
         <div className="flex flex-col items-center gap-3">
           <BotAvatar
             name={agentName}
-            size="lg"
+            size="xl"
             showStatusIndicator
             indicatorStatus="online"
           />
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <h1 className="text-2xl sm:text-3xl font-bold font-heading text-foreground tracking-tight">
               Hey, I&apos;m {agentName}
             </h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm sm:text-base text-muted-foreground">
               What can I help you explore today?
             </p>
           </div>
