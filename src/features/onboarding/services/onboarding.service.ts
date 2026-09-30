@@ -46,6 +46,7 @@ export class OnboardingApiError extends Error {
 export interface SaveDraftPayload {
   expected_version: number;
   current_step: number;
+  resume_id?: string | null;
   background?: Partial<BackgroundEvidence>;
   capabilities?: {
     extraction_status?: "success" | "failed" | "unattempted";

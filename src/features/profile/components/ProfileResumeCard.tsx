@@ -43,10 +43,6 @@ export function ProfileResumeCard({
 
   useEffect(() => {
     let cancelled = false;
-    if (!resumeId) {
-      setMetadata(null);
-      return;
-    }
 
     async function loadResumeMeta() {
       try {
@@ -54,8 +50,8 @@ export function ProfileResumeCard({
         const res = await fetch("/api/profile/resume");
         if (res.ok) {
           const data = await res.json();
-          if (!cancelled && data.resume) {
-            setMetadata(data.resume);
+          if (!cancelled) {
+            setMetadata(data.resume || null);
           }
         }
       } catch {
@@ -159,7 +155,7 @@ export function ProfileResumeCard({
             </h2>
           </div>
 
-          {resumeId ? (
+          {metadata ? (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
               <CheckCircle2 className="w-3 h-3" />
               <span>Connected</span>
@@ -182,7 +178,7 @@ export function ProfileResumeCard({
             <Loader2 className="w-4 h-4 animate-spin text-primary" />
             <span>Loading document details...</span>
           </div>
-        ) : resumeId ? (
+        ) : metadata ? (
           <div className="p-3.5 rounded-lg bg-secondary/40 border border-border/80 space-y-2">
             <div className="flex items-start gap-3">
               <div className="w-9 h-9 rounded-md bg-primary/15 border border-primary/30 flex items-center justify-center text-primary shrink-0 mt-0.5">
@@ -277,7 +273,7 @@ export function ProfileResumeCard({
             <>
               <UploadCloud className="w-4 h-4 text-primary" />
               <span>
-                {resumeId ? "Replace Resume (PDF)" : "Upload Resume (PDF)"}
+                {metadata ? "Replace Resume (PDF)" : "Upload Resume (PDF)"}
               </span>
             </>
           )}

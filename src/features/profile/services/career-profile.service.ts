@@ -110,6 +110,10 @@ export class CareerProfileService {
       currentOnboardingStep: step,
     };
 
+    if (validated.resume_id !== undefined) {
+      updatePayload.resumeId = validated.resume_id;
+    }
+
     if (validated.background) {
       updatePayload.background = {
         ...existing.background,

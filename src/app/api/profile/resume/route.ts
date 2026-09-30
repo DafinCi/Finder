@@ -30,15 +30,30 @@ export async function GET(req: NextRequest) {
     }
 
     const profile = await careerProfileService.getProfile(user.id);
-    if (!profile || !profile.resumeId) {
-      return NextResponse.json({ resume: null }, { status: 200 });
+    let resumeRecord = null;
+
+    if (profile?.resumeId) {
+      const { data } = await supabaseAdmin
+        .from("resumes")
+        .select("id, file_name, uploaded_at, status, walrus_blob_id")
+        .eq("id", profile.resumeId)
+        .maybeSingle();
+      resumeRecord = data;
     }
 
-    const { data: resumeRecord } = await supabaseAdmin
-      .from("resumes")
-      .select("id, file_name, uploaded_at, status, walrus_blob_id")
-      .eq("id", profile.resumeId)
-      .maybeSingle();
+    // Safe read-only fallback: If profile.resumeId is not populated yet,
+    // read the user's latest active resume without mutating database on GET
+    if (!resumeRecord) {
+      const { data: fallbackRecord } = await supabaseAdmin
+        .from("resumes")
+        .select("id, file_name, uploaded_at, status, walrus_blob_id")
+        .eq("profile_id", user.id)
+        .neq("status", "failed")
+        .order("uploaded_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      resumeRecord = fallbackRecord;
+    }
 
     return NextResponse.json({ resume: resumeRecord || null }, { status: 200 });
   } catch (err: unknown) {
