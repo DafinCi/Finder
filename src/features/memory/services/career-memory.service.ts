@@ -112,12 +112,12 @@ export class CareerMemoryService {
     if (memories.length === 0) return "";
 
     const categoryLabels: Record<MemoryCategory, string> = {
-      career_goal: "Arah / Target Karier",
-      role_transition: "Transisi Peran",
-      work_preference: "Preferensi Kerja",
-      tech_focus: "Fokus Teknologi",
-      constraint_avoid: "Hal yang Dihindari",
-      user_correction: "Koreksi Pengguna",
+      career_goal: "Career Goal / Direction",
+      role_transition: "Role Transition",
+      work_preference: "Work Mode Preference",
+      tech_focus: "Technology Focus",
+      constraint_avoid: "Constraints to Avoid",
+      user_correction: "User Correction",
     };
 
     const lines = memories.map((m) => {
@@ -125,9 +125,9 @@ export class CareerMemoryService {
       return `- ${label}: ${m.content} (Confidence: ${m.confidence})`;
     });
 
-    return `\n\n<untrusted_career_memory>\n[DURABLE CAREER MEMORIES (Hal yang Diingat Finder)]:
+    return `\n\n<untrusted_career_memory>\n[DURABLE CAREER MEMORIES]:
 ${lines.join("\n")}
-</untrusted_career_memory>\n(Gunakan memori di atas sebagai konteks personalisasi; jangan bertentangan dengan preferensi terbaru kandidat).`;
+</untrusted_career_memory>\n(Use the memories above as personalization context; do not contradict recent candidate preferences).`;
   }
 
   /**

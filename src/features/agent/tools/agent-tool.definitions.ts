@@ -1,7 +1,4 @@
-// ==============================================================================
-// DEFINITIONS: Agent Tools for Groq / OpenAI Function Calling
-// Module: @/features/agent/tools/agent-tool.definitions
-// ==============================================================================
+// Agent tool definitions for Groq and OpenAI function calling
 
 export interface ChatToolDefinition {
   type: "function";
@@ -225,7 +222,7 @@ export const AGENT_TOOL_DEFINITIONS: ChatToolDefinition[] = [
     function: {
       name: "read_candidate_cv",
       description:
-        "Membaca teks lengkap atau rincian mendalam dari dokumen CV/resume kandidat yang tersimpan di sistem. Panggil tool ini HANYA jika kandidat meminta analisis teks mendalam, peninjauan kalimat/paragraf asli, atau review poin-poin spesifik dari dokumen CV. JANGAN panggil tool ini untuk pertanyaan umum mengenai ketersediaan CV atau ringkasan profil.",
+        "Reads the full raw text or specific detailed sections of the candidate's stored resume document. Call this ONLY when the candidate requests in-depth textual analysis, review of exact phrasing, or inspection of specific sections requiring raw text. Do NOT call this tool for general questions about resume availability or profile summaries.",
       parameters: {
         type: "object",
         properties: {
@@ -240,7 +237,7 @@ export const AGENT_TOOL_DEFINITIONS: ChatToolDefinition[] = [
               "projects",
             ],
             description:
-              "Bagian spesifik dari dokumen CV yang ingin diinspeksi (default 'full').",
+              "Specific section of the resume document to inspect (defaults to 'full').",
           },
         },
       },

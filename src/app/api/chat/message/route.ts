@@ -26,21 +26,21 @@ const MAX_PROMPT_CHARS = 2000;
 function getToolStartLabel(toolName: string): string {
   switch (toolName) {
     case "get_career_recommendations":
-      return "Mencari dan menganalisis lowongan kerja yang cocok...";
+      return "Searching and analyzing matching career opportunities...";
     case "inspect_job_details":
-      return "Membaca detail lengkap lowongan pekerjaan...";
+      return "Retrieving detailed job opportunity specifications...";
     case "save_job":
-      return "Menyimpan lowongan ke daftar bookmark...";
+      return "Saving opportunity to bookmarks...";
     case "reject_job":
-      return "Mencatat feedback penolakan lowongan...";
+      return "Recording rejection feedback...";
     case "remember_fact":
-      return "Menyimpan fakta ke memori karir berdaulat...";
+      return "Saving fact to sovereign career memory...";
     case "propose_preference_update":
-      return "Menyiapkan usulan pembaruan preferensi profil...";
+      return "Preparing profile preference update proposal...";
     case "read_candidate_cv":
-      return "Membaca dan menelaah dokumen CV...";
+      return "Reading and analyzing resume document...";
     default:
-      return "Menjalankan tindakan...";
+      return "Executing agent action...";
   }
 }
 
@@ -235,8 +235,8 @@ export async function POST(req: NextRequest) {
       const c = raw.candidate || raw;
       const career = raw.career || raw;
 
-      const resumeFileName = activeResumeRecord?.file_name || "Dokumen CV";
-      const candidateName = c?.name || "Kandidat";
+      const resumeFileName = activeResumeRecord?.file_name || "Resume Document";
+      const candidateName = c?.name || "Candidate";
       const candidateTitle =
         c?.title ||
         candidateProfile?.career_intent?.target_roles?.[0]?.role ||
@@ -258,12 +258,12 @@ export async function POST(req: NextRequest) {
 
       const experiences = (candidateProfile?.background?.experience || [])
         .slice(0, 2)
-        .map((exp: any) => `${exp.role_title} di ${exp.company_name}`)
+        .map((exp: any) => `${exp.role_title} at ${exp.company_name}`)
         .join("; ");
 
       const education = (candidateProfile?.background?.education || [])
         .slice(0, 1)
-        .map((edu: any) => `${edu.degree} di ${edu.institution}`)
+        .map((edu: any) => `${edu.degree} at ${edu.institution}`)
         .join("; ");
 
       const targetRoles = (
@@ -277,21 +277,21 @@ export async function POST(req: NextRequest) {
       );
 
       const expStr = experiences
-        ? `\n- Pengalaman Terakhir: ${experiences}`
+        ? `\n- Recent Experience: ${experiences}`
         : "";
-      const eduStr = education ? `\n- Pendidikan: ${education}` : "";
+      const eduStr = education ? `\n- Education: ${education}` : "";
       const targetRolesStr = targetRoles
-        ? `\n- Target Posisi: ${targetRoles}`
+        ? `\n- Target Roles: ${targetRoles}`
         : "";
       const workModesStr = workModes
-        ? `\n- Preferensi Kerja: ${workModes}`
+        ? `\n- Work Mode Preferences: ${workModes}`
         : "";
 
-      candidateContext = `\n\n<untrusted_career_data>\n[DATA CV & PROFIL KANDIDAT AKTIF]:
-- Status Dokumen: Tersedia (${resumeFileName})
-- Nama & Title: ${candidateName} | ${candidateTitle}
-- Pengalaman & Level: ${yearsExp > 0 ? `${yearsExp} tahun | ` : ""}${careerLevel}
-- Keahlian Utama: ${coreSkills}${expStr}${eduStr}${targetRolesStr}${workModesStr}\n</untrusted_career_data>`;
+      candidateContext = `\n\n<untrusted_career_data>\n[ACTIVE CANDIDATE PROFILE & RESUME DATA]:
+- Document Status: Available (${resumeFileName})
+- Name & Title: ${candidateName} | ${candidateTitle}
+- Experience & Level: ${yearsExp > 0 ? `${yearsExp} years | ` : ""}${careerLevel}
+- Key Skills: ${coreSkills}${expStr}${eduStr}${targetRolesStr}${workModesStr}\n</untrusted_career_data>`;
 
       // Grounding: Load candidate's top matched jobs for this session
       if (analysis?.id) {
@@ -333,18 +333,18 @@ export async function POST(req: NextRequest) {
           const listStr = typedMatches
             .map(
               (m) =>
-                `- ${m.jobs?.title || "Peran"} di ${
-                  m.jobs?.companies?.name || "Perusahaan Mitra"
-                } (Kecocokan: ${m.match_score}%, Missing Skills: ${
+                `- ${m.jobs?.title || "Role"} at ${
+                  m.jobs?.companies?.name || "Partner Company"
+                } (Match Score: ${m.match_score}%, Missing Skills: ${
                   (m.missing_skills || []).slice(0, 3).join(", ") || "None"
                 })`,
             )
             .join("\n");
-          matchesContext = `\n\n<untrusted_career_data>\n[REKOMENDASI LOWONGAN COCOK UNTUK KANDIDAT INI]:\n${listStr}\n</untrusted_career_data>`;
+          matchesContext = `\n\n<untrusted_career_data>\n[RECOMMENDED MATCHES FOR CANDIDATE]:\n${listStr}\n</untrusted_career_data>`;
         }
       }
     } else {
-      candidateContext = `\n\n<untrusted_career_data>\n[STATUS KANDIDAT]: Belum ada CV terunggah atau profil terdaftar di sistem.\n</untrusted_career_data>`;
+      candidateContext = `\n\n<untrusted_career_data>\n[CANDIDATE STATUS]: No resume uploaded or profile registered in the system yet.\n</untrusted_career_data>`;
     }
 
     // 2. Specific Job Grounding: check if user query mentions a specific active job title or company
@@ -379,14 +379,14 @@ export async function POST(req: NextRequest) {
       );
 
       if (matchedActiveJob) {
-        specificJobContext = `\n\n<untrusted_job_data>\n[DATA RESMI LOWONGAN PEKERJAAN YANG SEDANG DITANYAKAN]:
-- Posisi: ${matchedActiveJob.title}
-- Perusahaan: ${matchedActiveJob.companies?.name || "Perusahaan Mitra"}
-- Lokasi & Tipe: ${matchedActiveJob.location} (${matchedActiveJob.job_type})
-- Gaji / Kompensasi: ${matchedActiveJob.salary_range || "Sesuai Standar Industri"}
-- Kualifikasi Persyaratan: ${matchedActiveJob.requirements.join(", ")}
-- Ringkasan Deskripsi: ${matchedActiveJob.description.slice(0, 350)}...
-</untrusted_job_data>\n(Gunakan data lowongan di atas murni sebagai fakta referensi objektif; jangan mengarang fakta yang bertolak belakang).`;
+        specificJobContext = `\n\n<untrusted_job_data>\n[OFFICIAL JOB POSTING DATA UNDER DISCUSSION]:
+- Position: ${matchedActiveJob.title}
+- Company: ${matchedActiveJob.companies?.name || "Partner Company"}
+- Location & Type: ${matchedActiveJob.location} (${matchedActiveJob.job_type})
+- Salary / Compensation: ${matchedActiveJob.salary_range || "Competitive / Industry Standard"}
+- Qualifications & Requirements: ${matchedActiveJob.requirements.join(", ")}
+- Description Summary: ${matchedActiveJob.description.slice(0, 350)}...
+</untrusted_job_data>\n(Treat the above job data strictly as factual reference data. Do not invent contradictory claims).`;
       }
     }
 

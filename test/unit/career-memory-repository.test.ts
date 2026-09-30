@@ -264,8 +264,8 @@ describe("Phase 1: Sovereign Career Memory Repository & Service", () => {
 
       const summary = await service.getDurableContextSummary(TEST_PROFILE_ID);
       expect(summary).toContain("<untrusted_career_memory>");
-      expect(summary).toContain("Arah / Target Karier: Transitioning toward AI Systems");
-      expect(summary).toContain("Preferensi Kerja: Prefers remote opportunities");
+      expect(summary).toContain("Career Goal / Direction: Transitioning toward AI Systems");
+      expect(summary).toContain("Work Mode Preference: Prefers remote opportunities");
     });
 
     it("should return empty string if no active memories exist", async () => {
