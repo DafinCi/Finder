@@ -1,4 +1,23 @@
-import { ChatSession, ChatMessage, SendMessagePayload } from "@/types/chat";
+import {
+  ChatSession,
+  ChatMessage,
+  SendMessagePayload,
+  ActionProposalData,
+} from "@/types/chat";
+
+export interface ToolStreamingEvent {
+  type: "tool_start" | "tool_end";
+  tool: string;
+  label?: string;
+  success?: boolean;
+}
+
+export interface SendMessageCallbacks {
+  onToken?: (token: string) => void;
+  onToolEvent?: (event: ToolStreamingEvent) => void;
+  onActionProposal?: (proposal: ActionProposalData) => void;
+  onMemoryUpdated?: () => void;
+}
 
 export const chatService = {
   async getSessions(): Promise<ChatSession[]> {
@@ -87,8 +106,13 @@ export const chatService = {
 
   async sendMessage(
     payload: SendMessagePayload,
-    onToken?: (token: string) => void,
-  ): Promise<{ userMessage: ChatMessage; assistantMessage: ChatMessage }> {
+    callbacks?: ((token: string) => void) | SendMessageCallbacks,
+  ): Promise<{
+    userMessage: ChatMessage;
+    assistantMessage: ChatMessage;
+    actionProposal?: ActionProposalData | null;
+    memoryUpdated?: boolean;
+  }> {
     const res = await fetch("/api/chat/message", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -104,10 +128,21 @@ export const chatService = {
       throw new Error("Response body is not readable for streaming.");
     }
 
+    const cbOnToken =
+      typeof callbacks === "function" ? callbacks : callbacks?.onToken;
+    const cbOnToolEvent =
+      typeof callbacks === "object" ? callbacks?.onToolEvent : undefined;
+    const cbOnActionProposal =
+      typeof callbacks === "object" ? callbacks?.onActionProposal : undefined;
+    const cbOnMemoryUpdated =
+      typeof callbacks === "object" ? callbacks?.onMemoryUpdated : undefined;
+
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let userMessage: ChatMessage | null = null;
     let assistantMessage: ChatMessage | null = null;
+    let actionProposal: ActionProposalData | null = null;
+    let memoryUpdated = false;
     let buffer = "";
 
     while (true) {
@@ -124,13 +159,38 @@ export const chatService = {
         const jsonStr = trimmed.slice(6);
         try {
           const parsed = JSON.parse(jsonStr);
-          if (parsed.token && onToken) {
-            onToken(parsed.token);
+
+          if (parsed.token && cbOnToken) {
+            cbOnToken(parsed.token);
           }
+
+          if (
+            (parsed.type === "tool_start" || parsed.type === "tool_end") &&
+            cbOnToolEvent
+          ) {
+            cbOnToolEvent({
+              type: parsed.type,
+              tool: parsed.tool,
+              label: parsed.label,
+              success: parsed.success,
+            });
+          }
+
+          if (parsed.type === "action_proposal" && cbOnActionProposal) {
+            cbOnActionProposal(parsed.proposal);
+          }
+
+          if (parsed.type === "memory_updated" && cbOnMemoryUpdated) {
+            cbOnMemoryUpdated();
+          }
+
           if (parsed.done) {
             userMessage = parsed.userMessage;
             assistantMessage = parsed.assistantMessage;
+            actionProposal = parsed.actionProposal || null;
+            memoryUpdated = Boolean(parsed.memoryUpdated);
           }
+
           if (parsed.error) {
             throw new Error(parsed.error);
           }
@@ -149,7 +209,7 @@ export const chatService = {
       throw new Error("Conversation stream finished unexpectedly.");
     }
 
-    return { userMessage, assistantMessage };
+    return { userMessage, assistantMessage, actionProposal, memoryUpdated };
   },
 
   async uploadAndAnalyzeResume(

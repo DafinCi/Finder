@@ -23,6 +23,17 @@ export interface MatchedJobItem {
   missing_skills?: string[];
 }
 
+export interface ActionProposalData {
+  type: "preference_update";
+  proposedChanges: {
+    workMode?: ("remote" | "hybrid" | "onsite")[];
+    targetRoles?: string[];
+    targetLevel?: string;
+  };
+  summary: string;
+  status?: "proposed" | "applied" | "rejected";
+}
+
 export interface ChatMessageMetadata {
   attachment?: {
     name: string;
@@ -34,6 +45,9 @@ export interface ChatMessageMetadata {
   analysis?: CandidateAnalysis | null;
   job_matches?: MatchedJobItem[];
   is_analysis_loading?: boolean;
+  tool_calls?: Array<{ name: string; args: unknown; success: boolean }>;
+  action_proposal?: ActionProposalData | null;
+  memory_updated?: boolean;
   [key: string]: unknown;
 }
 

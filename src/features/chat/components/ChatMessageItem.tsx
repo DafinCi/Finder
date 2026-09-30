@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
-import { FileText, Copy, Check } from "lucide-react";
+import { FileText, Copy, Check, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { ChatMessage } from "@/types/chat";
 import CandidateSummaryCard from "@/features/ai-analysis/components/CandidateSummaryCard";
 import JobMatchCarousel from "@/features/ai-analysis/components/JobMatchCarousel";
 import ChatMarkdown from "./ChatMarkdown";
+import ActionProposalCard from "./ActionProposalCard";
 
 interface ChatMessageItemProps {
   message: ChatMessage;
@@ -80,6 +81,24 @@ export default function ChatMessageItem({
         {/* Embedded Matched Jobs Carousel */}
         {jobMatches && jobMatches.length > 0 && (
           <JobMatchCarousel jobs={jobMatches} onAskAboutJob={onAskAboutJob} />
+        )}
+
+        {/* Action Proposal Card */}
+        {message.metadata?.action_proposal && (
+          <ActionProposalCard
+            proposal={message.metadata.action_proposal}
+            messageId={message.id}
+          />
+        )}
+
+        {/* Sovereign Memory Updated Badge */}
+        {message.metadata?.memory_updated && (
+          <div className="flex items-center gap-1.5 py-1 text-[11px] text-muted-foreground">
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary/10 border border-primary/20 text-primary font-medium">
+              <Sparkles className="w-3.5 h-3.5" />
+              Sovereign Career Memory Updated
+            </span>
+          </div>
         )}
 
         {/* Bottom Action: Always visible Quick Copy Button once response is fully rendered */}

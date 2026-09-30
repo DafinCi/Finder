@@ -220,4 +220,30 @@ export const AGENT_TOOL_DEFINITIONS: ChatToolDefinition[] = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "read_candidate_cv",
+      description:
+        "Membaca teks lengkap atau rincian mendalam dari dokumen CV/resume kandidat yang tersimpan di sistem. Panggil tool ini HANYA jika kandidat meminta analisis teks mendalam, peninjauan kalimat/paragraf asli, atau review poin-poin spesifik dari dokumen CV. JANGAN panggil tool ini untuk pertanyaan umum mengenai ketersediaan CV atau ringkasan profil.",
+      parameters: {
+        type: "object",
+        properties: {
+          section: {
+            type: "string",
+            enum: [
+              "full",
+              "summary",
+              "experience",
+              "education",
+              "skills",
+              "projects",
+            ],
+            description:
+              "Bagian spesifik dari dokumen CV yang ingin diinspeksi (default 'full').",
+          },
+        },
+      },
+    },
+  },
 ];

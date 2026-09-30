@@ -138,3 +138,14 @@ export const ProposePreferenceUpdateInputSchema = z.object({
 export type ProposePreferenceUpdateInput = z.infer<
   typeof ProposePreferenceUpdateInputSchema
 >;
+
+export const ReadCandidateCvInputSchema = z.object({
+  section: z
+    .enum(["full", "summary", "experience", "education", "skills", "projects"])
+    .optional()
+    .default("full")
+    .describe("Specific section of the CV to inspect (default 'full')"),
+});
+
+export type ReadCandidateCvInput = z.infer<typeof ReadCandidateCvInputSchema>;
+

@@ -58,14 +58,19 @@ vi.mock("@/lib/supabase/admin", () => ({
         table === "resume_analysis" ||
         table === "job_matches" ||
         table === "jobs" ||
-        table === "career_memories"
+        table === "career_memories" ||
+        table === "career_profiles"
       ) {
         const queryChain: any = {};
         queryChain.eq = vi.fn().mockReturnValue(queryChain);
+        queryChain.neq = vi.fn().mockReturnValue(queryChain);
         queryChain.order = vi.fn().mockReturnValue(queryChain);
-        queryChain.limit = vi.fn().mockResolvedValue({ data: [] });
-        queryChain.single = vi.fn().mockResolvedValue({ data: null });
-        queryChain.maybeSingle = vi.fn().mockResolvedValue({ data: null });
+        queryChain.single = vi.fn().mockResolvedValue({ data: null, error: null });
+        queryChain.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+        queryChain.limit = vi.fn(() => ({
+          ...queryChain,
+          then: (resolve: any) => Promise.resolve({ data: [] }).then(resolve),
+        }));
         return {
           select: vi.fn().mockReturnValue(queryChain),
         };

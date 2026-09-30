@@ -93,6 +93,61 @@ describe("Phase 2: Agent Tool Layer & Dispatcher", () => {
             })),
           };
         }
+        if (table === "career_profiles") {
+          return {
+            select: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                maybeSingle: vi.fn().mockResolvedValue({
+                  data: {
+                    background: {
+                      experience: [
+                        { role_title: "Frontend Lead", company_name: "Tech Corp" },
+                      ],
+                      education: [
+                        { degree: "S1 Ilmu Komputer", institution: "Universitas Indonesia" },
+                      ],
+                      projects: [],
+                    },
+                    capabilities: {
+                      skills: [{ skill: "React", category: "core", proficiency_claim: "proficient" }],
+                    },
+                    career_intent: {
+                      target_roles: [{ role: "Senior Frontend Engineer", priority: "primary" }],
+                      target_level: "senior",
+                    },
+                    preferences: {
+                      work_modes: ["remote"],
+                    },
+                  },
+                  error: null,
+                }),
+              })),
+            })),
+          };
+        }
+        if (table === "resumes") {
+          return {
+            select: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                neq: vi.fn(() => ({
+                  order: vi.fn(() => ({
+                    limit: vi.fn(() => ({
+                      maybeSingle: vi.fn().mockResolvedValue({
+                        data: {
+                          id: "res-123",
+                          file_name: "resume_frontend_lead.pdf",
+                          raw_text: "Experienced Frontend Lead with 6 years in React and Next.js.",
+                          uploaded_at: "2026-09-30T00:00:00Z",
+                        },
+                        error: null,
+                      }),
+                    })),
+                  })),
+                })),
+              })),
+            })),
+          };
+        }
         return {};
       }),
     };
@@ -297,4 +352,50 @@ describe("Phase 2: Agent Tool Layer & Dispatcher", () => {
       expect(result.actionProposal?.proposedChanges.workMode).toEqual(["remote", "hybrid"]);
     });
   });
+
+  describe("6. read_candidate_cv", () => {
+    it("should retrieve structured CV sections and fileName successfully", async () => {
+      const result = await dispatcher.executeTool(
+        TEST_PROFILE_ID,
+        "read_candidate_cv",
+        { section: "full" },
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.toolName).toBe("read_candidate_cv");
+      const data = result.data as any;
+      expect(data.fileName).toBe("resume_frontend_lead.pdf");
+      expect(data.experience).toHaveLength(1);
+      expect(data.experience[0].role_title).toBe("Frontend Lead");
+      expect(data.skills[0].skill).toBe("React");
+      expect(data.rawTextExcerpt).toContain("Experienced Frontend Lead");
+    });
+
+    it("should return error when candidate has neither CV nor career profile", async () => {
+      mockSupabase.from.mockImplementation(() => ({
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+            neq: vi.fn(() => ({
+              order: vi.fn(() => ({
+                limit: vi.fn(() => ({
+                  maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+                })),
+              })),
+            })),
+          })),
+        })),
+      }));
+
+      const result = await dispatcher.executeTool(
+        TEST_PROFILE_ID,
+        "read_candidate_cv",
+        {},
+      );
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("belum mengunggah dokumen CV");
+    });
+  });
 });
+

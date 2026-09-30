@@ -23,12 +23,14 @@ import {
   RejectJobInputSchema,
   RememberFactInputSchema,
   ProposePreferenceUpdateInputSchema,
+  ReadCandidateCvInputSchema,
   GetRecommendationsInput,
   InspectJobDetailsInput,
   SaveJobInput,
   RejectJobInput,
   RememberFactInput,
   ProposePreferenceUpdateInput,
+  ReadCandidateCvInput,
 } from "../schemas/agent-tools.schema";
 import { RecommendedJobOpportunity } from "@/features/matching/types/matching.types";
 
@@ -55,6 +57,7 @@ export interface ActionProposalData {
     targetLevel?: string;
   };
   summary: string;
+  status?: "proposed" | "applied" | "rejected";
 }
 
 export interface AgentToolResult {
@@ -140,11 +143,18 @@ export class AgentToolDispatcher {
           return this.dispatchProposePreference(validated);
         }
 
+        case "read_candidate_cv": {
+          const validated = ReadCandidateCvInputSchema.parse(
+            typeof rawArgs === "string" ? JSON.parse(rawArgs) : rawArgs || {},
+          );
+          return await this.dispatchReadCandidateCv(profileId, validated);
+        }
+
         default:
           return {
             success: false,
             toolName,
-            error: `Unrecognized tool: '${toolName}'. Supported tools: get_career_recommendations, inspect_job_details, save_job, reject_job, remember_fact, propose_preference_update.`,
+            error: `Unrecognized tool: '${toolName}'. Supported tools: get_career_recommendations, inspect_job_details, save_job, reject_job, remember_fact, propose_preference_update, read_candidate_cv.`,
           };
       }
     } catch (err) {
@@ -358,6 +368,83 @@ export class AgentToolDispatcher {
       },
     };
   }
+
+  /**
+   * Reads and projects candidate CV/profile data with safe truncation.
+   * Protects Groq TPM window while providing deep CV inspection.
+   */
+  private async dispatchReadCandidateCv(
+    profileId: string,
+    args: ReadCandidateCvInput,
+  ): Promise<AgentToolResult> {
+    const [profileRes, resumeRes] = await Promise.all([
+      this.client
+        .from("career_profiles")
+        .select("background, capabilities, career_intent, preferences, resume_id")
+        .eq("profile_id", profileId)
+        .maybeSingle(),
+      this.client
+        .from("resumes")
+        .select("id, file_name, raw_text, uploaded_at")
+        .eq("profile_id", profileId)
+        .neq("status", "failed")
+        .order("uploaded_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+
+    const profileData = profileRes.data;
+    const resumeData = resumeRes.data;
+
+    if (!profileData && !resumeData) {
+      return {
+        success: false,
+        toolName: "read_candidate_cv",
+        error: "Kandidat belum mengunggah dokumen CV atau melengkapi profil karir di sistem.",
+      };
+    }
+
+    const section = args.section || "full";
+    const result: Record<string, unknown> = {
+      fileName: resumeData?.file_name || "canonical_profile",
+      section,
+    };
+
+    if (section === "full" || section === "summary") {
+      result.careerIntent = profileData?.career_intent || null;
+      result.preferences = profileData?.preferences || null;
+    }
+
+    if (section === "full" || section === "experience") {
+      result.experience = profileData?.background?.experience || [];
+    }
+
+    if (section === "full" || section === "skills") {
+      result.skills =
+        profileData?.capabilities?.skills?.map((s: any) => ({
+          skill: s.skill,
+          category: s.category,
+          proficiency: s.proficiency_claim || "competent",
+        })) || [];
+    }
+
+    if (section === "full" || section === "education") {
+      result.education = profileData?.background?.education || [];
+      result.projects = profileData?.background?.projects || [];
+    }
+
+    // Include safely truncated raw text excerpt if available (max 3,500 chars to safeguard Groq TPM)
+    if (resumeData?.raw_text && (section === "full" || section === "summary")) {
+      result.rawTextExcerpt = resumeData.raw_text.slice(0, 3500);
+    }
+
+    return {
+      success: true,
+      toolName: "read_candidate_cv",
+      data: result,
+    };
+  }
 }
 
 export const agentToolDispatcher = new AgentToolDispatcher();
+

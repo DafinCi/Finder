@@ -17,7 +17,7 @@ import {
 describe("Unit: Prompt Injection Boundary & System Prompts", () => {
   describe("Career Copilot Prompt", () => {
     it("should enforce prompt version tracking", () => {
-      expect(CAREER_COPILOT_PROMPT_VERSION).toBe("v2.0");
+      expect(CAREER_COPILOT_PROMPT_VERSION).toBe("v2.1");
     });
 
     it("should contain explicit security boundary instructions against untrusted inputs", () => {

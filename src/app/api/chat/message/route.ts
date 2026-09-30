@@ -37,6 +37,8 @@ function getToolStartLabel(toolName: string): string {
       return "Menyimpan fakta ke memori karir berdaulat...";
     case "propose_preference_update":
       return "Menyiapkan usulan pembaruan preferensi profil...";
+    case "read_candidate_cv":
+      return "Membaca dan menelaah dokumen CV...";
     default:
       return "Menjalankan tindakan...";
   }
@@ -125,125 +127,224 @@ export async function POST(req: NextRequest) {
 
     if (userMsgError) throw userMsgError;
 
-    // 1. Load candidate profile context in compressed format to preserve Groq TPM budget
+    // 1. Resolve candidate profile & active resume with dual-source fallback
     let candidateContext = "";
     let matchesContext = "";
+    let activeResumeId = session.resume_id;
+    let candidateProfile: any = null;
+    let activeResumeRecord: any = null;
 
-    if (session.resume_id) {
-      // Security P0: Verify linked resume actually belongs to current user to prevent cross-tenant data leakage
-      const { data: resumeOwnership } = await supabaseAdmin
-        .from("resumes")
-        .select("id, profile_id")
-        .eq("id", session.resume_id)
-        .maybeSingle();
-
-      const isResumeOwner =
-        resumeOwnership && resumeOwnership.profile_id === user.id;
-
-      if (!isResumeOwner) {
-        console.warn(
-          `[SECURITY ALERT] Blocked candidate context leakage: Session ${session_id} has resume_id ${session.resume_id} not owned by user ${user.id}`,
-        );
-      } else {
-        const { data: analysis } = await supabaseAdmin
-          .from("resume_analysis")
-          .select("id, candidate_data, extracted_skills")
-          .eq("resume_id", session.resume_id)
-          .order("created_at", { ascending: false })
+    if (!activeResumeId) {
+      const [cpRes, latestResumeRes] = await Promise.all([
+        supabaseAdmin
+          .from("career_profiles")
+          .select("resume_id, background, capabilities, career_intent, preferences")
+          .eq("profile_id", user.id)
+          .maybeSingle(),
+        supabaseAdmin
+          .from("resumes")
+          .select("id, file_name, raw_text")
+          .eq("profile_id", user.id)
+          .neq("status", "failed")
+          .order("uploaded_at", { ascending: false })
           .limit(1)
-          .maybeSingle();
+          .maybeSingle(),
+      ]);
 
-        if (analysis?.candidate_data) {
-          interface CompressedCandidate {
-            name?: string;
-            title?: string;
-            years_of_experience?: number;
-            skills?: { core?: string[] };
+      candidateProfile = cpRes.data;
+      activeResumeRecord = latestResumeRes.data;
+      activeResumeId =
+        candidateProfile?.resume_id || activeResumeRecord?.id || null;
+
+      if (activeResumeId) {
+        // Non-blocking auto-link to session
+        (async () => {
+          try {
+            await supabaseAdmin
+              .from("chat_sessions")
+              .update({ resume_id: activeResumeId })
+              .eq("id", session_id);
+          } catch (e) {
+            console.warn("Failed to auto-link resume to session:", e);
           }
-          interface CompressedCareer {
-            career_level?: string;
-            strengths?: string[];
-          }
-          interface RawData {
-            candidate?: CompressedCandidate;
-            career?: CompressedCareer;
-            name?: string;
-            title?: string;
-            years_of_experience?: number;
-            skills?: { core?: string[] };
-            career_level?: string;
-            strengths?: string[];
-          }
+        })().catch(() => {});
+      }
+    } else {
+      // Security P0: Verify linked resume belongs to current user
+      const [ownershipRes, cpRes] = await Promise.all([
+        supabaseAdmin
+          .from("resumes")
+          .select("id, profile_id, file_name")
+          .eq("id", activeResumeId)
+          .maybeSingle(),
+        supabaseAdmin
+          .from("career_profiles")
+          .select("resume_id, background, capabilities, career_intent, preferences")
+          .eq("profile_id", user.id)
+          .maybeSingle(),
+      ]);
 
-          const raw = analysis.candidate_data as RawData;
-          const c = raw.candidate || raw;
-          const career = raw.career || raw;
-          const coreSkills = Array.isArray(c?.skills?.core)
-            ? c.skills.core.join(", ")
-            : (analysis.extracted_skills || []).slice(0, 15).join(", ");
-          const strengths = Array.isArray(career?.strengths)
-            ? career.strengths.slice(0, 3).join("; ")
-            : "";
+      const isOwner =
+        ownershipRes.data && ownershipRes.data.profile_id === user.id;
+      if (!isOwner) {
+        console.warn(
+          `[SECURITY ALERT] Blocked candidate context leakage: Session ${session_id} has resume_id ${activeResumeId} not owned by user ${user.id}`,
+        );
+        activeResumeId = null;
+      } else {
+        activeResumeRecord = ownershipRes.data;
+      }
+      candidateProfile = cpRes.data;
+    }
 
-          candidateContext = `\n\n<untrusted_career_data>\n[RINGKASAN PROFIL KANDIDAT AKTIF]:
-- Nama & Title: ${c?.name || "Kandidat"} | ${c?.title || "Professional"}
-- Pengalaman: ${c?.years_of_experience ?? 0} tahun
-- Keahlian Utama: ${coreSkills || "General"}
-- Kekuatan: ${strengths || "Teknis & Adaptif"}
-- Level Karir: ${career?.career_level || "Mid-Level"}\n</untrusted_career_data>`;
+    let analysis: any = null;
+    if (activeResumeId) {
+      const analysisRes = await supabaseAdmin
+        .from("resume_analysis")
+        .select("id, candidate_data, extracted_skills")
+        .eq("resume_id", activeResumeId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      analysis = analysisRes.data;
+    }
 
-          // Grounding: Load candidate's top matched jobs for this session
-          if (analysis.id) {
-            const { data: topMatches } = await supabaseAdmin
-              .from("job_matches")
-              .select(
-                `
-              match_score,
-              missing_skills,
-              jobs:job_id (
-                id,
-                title,
-                location,
-                experience_level,
-                companies:company_id (
-                  name
-                )
-              )
-            `,
-              )
-              .eq("analysis_id", analysis.id)
-              .order("match_score", { ascending: false })
-              .limit(3);
+    if (activeResumeId || candidateProfile) {
+      interface CompressedCandidate {
+        name?: string;
+        title?: string;
+        years_of_experience?: number;
+        skills?: { core?: string[] };
+      }
+      interface CompressedCareer {
+        career_level?: string;
+        strengths?: string[];
+      }
+      interface RawData {
+        candidate?: CompressedCandidate;
+        career?: CompressedCareer;
+        name?: string;
+        title?: string;
+        years_of_experience?: number;
+        skills?: { core?: string[] };
+        career_level?: string;
+        strengths?: string[];
+      }
 
-            interface MatchJoinRow {
-              match_score: number;
-              missing_skills: string[];
-              jobs: {
-                id: string;
-                title: string;
-                location: string;
-                experience_level: string;
-                companies: { name: string } | null;
-              } | null;
-            }
+      const raw = (analysis?.candidate_data as RawData) || {};
+      const c = raw.candidate || raw;
+      const career = raw.career || raw;
 
-            if (topMatches && topMatches.length > 0) {
-              const typedMatches = topMatches as unknown as MatchJoinRow[];
-              const listStr = typedMatches
-                .map(
-                  (m) =>
-                    `- ${m.jobs?.title || "Peran"} di ${
-                      m.jobs?.companies?.name || "Perusahaan Mitra"
-                    } (Kecocokan: ${m.match_score}%, Missing Skills: ${
-                      (m.missing_skills || []).slice(0, 3).join(", ") || "None"
-                    })`,
-                )
-                .join("\n");
-              matchesContext = `\n\n<untrusted_career_data>\n[REKOMENDASI LOWONGAN COCOK UNTUK KANDIDAT INI]:\n${listStr}\n</untrusted_career_data>`;
-            }
-          }
+      const resumeFileName = activeResumeRecord?.file_name || "Dokumen CV";
+      const candidateName = c?.name || "Kandidat";
+      const candidateTitle =
+        c?.title ||
+        candidateProfile?.career_intent?.target_roles?.[0]?.role ||
+        "Professional";
+      const yearsExp = c?.years_of_experience ?? 0;
+      const careerLevel =
+        career?.career_level ||
+        candidateProfile?.career_intent?.target_level ||
+        "Mid-Level";
+
+      const coreSkills = Array.isArray(c?.skills?.core)
+        ? c.skills.core.join(", ")
+        : (analysis?.extracted_skills || []).slice(0, 10).join(", ") ||
+          (candidateProfile?.capabilities?.skills || [])
+            .slice(0, 10)
+            .map((s: any) => s.skill)
+            .join(", ") ||
+          "General";
+
+      const experiences = (candidateProfile?.background?.experience || [])
+        .slice(0, 2)
+        .map((exp: any) => `${exp.role_title} di ${exp.company_name}`)
+        .join("; ");
+
+      const education = (candidateProfile?.background?.education || [])
+        .slice(0, 1)
+        .map((edu: any) => `${edu.degree} di ${edu.institution}`)
+        .join("; ");
+
+      const targetRoles = (
+        candidateProfile?.career_intent?.target_roles || []
+      )
+        .map((r: any) => r.role)
+        .join(", ");
+
+      const workModes = (candidateProfile?.preferences?.work_modes || []).join(
+        ", ",
+      );
+
+      const expStr = experiences
+        ? `\n- Pengalaman Terakhir: ${experiences}`
+        : "";
+      const eduStr = education ? `\n- Pendidikan: ${education}` : "";
+      const targetRolesStr = targetRoles
+        ? `\n- Target Posisi: ${targetRoles}`
+        : "";
+      const workModesStr = workModes
+        ? `\n- Preferensi Kerja: ${workModes}`
+        : "";
+
+      candidateContext = `\n\n<untrusted_career_data>\n[DATA CV & PROFIL KANDIDAT AKTIF]:
+- Status Dokumen: Tersedia (${resumeFileName})
+- Nama & Title: ${candidateName} | ${candidateTitle}
+- Pengalaman & Level: ${yearsExp > 0 ? `${yearsExp} tahun | ` : ""}${careerLevel}
+- Keahlian Utama: ${coreSkills}${expStr}${eduStr}${targetRolesStr}${workModesStr}\n</untrusted_career_data>`;
+
+      // Grounding: Load candidate's top matched jobs for this session
+      if (analysis?.id) {
+        const { data: topMatches } = await supabaseAdmin
+          .from("job_matches")
+          .select(
+            `
+          match_score,
+          missing_skills,
+          jobs:job_id (
+            id,
+            title,
+            location,
+            experience_level,
+            companies:company_id (
+              name
+            )
+          )
+        `,
+          )
+          .eq("analysis_id", analysis.id)
+          .order("match_score", { ascending: false })
+          .limit(3);
+
+        interface MatchJoinRow {
+          match_score: number;
+          missing_skills: string[];
+          jobs: {
+            id: string;
+            title: string;
+            location: string;
+            experience_level: string;
+            companies: { name: string } | null;
+          } | null;
+        }
+
+        if (topMatches && topMatches.length > 0) {
+          const typedMatches = topMatches as unknown as MatchJoinRow[];
+          const listStr = typedMatches
+            .map(
+              (m) =>
+                `- ${m.jobs?.title || "Peran"} di ${
+                  m.jobs?.companies?.name || "Perusahaan Mitra"
+                } (Kecocokan: ${m.match_score}%, Missing Skills: ${
+                  (m.missing_skills || []).slice(0, 3).join(", ") || "None"
+                })`,
+            )
+            .join("\n");
+          matchesContext = `\n\n<untrusted_career_data>\n[REKOMENDASI LOWONGAN COCOK UNTUK KANDIDAT INI]:\n${listStr}\n</untrusted_career_data>`;
         }
       }
+    } else {
+      candidateContext = `\n\n<untrusted_career_data>\n[STATUS KANDIDAT]: Belum ada CV terunggah atau profil terdaftar di sistem.\n</untrusted_career_data>`;
     }
 
     // 2. Specific Job Grounding: check if user query mentions a specific active job title or company
