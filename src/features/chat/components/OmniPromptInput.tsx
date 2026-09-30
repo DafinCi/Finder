@@ -25,7 +25,7 @@ interface OmniPromptInputProps {
 export default function OmniPromptInput({
   onSubmit,
   isLoading = false,
-  placeholder = "Type your career goal or attach your CV (PDF) for analysis...",
+  placeholder = "Type a message",
   isSticky = false,
 }: OmniPromptInputProps) {
   const [prompt, setPrompt] = useState("");
@@ -130,7 +130,7 @@ export default function OmniPromptInput({
       <form
         onSubmit={handleSubmit}
         aria-label="Message and CV upload"
-        className={`relative rounded-2xl border bg-card/95 shadow-md backdrop-blur-md p-3.5 transition-all ${
+        className={`relative rounded-2xl border bg-card/95 shadow-md backdrop-blur-md p-2 sm:p-2.5 transition-all ${
           isDragging
             ? "border-primary ring-2 ring-primary/20 bg-primary/5"
             : "border-border/80"
@@ -146,93 +146,88 @@ export default function OmniPromptInput({
 
         {/* Attached File Preview Badge */}
         {attachedFile && (
-          <div className="flex items-center gap-2 mb-2 p-1.5 px-3 rounded-xl bg-secondary/80 border border-border/80 w-fit text-xs text-foreground">
-            <FileText className="w-3.5 h-3.5 text-primary" />
+          <div className="flex items-center gap-2 mb-2 p-1 px-2.5 rounded-xl bg-secondary/80 border border-border/80 w-fit text-xs text-foreground animate-in fade-in">
+            <FileText className="w-3.5 h-3.5 text-primary shrink-0" />
             <span className="font-medium truncate max-w-xs">
               {attachedFile.name}
             </span>
-            <span className="text-[10px] text-muted-foreground">
+            <span className="text-[10px] text-muted-foreground shrink-0">
               ({(attachedFile.size / 1024 / 1024).toFixed(2)} MB)
             </span>
             <button
               type="button"
               onClick={handleRemoveFile}
               aria-label="Remove attached CV"
-              className="p-1.5 min-w-[32px] min-h-[32px] flex items-center justify-center hover:bg-destructive/10 rounded-lg text-muted-foreground hover:text-destructive focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-destructive/50 cursor-pointer transition-colors"
+              className="p-1 hover:bg-destructive/10 rounded-lg text-muted-foreground hover:text-destructive cursor-pointer transition-colors"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-3 h-3" />
             </button>
           </div>
         )}
 
-        {/* Dynamic Auto-Expanding Text Area */}
-        <textarea
-          ref={textareaRef}
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          rows={1}
-          maxLength={MAX_PROMPT_CHARS}
-          disabled={isLoading}
-          aria-label="Message"
-          className="w-full resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none leading-relaxed py-1 min-h-[38px] max-h-[160px] overflow-y-auto custom-scrollbar"
-        />
+        {/* Compact Horizontal Input Row */}
+        <div className="flex items-end gap-1.5 sm:gap-2">
+          {/* File Attachment Button (Icon Only on Left) */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept=".pdf"
+            aria-label="Upload resume in PDF format"
+            className="hidden"
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isLoading}
+            aria-label="Attach CV (PDF up to 5MB)"
+            title="Attach CV (PDF)"
+            className="w-9 h-9 shrink-0 flex items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors cursor-pointer disabled:opacity-50"
+          >
+            <Paperclip className="w-4 h-4" />
+          </button>
 
-        {/* Action Toolbar */}
-        <div className="flex items-center justify-between pt-2 border-t border-border/40 mt-1">
-          {/* File Attachment Button */}
-          <div className="flex items-center gap-2">
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              accept=".pdf"
-              aria-label="Upload resume in PDF format"
-              className="hidden"
-            />
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isLoading}
-              aria-label="Attach CV in PDF format up to 5MB"
-              className="min-h-[36px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors cursor-pointer disabled:opacity-50"
-            >
-              <Paperclip className="w-3.5 h-3.5" />
-              <span>Attach CV</span>
-            </button>
-            <span className="hidden sm:inline text-[11px] text-muted-foreground/60">
-              PDF up to 5MB
-            </span>
-          </div>
+          {/* Dynamic Auto-Expanding Text Area */}
+          <textarea
+            ref={textareaRef}
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={placeholder}
+            rows={1}
+            maxLength={MAX_PROMPT_CHARS}
+            disabled={isLoading}
+            aria-label="Message"
+            className="flex-1 resize-none bg-transparent text-xs sm:text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none leading-relaxed py-2 px-1 min-h-[36px] max-h-[140px] overflow-y-auto custom-scrollbar"
+          />
 
-          {/* Right Controls: Character counter & Submit */}
-          <div className="flex items-center gap-2.5">
-            {prompt.length > 1500 && (
-              <span
-                className={`text-[11px] font-mono transition-colors ${
-                  prompt.length >= MAX_PROMPT_CHARS
-                    ? "text-destructive font-semibold"
-                    : "text-muted-foreground"
-                }`}
-              >
-                {prompt.length}/{MAX_PROMPT_CHARS}
-              </span>
-            )}
-
-            <button
-              type="submit"
-              disabled={!canSubmit}
-              aria-label="Send message"
-              className={`w-9 h-9 rounded-xl transition-all duration-150 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 focus-visible:ring-offset-card ${
-                canSubmit
-                  ? "bg-primary text-primary-foreground hover:opacity-90 shadow-2xs cursor-pointer active:scale-95"
-                  : "bg-secondary text-muted-foreground cursor-not-allowed opacity-50"
+          {/* Character counter (only when approaching limit) */}
+          {prompt.length > 1500 && (
+            <span
+              className={`text-[10px] font-mono shrink-0 pb-2 transition-colors ${
+                prompt.length >= MAX_PROMPT_CHARS
+                  ? "text-destructive font-semibold"
+                  : "text-muted-foreground"
               }`}
             >
-              <ArrowUp className="w-4 h-4" />
-            </button>
-          </div>
+              {prompt.length}/{MAX_PROMPT_CHARS}
+            </span>
+          )}
+
+          {/* Submit Button on Right */}
+          <button
+            type="submit"
+            disabled={!canSubmit}
+            aria-label="Send message"
+            title="Send message"
+            className={`w-9 h-9 shrink-0 rounded-xl transition-all duration-150 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+              canSubmit
+                ? "bg-primary text-primary-foreground hover:opacity-95 shadow-2xs cursor-pointer active:scale-95"
+                : "bg-secondary text-muted-foreground cursor-not-allowed opacity-40"
+            }`}
+          >
+            <ArrowUp className="w-4 h-4" />
+          </button>
         </div>
       </form>
     </div>

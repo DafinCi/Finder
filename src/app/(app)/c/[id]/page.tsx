@@ -131,7 +131,7 @@ export default function ChatSessionPage({
             isSticky={true}
             onSubmit={(prompt, file) => sendMessage(prompt, file)}
             isLoading={isLoading}
-            placeholder="Ask a follow-up question or attach another CV..."
+            placeholder="Type a message"
           />
         </div>
       </div>

@@ -86,7 +86,7 @@ export default function AppChatHomePage() {
           <OmniPromptInput
             onSubmit={handleSubmit}
             isLoading={isLoading}
-            placeholder="Ask a question or drag & drop your CV (PDF)..."
+            placeholder="Type a message"
           />
         </div>
 
