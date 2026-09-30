@@ -11,7 +11,7 @@ import {
 } from "./prompts/profile-extractor.prompt";
 
 export const ExtractedCandidateSchema = z.object({
-  name: z.string().trim().default("Anonim"),
+  name: z.string().trim().default("Anonymous"),
   title: z.string().trim().default("Professional"),
   years_of_experience: z.coerce.number().min(0).max(60).default(0),
   summary: z.string().trim().default(""),
@@ -24,8 +24,8 @@ export const ExtractedCandidateSchema = z.object({
   experience: z
     .array(
       z.object({
-        company: z.string().trim().default("Perusahaan"),
-        role: z.string().trim().default("Posisi"),
+        company: z.string().trim().default("Company"),
+        role: z.string().trim().default("Position"),
         duration: z.string().trim().default(""),
         achievements: z.array(z.string().trim()).default([]),
       }),

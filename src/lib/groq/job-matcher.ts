@@ -17,7 +17,7 @@ export const JobMatchResultItemSchema = z.object({
     .string()
     .trim()
     .default(
-      "Kecocokan profil dievaluasi berdasarkan keselarasan tech stack dan pengalaman.",
+      "Profile fit evaluated based on tech stack and experience alignment.",
     ),
   missing_skills: z.array(z.string().trim()).default([]),
 });
