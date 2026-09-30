@@ -25,7 +25,7 @@ function getScoreBadge(score: number) {
   const badgeColor = isHighMatch
     ? "bg-slush-mint/10 text-slush-mint border-slush-mint/25"
     : isMediumMatch
-      ? "bg-sui-blue-500/10 text-sui-blue-500 border-sui-blue-500/25"
+      ? "bg-primary/15 text-slush-lavender border-primary/30"
       : "bg-slush-yellow/10 text-slush-yellow border-slush-yellow/25";
 
   return (

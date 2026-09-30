@@ -133,7 +133,7 @@ export default function OmniPromptInput({
         className={`relative rounded-2xl border bg-card/95 shadow-md backdrop-blur-md p-3.5 transition-all ${
           isDragging
             ? "border-primary ring-2 ring-primary/20 bg-primary/5"
-            : "border-border/80 focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20"
+            : "border-border/80"
         }`}
       >
         {/* Drag Overlay Hint */}

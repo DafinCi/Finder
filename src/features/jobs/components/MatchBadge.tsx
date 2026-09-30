@@ -17,7 +17,7 @@ export default function MatchBadge({
     colorClass = "bg-slush-mint/10 text-slush-mint border-slush-mint/25";
   } else if (score >= 75) {
     text = "Strong Match";
-    colorClass = "bg-sui-blue-500/10 text-sui-blue-500 border-sui-blue-500/25";
+    colorClass = "bg-primary/15 text-slush-lavender border-primary/30";
   } else if (score >= 60) {
     text = "Good Match";
     colorClass = "bg-slush-blue/10 text-slush-blue border-slush-blue/25";

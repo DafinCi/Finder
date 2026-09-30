@@ -27,7 +27,7 @@ export default function MobileBottomNav() {
           aria-current={isHomeActive ? "page" : undefined}
           className={`flex flex-col items-center justify-center gap-1 min-h-[44px] rounded-xl transition-colors cursor-pointer ${
             isHomeActive
-              ? "text-primary font-semibold"
+              ? "text-slush-lavender font-semibold"
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
@@ -45,7 +45,7 @@ export default function MobileBottomNav() {
           aria-expanded={!collapsed}
           className={`flex flex-col items-center justify-center gap-1 min-h-[44px] rounded-xl transition-colors cursor-pointer ${
             isChatsActive
-              ? "text-primary font-semibold"
+              ? "text-slush-lavender font-semibold"
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
@@ -59,7 +59,7 @@ export default function MobileBottomNav() {
           aria-current={isJobsActive ? "page" : undefined}
           className={`flex flex-col items-center justify-center gap-1 min-h-[44px] rounded-xl transition-colors cursor-pointer ${
             isJobsActive
-              ? "text-primary font-semibold"
+              ? "text-slush-lavender font-semibold"
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
@@ -73,7 +73,7 @@ export default function MobileBottomNav() {
           aria-current={isProfileActive ? "page" : undefined}
           className={`flex flex-col items-center justify-center gap-1 min-h-[44px] rounded-xl transition-colors cursor-pointer ${
             isProfileActive
-              ? "text-primary font-semibold"
+              ? "text-slush-lavender font-semibold"
               : "text-muted-foreground hover:text-foreground"
           }`}
         >

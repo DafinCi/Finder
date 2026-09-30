@@ -39,8 +39,8 @@
   --color-finder-border-strong: rgba(255, 255, 255, 0.18);
 
   /* Semantic Utilities */
-  --color-action-primary: #298DFF;
-  --color-action-primary-hover: #4DA2FF;
+  --color-action-primary: #5C4ADE;
+  --color-action-primary-hover: #7161EF;
   --color-state-success: #55DB9C;
   --color-state-warning: #FFD731;
   --color-state-danger: #FB4903;
@@ -108,8 +108,8 @@
   --popover: #171B22;
   --popover-foreground: #F7F8FA;
 
-  /* Brand / Action Primary (Sui Blue 500) */
-  --primary: #298DFF;
+  /* Brand / Action Primary (Slush Violet) */
+  --primary: #5C4ADE;
   --primary-foreground: #FFFFFF;
 
   /* Secondary & Muted Surfaces (Finder Surface 2 & 3) */
@@ -131,32 +131,32 @@
   /* UI Borders & Rings */
   --border: rgba(255, 255, 255, 0.12);
   --input: rgba(255, 255, 255, 0.08);
-  --ring: #298DFF;
+  --ring: #5C4ADE;
 
   /* Radius base */
   --radius: 0.75rem;
 
   /* Charts */
-  --chart-1: #298DFF;
-  --chart-2: #4DA2FF;
+  --chart-1: #5C4ADE;
+  --chart-2: #298DFF;
   --chart-3: #55DB9C;
   --chart-4: #FFD731;
-  --chart-5: #5C4ADE;
+  --chart-5: #4DA2FF;
 
   /* Sidebar */
   --sidebar: #0B0D10;
   --sidebar-foreground: #F7F8FA;
-  --sidebar-primary: #298DFF;
+  --sidebar-primary: #5C4ADE;
   --sidebar-primary-foreground: #FFFFFF;
   --sidebar-accent: #171B22;
   --sidebar-accent-foreground: #F7F8FA;
   --sidebar-border: rgba(255, 255, 255, 0.12);
-  --sidebar-ring: #298DFF;
+  --sidebar-ring: #5C4ADE;
 }
 
 /* Custom utility from docs/finder-design-system.md Section 45 */
 @utility finder-focus-ring {
-  outline: 2px solid var(--color-sui-blue-500);
+  outline: 2px solid var(--color-slush-violet);
   outline-offset: 2px;
 }
 

@@ -62,7 +62,7 @@ export default function ChatMessageItem({
             </div>
           )}
 
-          {/* User message text bubble: Sui-blue identity surface */}
+          {/* User message text bubble: Slush-violet identity surface */}
           {message.content && (
             <div className="px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-sans leading-relaxed shadow-2xs">
               {message.content}

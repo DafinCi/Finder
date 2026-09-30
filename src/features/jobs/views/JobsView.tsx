@@ -194,7 +194,7 @@ export default function JobsView() {
     }
     if (mode === "hybrid") {
       return (
-        <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-sui-blue-500/10 text-sui-blue-500 border border-sui-blue-500/25 font-medium">
+        <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-primary/15 text-slush-lavender border border-primary/30 font-medium">
           Hybrid
         </span>
       );

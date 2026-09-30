@@ -50,7 +50,7 @@ export default function JobSummary({ stats }: JobSummaryProps) {
       </div>
 
       <div className="border border-border/80 bg-card/60 backdrop-blur-xs rounded-xl p-4 flex items-center gap-3.5 shadow-2xs">
-        <div className="p-2.5 bg-sui-blue-500/10 rounded-xl text-sui-blue-500 border border-sui-blue-500/20">
+        <div className="p-2.5 bg-primary/10 rounded-xl text-primary border border-primary/20">
           <TrendingUp className="w-5 h-5" />
         </div>
         <div>
