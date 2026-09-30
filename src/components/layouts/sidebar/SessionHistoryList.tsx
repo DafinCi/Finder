@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { ChatSession } from "@/types/chat";
 import { GroupedSessions } from "@/features/chat/hooks/useSessions";
+import { useAgent } from "@/contexts/AgentContext";
+import BotAvatar from "@/components/ui/BotAvatar";
 
 interface SessionHistoryListProps {
   groupedSessions: GroupedSessions;
@@ -36,6 +38,7 @@ export default function SessionHistoryList({
   onDeleteSession,
 }: SessionHistoryListProps) {
   const pathname = usePathname();
+  const { agentName } = useAgent();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [isSavingRename, setIsSavingRename] = useState(false);
@@ -160,21 +163,37 @@ export default function SessionHistoryList({
           return (
             <div
               key={session.id}
-              className={`group relative flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+              className={`group relative flex items-center justify-between gap-2.5 px-2.5 py-2 rounded-xl text-xs transition-all cursor-pointer ${
                 isActive
-                  ? "bg-secondary text-foreground font-semibold"
-                  : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+                  ? "bg-secondary text-foreground font-semibold shadow-2xs"
+                  : "text-muted-foreground hover:bg-secondary/70 hover:text-foreground"
               }`}
             >
               <Link
                 href={`/c/${session.id}`}
-                className="flex items-center gap-2.5 min-w-0 flex-1 mr-1"
-                title={session.title}
+                className="flex items-center gap-2.5 min-w-0 flex-1 overflow-hidden"
+                title={`${agentName} - ${session.title}`}
               >
-                <span className="truncate">{session.title}</span>
+                {/* Bot Avatar with dynamic Slush color derived from session.id */}
+                <BotAvatar
+                  name={session.id}
+                  size="sm"
+                  className="shrink-0"
+                />
+
+                {/* Agent Name + Session Title Subtext */}
+                <div className="flex flex-col min-w-0 flex-1">
+                  <span className="text-xs font-semibold text-foreground truncate group-hover:text-primary transition-colors leading-tight">
+                    {agentName}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground truncate leading-tight mt-0.5">
+                    {session.title}
+                  </span>
+                </div>
               </Link>
 
-              <div className="flex items-center shrink-0 gap-0.5">
+              {/* Action Buttons: Rename + Trash Delete with smooth slide-in on hover */}
+              <div className="flex items-center shrink-0 gap-0.5 opacity-0 group-hover:opacity-100 translate-x-1 group-hover:translate-x-0 transition-all duration-200">
                 {onRenameSession && (
                   <button
                     type="button"
@@ -185,7 +204,7 @@ export default function SessionHistoryList({
                       setEditTitle(session.title);
                     }}
                     aria-label={`Rename ${session.title}`}
-                    className="opacity-70 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 min-w-[28px] min-h-[28px] flex items-center justify-center hover:text-foreground hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 rounded-md transition-all cursor-pointer"
+                    className="min-w-[28px] min-h-[28px] flex items-center justify-center hover:text-foreground hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 rounded-lg transition-colors cursor-pointer"
                     title="Rename"
                   >
                     <Pencil className="w-3 h-3 text-muted-foreground hover:text-foreground" />
@@ -204,7 +223,7 @@ export default function SessionHistoryList({
                         onDeleteSession(session.id);
                       }}
                       aria-label={`Delete session ${session.title}`}
-                      className="opacity-70 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 min-w-[28px] min-h-[28px] flex items-center justify-center hover:text-destructive hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-destructive/50 rounded-md transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="min-w-[28px] min-h-[28px] flex items-center justify-center hover:text-destructive hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-destructive/50 rounded-lg transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                       title={isThisDeleting ? "Deleting..." : "Delete session"}
                     >
                       {isThisDeleting ? (
