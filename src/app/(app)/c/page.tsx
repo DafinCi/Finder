@@ -8,9 +8,12 @@ import OmniPromptInput from "@/features/chat/components/OmniPromptInput";
 import ChatActionPills from "@/features/chat/components/ChatActionPills";
 import { chatService } from "@/features/chat/services/chat.service";
 import { generateSmartSessionTitle } from "@/features/chat/utils/title-generator";
+import { useAgent } from "@/contexts/AgentContext";
+import BotAvatar from "@/components/ui/BotAvatar";
 
 export default function AppChatHomePage() {
   const router = useRouter();
+  const { agentName } = useAgent();
   const [isLoading, setIsLoading] = useState(false);
   const [statusText, setStatusText] = useState("");
 
@@ -74,11 +77,22 @@ export default function AppChatHomePage() {
   return (
     <div className="flex-1 flex flex-col items-center justify-center h-full px-4 py-8 animate-in fade-in duration-300 relative overflow-y-auto custom-scrollbar">
       <div className="w-full max-w-2xl text-center space-y-7 my-auto">
-        {/* Hero Title */}
-        <div className="space-y-2">
-          <h1 className="text-3xl sm:text-4xl font-bold font-heading text-foreground tracking-tight">
-            Where do you want to take your career today?
-          </h1>
+        {/* Friendly Agent Greeting */}
+        <div className="flex flex-col items-center gap-3">
+          <BotAvatar
+            name={agentName}
+            size="lg"
+            showStatusIndicator
+            indicatorStatus="online"
+          />
+          <div className="space-y-1">
+            <h1 className="text-2xl sm:text-3xl font-bold font-heading text-foreground tracking-tight">
+              Hey, I&apos;m {agentName}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              What can I help you explore today?
+            </p>
+          </div>
         </div>
 
         {/* Omni-Prompt Input */}

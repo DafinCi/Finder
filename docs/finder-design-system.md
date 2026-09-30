@@ -687,7 +687,18 @@ font-family:
 
 ## 7.4 Finder Type Scale
 
-Finder uses a balanced, readable type scale calibrated for conversational density:
+Finder uses a balanced, readable type scale calibrated for conversational density, adapted from Slush and WhatsApp design patterns:
+
+| Token | Size | Line Height | Usage in Finder |
+|---|---|---|---|
+| `--text-xs` | 12px (0.75rem) | 1.38 | Timestamps, badges, status indicators, secondary metadata |
+| `--text-sm` | 13px (0.8125rem) | 1.35 | Captions, helper text, tags, session subtitle in sidebar |
+| `--text-base` | 15px (0.9375rem) | 1.40 | Default chat message body, UI controls, omnibar input |
+| `--text-lg` | 16px (1rem) | 1.35 | Emphasized message text, card titles, drawer nickname editor |
+| `--text-xl` | 20px (1.25rem) | 1.25 | Drawer headers, dialog titles, section headers |
+| `--text-2xl` | 24px (1.5rem) | 1.20 | Empty state greeting headlines, modal titles |
+| `--text-3xl` | 30px (1.875rem) | 1.15 | Page headers, primary feature intros |
+| `--text-4xl` | 36px (2.25rem) | 1.10 | Hero display and brand moments |
 
 ```css
 @theme {
@@ -696,11 +707,18 @@ Finder uses a balanced, readable type scale calibrated for conversational densit
   --text-base: 0.9375rem; /* 15px - Default chat message body, UI controls */
   --text-lg: 1rem;        /* 16px - Emphasized message text, card titles */
   --text-xl: 1.25rem;     /* 20px - Section headers */
-  --text-2xl: 1.5rem;     /* 24px - Modal & conversation titles */
+  --text-2xl: 1.5rem;     /* 24px - Modal and conversation titles */
   --text-3xl: 1.875rem;   /* 30px - Page headers */
-  --text-4xl: 2.25rem;    /* 36px - Brand moments & Hero display */
+  --text-4xl: 2.25rem;    /* 36px - Brand moments and Hero display */
 }
 ```
+
+## 7.5 Conversational Reading Rhythm
+
+Adapted from WhatsApp reading rhythm guidelines:
+- Body text is paired with generous line-height (1.34 to 1.40) to prevent conversational blocks from feeling cramped.
+- Relaxed leading increases scanning comfort for long job recommendations and career analysis summaries.
+- Headlines use tighter line-height (1.10 to 1.25) to maintain punchy presence without creating vertical whitespace gaps.
 
 ---
 
@@ -747,6 +765,31 @@ https://tailwindcss.com/docs/margin
 ```
 
 Use the existing Tailwind spacing utilities whenever possible.
+
+---
+
+## 8.3 Conversational Spacing Rhythm
+
+Adapted from WhatsApp 4px base spacing scale and comfortable density:
+
+| Spacing Token | Pixels | Application in Finder UI |
+|---|---|---|
+| `p-1`, `gap-1` | 4px | Micro-gaps between status dot and text, icon paddings |
+| `p-2`, `gap-2` | 8px | Button internal padding, avatar to title gap |
+| `p-3`, `gap-3` | 12px | Sidebar session item padding, compact card padding |
+| `p-4`, `gap-4` | 16px | Container padding, standard card margins, drawer padding |
+| `p-5`, `gap-5` | 20px | Section gutters, spacing between grouped card sections |
+| `p-6`, `gap-6` | 24px | Modal dialog padding, drawer header padding |
+| `p-8`, `gap-8` | 32px | Empty state hero spacing, major layout gaps |
+
+### Key Dimensional Constraints
+
+1. **Omnibar Input**: Compact horizontal single-row with base height of 44 to 48px, icon-only attachment button, auto-expanding textarea, and direct send button.
+2. **Sidebar Width Limits**:
+   - Minimum width: 240px
+   - Maximum width: 420px
+   - Default width: 260px
+   - Draggable desktop splitter with 60fps tracking and localStorage persistence (`finder_sidebar_width`).
 
 ---
 
@@ -1043,6 +1086,50 @@ Do not invent novel interaction for:
 - reacting
 - searching
 - navigating back
+
+---
+
+## 15.4 Agent as a Friend Interaction Model
+
+Finder treats the AI agent with the approachable familiarity of a friend on WhatsApp rather than an impersonal utility prompt:
+
+### 1. Contact Header and Topbar
+- Replaces static session titles and decorative badges with an interactive contact button.
+- Displays the `BotAvatar` with active online status indicator, customizable agent nickname (`agentName`), and dynamic status subtitle.
+- Subtitle behavior:
+  - When idle: shows informative `"Click here for agent info"` hint.
+  - When processing: shows actual real-time streaming status from the backend SSE stream (e.g. `"Searching career opportunities..."`, `"Analyzing resume..."`).
+  - No synthetic idle presence: Avoid fabricated "last seen" or artificial idle states.
+
+### 2. Right-Hand Agent Info Drawer
+- Clicking the contact header opens a right slide-in drawer (`AgentInfoDrawer`).
+- Displays generous 72px `BotAvatar`, inline nickname editor with instant persistence to `localStorage` (`finder_agent_nickname`), and technical LLM runtime card (`openai/gpt-oss-120b` via Groq Cloud).
+- Clean scope boundaries:
+  - Do not implement custom avatar photo upload (keep lightweight deterministic SVG).
+  - Do not implement tone/personality selector dials.
+  - Do not embed memory browser in the drawer (reserved for `/settings` sovereign memory).
+
+### 3. WhatsApp-Style Sidebar Conversation Items
+- Each conversation item in `SessionHistoryList` displays a 32px `BotAvatar` with deterministic Slush color hashing derived from the session ID.
+- Primary text is the customizable Agent nickname; secondary text is the session title.
+- Hover reveals a slide-in delete icon button for rapid session management.
+
+### 4. Compact Omnibar Input
+- Single-row horizontal input bar with default height 44 to 48px.
+- Left-aligned icon-only paperclip for PDF attachment with floating thumbnail chip.
+- Center auto-expanding textarea with `"Type a message"` placeholder.
+- Right-aligned send button with Slush Violet primary fill.
+
+### 5. Short Empty State Greeting
+- Concise, approachable new conversation screen in `/c`.
+- Online `BotAvatar` paired with `"Hey, I'm {agentName}"` and `"What can I help you explore today?"`.
+- Avoids wall-of-text introductions.
+
+### 6. Strict Exclusion List (Do Not Adopt)
+- No avatar photo upload.
+- No conversation tone toggles.
+- No timestamps or double checkmark ticks on chat bubbles.
+- No user or bot avatars attached to individual chat bubbles.
 
 ---
 
