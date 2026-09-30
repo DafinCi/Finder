@@ -5,133 +5,170 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* Sui Official Identity */
+  --color-sui-black: #000000;
+  --color-sui-white: #ffffff;
+  --color-sui-gray-500: #6c7584;
+  --color-sui-blue-500: #298dff;
+  --color-sui-blue-600: #1759c4;
+
+  /* Slush Official Palette */
+  --color-slush-blue: #4da2ff;
+  --color-slush-glacier: #dceeff;
+  --color-slush-violet: #5c4ade;
+  --color-slush-lavender: #e9ccff;
+  --color-slush-ember: #fb4903;
+  --color-slush-yellow: #ffd731;
+  --color-slush-mint: #55db9c;
+  --color-slush-white: #ffffff;
+  --color-slush-black: #000000;
+
+  /* Finder Dark Primitives */
+  --color-finder-bg: #0b0d10;
+  --color-finder-surface-1: #111419;
+  --color-finder-surface-2: #171b22;
+  --color-finder-surface-3: #1d222b;
+
+  --color-finder-text-primary: #f7f8fa;
+  --color-finder-text-secondary: #b5bbc5;
+  --color-finder-text-tertiary: #858c98;
+  --color-finder-text-disabled: #626975;
+
+  --color-finder-border-subtle: rgba(255, 255, 255, 0.08);
+  --color-finder-border-default: rgba(255, 255, 255, 0.12);
+  --color-finder-border-strong: rgba(255, 255, 255, 0.18);
+
+  /* Semantic Utilities */
+  --color-action-primary: #298dff;
+  --color-action-primary-hover: #4da2ff;
+  --color-state-success: #55db9c;
+  --color-state-warning: #ffd731;
+  --color-state-danger: #fb4903;
+  --color-state-special: #5c4ade;
+  --color-state-special-foreground: #e9ccff;
+
+  /* Framework / Shadcn Token Mapping */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-body);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-heading);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-xl: 10px;
-  --radius-2xl: 12px;
-  --radius-3xl: 14px;
-  --radius-4xl: 16px;
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
 
-  --color-gradasi: var(--gradasi);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Geometry: Radius Scale (docs/finder-design-system.md Section 9) */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.5rem;
+  --radius-pill: 9999px;
+
+  /* Typography */
+  --font-sans:
+    var(--font-sans), "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-heading:
+    var(--font-heading), "Plus Jakarta Sans", ui-sans-serif, system-ui,
+    sans-serif;
+  --font-mono:
+    var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, monospace;
 }
 
 :root {
-  /* ==========================
-     Base (Zinc Dark Palette)
-  ========================== */
-  --background: oklch(0.14 0.005 260);
-  --foreground: oklch(0.96 0.005 260);
+  /* Finder Base (Dark-Only Specification) */
+  --background: #0b0d10;
+  --foreground: #f7f8fa;
 
-  /* ==========================
-     Surface (Elevated Zinc)
-  ========================== */
-  --card: oklch(0.18 0.006 260);
-  --card-foreground: oklch(0.96 0.005 260);
+  /* Surfaces */
+  --card: #111419;
+  --card-foreground: #f7f8fa;
 
-  --popover: oklch(0.18 0.006 260);
-  --popover-foreground: oklch(0.96 0.005 260);
+  --popover: #171b22;
+  --popover-foreground: #f7f8fa;
 
-  /* ==========================
-     Brand / Accent (Vibrant Violet / Indigo)
-  ========================== */
-  --primary: oklch(0.65 0.2 280);
-  --primary-foreground: oklch(0.98 0.005 260);
+  /* Brand / Action Primary (Sui Blue 500) */
+  --primary: #298dff;
+  --primary-foreground: #ffffff;
 
-  /* ==========================
-     Secondary (Zinc Muted Surface)
-  ========================== */
-  --secondary: oklch(0.22 0.008 260);
-  --secondary-foreground: oklch(0.96 0.005 260);
+  /* Secondary & Muted Surfaces (Finder Surface 2 & 3) */
+  --secondary: #171b22;
+  --secondary-foreground: #b5bbc5;
 
-  /* ==========================
-     Muted
-  ========================== */
-  --muted: oklch(0.22 0.008 260);
-  --muted-foreground: oklch(0.65 0.01 260);
+  --muted: #171b22;
+  --muted-foreground: #858c98;
 
-  /* ==========================
-     Accent
-  ========================== */
-  --accent: oklch(0.25 0.012 260);
-  --accent-foreground: oklch(0.96 0.005 260);
+  --accent: #171b22;
+  --accent-foreground: #f7f8fa;
 
-  /* ==========================
-     Status
-  ========================== */
-  --destructive: oklch(0.68 0.2 25);
-  --success: oklch(0.72 0.17 155);
-  --warning: oklch(0.82 0.16 85);
+  /* Status Colors */
+  --destructive: #fb4903;
+  --destructive-foreground: #ffffff;
+  --success: #55db9c;
+  --warning: #ffd731;
 
-  /* ==========================
-     UI / Borders / Rings
-  ========================== */
-  --border: oklch(0.26 0.008 260);
-  --input: oklch(0.22 0.008 260);
-  --ring: oklch(0.65 0.2 280);
+  /* UI Borders & Rings */
+  --border: rgba(255, 255, 255, 0.12);
+  --input: rgba(255, 255, 255, 0.08);
+  --ring: #298dff;
 
-  /* ==========================
-     Charts
-  ========================== */
-  --chart-1: oklch(0.65 0.2 280);
-  --chart-2: oklch(0.71 0.16 220);
-  --chart-3: oklch(0.7 0.17 155);
-  --chart-4: oklch(0.82 0.16 85);
-  --chart-5: oklch(0.69 0.18 335);
+  /* Radius base */
+  --radius: 0.75rem;
 
-  /* ==========================
-     Radius
-  ========================== */
-  --radius: 8px;
+  /* Charts */
+  --chart-1: #298dff;
+  --chart-2: #4da2ff;
+  --chart-3: #55db9c;
+  --chart-4: #ffd731;
+  --chart-5: #5c4ade;
 
-  /* ==========================
-     Sidebar (Zinc Surface)
-  ========================== */
-  --sidebar: oklch(0.16 0.005 260);
-  --sidebar-foreground: oklch(0.96 0.005 260);
-  --sidebar-primary: oklch(0.65 0.2 280);
-  --sidebar-primary-foreground: oklch(0.98 0.005 260);
-  --sidebar-accent: oklch(0.22 0.008 260);
-  --sidebar-accent-foreground: oklch(0.96 0.005 260);
-  --sidebar-border: oklch(0.24 0.008 260);
-  --sidebar-ring: oklch(0.65 0.2 280);
+  /* Sidebar */
+  --sidebar: #0b0d10;
+  --sidebar-foreground: #f7f8fa;
+  --sidebar-primary: #298dff;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #171b22;
+  --sidebar-accent-foreground: #f7f8fa;
+  --sidebar-border: rgba(255, 255, 255, 0.12);
+  --sidebar-ring: #298dff;
+}
+
+/* Custom utility from docs/finder-design-system.md Section 45 */
+@utility finder-focus-ring {
+  outline: 2px solid var(--color-sui-blue-500);
+  outline-offset: 2px;
 }
 
 @layer base {
+  html {
+    color-scheme: dark;
+  }
   * {
     @apply border-border outline-ring/50;
   }
