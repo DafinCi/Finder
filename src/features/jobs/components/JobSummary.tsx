@@ -34,7 +34,7 @@ export default function JobSummary({ stats }: JobSummaryProps) {
       </div>
 
       <div className="border border-border/80 bg-card/60 backdrop-blur-xs rounded-xl p-4 flex items-center gap-3.5 shadow-2xs">
-        <div className="p-2.5 bg-emerald-500/10 rounded-lg text-emerald-500 border border-emerald-500/20">
+        <div className="p-2.5 bg-slush-mint/10 rounded-xl text-slush-mint border border-slush-mint/20">
           <Award className="w-5 h-5" />
         </div>
         <div>
@@ -43,14 +43,14 @@ export default function JobSummary({ stats }: JobSummaryProps) {
           </p>
           <div className="flex items-baseline gap-1.5">
             <h4 className="text-xl font-bold font-heading text-foreground">
-              {highest !== null ? `${highest} / 100` : "—"}
+              {highest !== null ? `${highest} / 100` : "N/A"}
             </h4>
           </div>
         </div>
       </div>
 
       <div className="border border-border/80 bg-card/60 backdrop-blur-xs rounded-xl p-4 flex items-center gap-3.5 shadow-2xs">
-        <div className="p-2.5 bg-blue-500/10 rounded-lg text-blue-500 border border-blue-500/20">
+        <div className="p-2.5 bg-sui-blue-500/10 rounded-xl text-sui-blue-500 border border-sui-blue-500/20">
           <TrendingUp className="w-5 h-5" />
         </div>
         <div>
@@ -59,7 +59,7 @@ export default function JobSummary({ stats }: JobSummaryProps) {
           </p>
           <div className="flex items-baseline gap-1.5">
             <h4 className="text-xl font-bold font-heading text-foreground">
-              {average !== null ? `${average} / 100` : "—"}
+              {average !== null ? `${average} / 100` : "N/A"}
             </h4>
           </div>
         </div>

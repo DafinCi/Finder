@@ -70,12 +70,12 @@ export default function RejectReasonModal({
     >
       <div
         ref={modalRef}
-        className="w-full max-w-md bg-card border border-border rounded-xl shadow-2xl p-6 space-y-4 animate-in zoom-in-95 duration-200"
+        className="w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl p-6 space-y-4 animate-in zoom-in-95 duration-200"
       >
         {/* Header */}
         <div className="flex items-start justify-between gap-3 pb-2 border-b border-border/70">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-rose-500/10 text-rose-500 border border-rose-500/20">
+            <div className="p-2 rounded-xl bg-slush-ember/10 text-slush-ember border border-slush-ember/20">
               <ThumbsDown className="w-4 h-4" />
             </div>
             <div>
@@ -94,7 +94,7 @@ export default function RejectReasonModal({
             type="button"
             onClick={handleCancel}
             aria-label="Close"
-            className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -115,7 +115,7 @@ export default function RejectReasonModal({
                 key={opt.id}
                 type="button"
                 onClick={() => setSelectedReason(isSelected ? null : opt.id)}
-                className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-all flex items-center justify-between border cursor-pointer ${
+                className={`w-full text-left px-3 py-2 rounded-xl text-xs transition-all flex items-center justify-between border cursor-pointer ${
                   isSelected
                     ? "bg-primary/10 border-primary text-foreground font-medium"
                     : "bg-secondary/40 border-border/70 text-muted-foreground hover:text-foreground hover:bg-secondary"
@@ -135,14 +135,14 @@ export default function RejectReasonModal({
           <button
             type="button"
             onClick={handleCancel}
-            className="px-3.5 py-2 text-xs rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors cursor-pointer"
+            className="px-3.5 py-2 text-xs rounded-xl border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors cursor-pointer"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={handleConfirm}
-            className="px-4 py-2 text-xs rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-medium shadow-xs transition-colors cursor-pointer"
+            className="px-4 py-2 text-xs rounded-xl bg-slush-ember hover:bg-slush-ember/90 text-white font-medium shadow-xs transition-colors cursor-pointer"
           >
             {selectedReason ? "Submit & Exclude" : "Exclude without reason"}
           </button>
