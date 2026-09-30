@@ -78,7 +78,7 @@ export default function ChatTimeline({
             <button
               type="button"
               onClick={onRetry}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-destructive/15 text-destructive hover:bg-destructive/25 font-semibold transition-colors cursor-pointer w-fit"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-destructive/15 text-destructive hover:bg-destructive/25 font-semibold transition-colors cursor-pointer w-fit"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Try again</span>
@@ -90,7 +90,7 @@ export default function ChatTimeline({
       {/* Bottom spacer ensures messages and actions clear the floating bottom omnibar */}
       <div
         ref={bottomRef}
-        className="h-36 sm:h-40 shrink-0"
+        className="h-48 md:h-40 shrink-0"
         aria-hidden="true"
       />
     </div>

@@ -23,7 +23,7 @@ export default function Sidebar() {
       {/* Responsive Sidebar Drawer */}
       <aside
         className={`
-          h-screen flex flex-col bg-sidebar border-r border-border/80 transition-all duration-300 ease-in-out shrink-0 no-scrollbar
+          h-[100dvh] flex flex-col bg-sidebar border-r border-border/80 transition-all duration-300 ease-in-out shrink-0 no-scrollbar
           fixed md:relative inset-y-0 left-0 z-50 md:z-40
           ${
             collapsed

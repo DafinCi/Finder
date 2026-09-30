@@ -23,14 +23,14 @@ function getScoreBadge(score: number) {
   const isMediumMatch = score >= 65 && score < 80;
 
   const badgeColor = isHighMatch
-    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+    ? "bg-slush-mint/10 text-slush-mint border-slush-mint/25"
     : isMediumMatch
-      ? "bg-sky-500/10 text-sky-400 border-sky-500/20"
-      : "bg-amber-500/10 text-amber-400 border-amber-500/20";
+      ? "bg-sui-blue-500/10 text-sui-blue-500 border-sui-blue-500/25"
+      : "bg-slush-yellow/10 text-slush-yellow border-slush-yellow/25";
 
   return (
     <span
-      className={`px-2 py-0.5 rounded-md text-[11px] font-semibold border shrink-0 font-sans ${badgeColor}`}
+      className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold border shrink-0 font-sans ${badgeColor}`}
     >
       {score} / 100 Match
     </span>
@@ -49,7 +49,7 @@ function renderPotentialGaps(missingSkills?: string[] | null) {
         {missingSkills.map((skill, idx) => (
           <span
             key={idx}
-            className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-secondary/70 text-muted-foreground border border-border/50"
+            className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-secondary/70 text-muted-foreground border border-border/50"
           >
             {skill}
           </span>
@@ -120,7 +120,7 @@ export default function JobMatchCarousel({
             {topJob.salary_range && (
               <>
                 <span>•</span>
-                <span className="inline-flex items-center gap-0.5 text-foreground/80 font-medium">
+                <span className="inline-flex items-center gap-0.5 text-slush-mint font-medium">
                   <DollarSign className="w-3.5 h-3.5" />
                   {topJob.salary_range}
                 </span>
@@ -130,7 +130,7 @@ export default function JobMatchCarousel({
 
           {/* AI Match Reason: Full Natural Auto-Height */}
           {topJob.reason && (
-            <div className="p-3 bg-secondary/35 border border-border/50 rounded-lg space-y-1">
+            <div className="p-3 bg-secondary/35 border border-border/50 rounded-xl space-y-1">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Match Assessment
               </span>
@@ -151,7 +151,7 @@ export default function JobMatchCarousel({
               className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
             >
               <MessageSquare className="w-3.5 h-3.5 text-primary" />
-              <span>Ask Copilot about this role</span>
+              <span>Ask Finder about this role</span>
             </button>
 
             <Link
@@ -217,7 +217,7 @@ export default function JobMatchCarousel({
                     {job.salary_range && (
                       <>
                         <span>•</span>
-                        <span className="text-foreground/80 font-medium">
+                        <span className="text-slush-mint font-medium">
                           {job.salary_range}
                         </span>
                       </>
@@ -226,7 +226,7 @@ export default function JobMatchCarousel({
 
                   {/* AI Reason (Auto-Height, No Clamping) */}
                   {job.reason && (
-                    <p className="text-xs text-muted-foreground leading-relaxed bg-secondary/30 p-2 rounded-lg font-sans">
+                    <p className="text-xs text-muted-foreground leading-relaxed bg-secondary/30 p-2.5 rounded-xl font-sans">
                       {job.reason}
                     </p>
                   )}
@@ -243,7 +243,7 @@ export default function JobMatchCarousel({
                     className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                   >
                     <MessageSquare className="w-3 h-3 text-primary" />
-                    <span>Ask Copilot</span>
+                    <span>Ask Finder</span>
                   </button>
 
                   <Link

@@ -107,7 +107,7 @@ export default function AppChatHomePage() {
 
         {/* Trust & Privacy Footnote */}
         <div className="pt-2 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground/60">
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-500/70" />
+          <ShieldCheck className="w-3.5 h-3.5 text-slush-mint/80" />
           <span>Text-based PDF only. Your data stays private.</span>
         </div>
       </div>

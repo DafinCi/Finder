@@ -130,7 +130,7 @@ export default function OmniPromptInput({
       <form
         onSubmit={handleSubmit}
         aria-label="Message and CV upload"
-        className={`relative rounded-xl border bg-card/95 shadow-md backdrop-blur-md p-3 transition-all ${
+        className={`relative rounded-2xl border bg-card/95 shadow-md backdrop-blur-md p-3.5 transition-all ${
           isDragging
             ? "border-primary ring-2 ring-primary/20 bg-primary/5"
             : "border-border/80 focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20"
@@ -138,7 +138,7 @@ export default function OmniPromptInput({
       >
         {/* Drag Overlay Hint */}
         {isDragging && (
-          <div className="absolute inset-0 rounded-xl bg-card/95 flex items-center justify-center gap-2 z-10 text-primary font-medium text-sm animate-in fade-in">
+          <div className="absolute inset-0 rounded-2xl bg-card/95 flex items-center justify-center gap-2 z-10 text-primary font-medium text-sm animate-in fade-in">
             <UploadCloud className="w-5 h-5 animate-bounce" />
             <span>Drop your CV (PDF) here</span>
           </div>
@@ -146,7 +146,7 @@ export default function OmniPromptInput({
 
         {/* Attached File Preview Badge */}
         {attachedFile && (
-          <div className="flex items-center gap-2 mb-2 p-1.5 px-3 rounded-lg bg-secondary/80 border border-border/80 w-fit text-xs text-foreground">
+          <div className="flex items-center gap-2 mb-2 p-1.5 px-3 rounded-xl bg-secondary/80 border border-border/80 w-fit text-xs text-foreground">
             <FileText className="w-3.5 h-3.5 text-primary" />
             <span className="font-medium truncate max-w-xs">
               {attachedFile.name}
@@ -158,7 +158,7 @@ export default function OmniPromptInput({
               type="button"
               onClick={handleRemoveFile}
               aria-label="Remove attached CV"
-              className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center hover:bg-destructive/10 rounded-md text-muted-foreground hover:text-destructive focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-destructive/50 cursor-pointer transition-colors"
+              className="p-1.5 min-w-[32px] min-h-[32px] flex items-center justify-center hover:bg-destructive/10 rounded-lg text-muted-foreground hover:text-destructive focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-destructive/50 cursor-pointer transition-colors"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -196,7 +196,7 @@ export default function OmniPromptInput({
               onClick={() => fileInputRef.current?.click()}
               disabled={isLoading}
               aria-label="Attach CV in PDF format up to 5MB"
-              className="min-h-[36px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors cursor-pointer disabled:opacity-50"
+              className="min-h-[36px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors cursor-pointer disabled:opacity-50"
             >
               <Paperclip className="w-3.5 h-3.5" />
               <span>Attach CV</span>
@@ -224,7 +224,7 @@ export default function OmniPromptInput({
               type="submit"
               disabled={!canSubmit}
               aria-label="Send message"
-              className={`w-9 h-9 rounded-lg transition-all duration-150 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 focus-visible:ring-offset-card ${
+              className={`w-9 h-9 rounded-xl transition-all duration-150 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 focus-visible:ring-offset-card ${
                 canSubmit
                   ? "bg-primary text-primary-foreground hover:opacity-90 shadow-2xs cursor-pointer active:scale-95"
                   : "bg-secondary text-muted-foreground cursor-not-allowed opacity-50"

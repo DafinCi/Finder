@@ -89,7 +89,7 @@ export default function SidebarNavigation({
       <div className="space-y-1 mb-3">
         <Link
           href="/jobs"
-          className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+          className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-colors ${
             pathname === "/jobs"
               ? "bg-secondary text-foreground font-semibold"
               : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
@@ -100,7 +100,7 @@ export default function SidebarNavigation({
         </Link>
         <Link
           href="/profile"
-          className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+          className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-colors ${
             pathname === "/profile"
               ? "bg-secondary text-foreground font-semibold"
               : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
@@ -111,7 +111,7 @@ export default function SidebarNavigation({
         </Link>
         <Link
           href="/settings"
-          className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+          className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-colors ${
             pathname === "/settings"
               ? "bg-secondary text-foreground font-semibold"
               : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { FileText, Copy, Check, Sparkles } from "lucide-react";
+import { FileText, Copy, Check, Sparkles, ThumbsUp, ThumbsDown } from "lucide-react";
 import { toast } from "sonner";
 import { ChatMessage } from "@/types/chat";
 import CandidateSummaryCard from "@/features/ai-analysis/components/CandidateSummaryCard";
@@ -24,6 +24,9 @@ export default function ChatMessageItem({
   const jobMatches = message.metadata?.job_matches;
   const isStreaming = message.id.startsWith("stream-");
   const [copied, setCopied] = useState(false);
+  const [feedback, setFeedback] = useState<"helpful" | "unhelpful" | null>(
+    (message.metadata?.feedback as "helpful" | "unhelpful") || null,
+  );
 
   const handleCopy = async () => {
     if (!message.content) return;
@@ -34,6 +37,16 @@ export default function ChatMessageItem({
       setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error("Failed to copy text");
+    }
+  };
+
+  const handleFeedback = (type: "helpful" | "unhelpful") => {
+    const newFeedback = feedback === type ? null : type;
+    setFeedback(newFeedback);
+    if (newFeedback === "helpful") {
+      toast.success("Feedback recorded: helpful response");
+    } else if (newFeedback === "unhelpful") {
+      toast.info("Feedback recorded: unhelpful response");
     }
   };
 
@@ -49,9 +62,9 @@ export default function ChatMessageItem({
             </div>
           )}
 
-          {/* User message text bubble */}
+          {/* User message text bubble: Sui-blue identity surface */}
           {message.content && (
-            <div className="px-4 py-2.5 rounded-2xl bg-secondary/80 text-foreground text-sm font-sans leading-relaxed border border-border/50 shadow-2xs">
+            <div className="px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-sans leading-relaxed shadow-2xs">
               {message.content}
             </div>
           )}
@@ -60,7 +73,7 @@ export default function ChatMessageItem({
     );
   }
 
-  // Assistant Message (Clean, avatar-free, industry-standard editorial style)
+  // Assistant Message (Neutral surface with deliberate AI evaluation actions)
   return (
     <div className="group relative my-6 animate-in fade-in duration-300">
       <div className="space-y-3">
@@ -94,35 +107,64 @@ export default function ChatMessageItem({
         {/* Sovereign Memory Updated Badge */}
         {message.metadata?.memory_updated && (
           <div className="flex items-center gap-1.5 py-1 text-[11px] text-muted-foreground">
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary/10 border border-primary/20 text-primary font-medium">
+            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary/10 border border-primary/25 text-primary font-medium">
               <Sparkles className="w-3.5 h-3.5" />
               Sovereign Career Memory Updated
             </span>
           </div>
         )}
 
-        {/* Bottom Action: Always visible Quick Copy Button once response is fully rendered */}
+        {/* Bottom AI Actions: Evaluation & Utility */}
         {!isStreaming && message.content && (
-          <div className="flex items-center gap-2 pt-1">
+          <div className="flex items-center gap-1.5 pt-1">
             <button
               type="button"
               onClick={handleCopy}
               aria-label="Copy response to clipboard"
               title="Copy response"
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/70 focus:bg-secondary/70 focus:outline-none focus:ring-1 focus:ring-ring transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/70 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40 transition-colors cursor-pointer"
             >
               {copied ? (
                 <>
-                  <Check className="w-3.5 h-3.5 text-emerald-500" />
-                  <span className="text-[11px] text-emerald-500 font-medium">
+                  <Check className="w-3.5 h-3.5 text-slush-mint" />
+                  <span className="text-[11px] text-slush-mint font-medium">
                     Copied
                   </span>
                 </>
               ) : (
                 <>
                   <Copy className="w-3.5 h-3.5" />
+                  <span className="text-[11px] hidden sm:inline">Copy</span>
                 </>
               )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleFeedback("helpful")}
+              aria-label="Mark response as helpful"
+              title="Helpful response"
+              className={`p-1.5 rounded-xl text-xs transition-colors cursor-pointer ${
+                feedback === "helpful"
+                  ? "text-slush-mint bg-slush-mint/10 border border-slush-mint/25"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/70"
+              }`}
+            >
+              <ThumbsUp className="w-3.5 h-3.5" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleFeedback("unhelpful")}
+              aria-label="Mark response as unhelpful"
+              title="Unhelpful response"
+              className={`p-1.5 rounded-xl text-xs transition-colors cursor-pointer ${
+                feedback === "unhelpful"
+                  ? "text-slush-ember bg-slush-ember/10 border border-slush-ember/25"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/70"
+              }`}
+            >
+              <ThumbsDown className="w-3.5 h-3.5" />
             </button>
           </div>
         )}

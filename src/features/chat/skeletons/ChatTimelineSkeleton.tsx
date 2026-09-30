@@ -23,7 +23,7 @@ export default function ChatTimelineSkeleton() {
       {/* 2. User Message Skeleton (Right Aligned) */}
       <div className="flex justify-end">
         <div className="max-w-[75%] space-y-2">
-          <div className="p-4 rounded-2xl rounded-tr-sm bg-secondary/50 space-y-2">
+          <div className="p-4 rounded-xl bg-secondary/50 space-y-2">
             <div className="h-3.5 w-48 bg-secondary/70 rounded" />
             <div className="h-3.5 w-32 bg-secondary/60 rounded" />
           </div>

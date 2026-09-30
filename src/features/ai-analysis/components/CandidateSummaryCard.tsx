@@ -27,7 +27,7 @@ export default function CandidateSummaryCard({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-base">
+          <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-base">
             {name.charAt(0)}
           </div>
           <div>
@@ -43,7 +43,7 @@ export default function CandidateSummaryCard({
           </div>
         </div>
 
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium bg-secondary/80 text-muted-foreground border border-border w-fit">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium bg-secondary/80 text-muted-foreground border border-border w-fit">
           Extracted from your resume
         </span>
       </div>
@@ -65,7 +65,7 @@ export default function CandidateSummaryCard({
             {coreSkills.map((skill: string, i: number) => (
               <span
                 key={i}
-                className="px-2.5 py-1 text-xs rounded-md bg-secondary/80 border border-border text-foreground font-medium"
+                className="px-3 py-1 text-xs rounded-full bg-secondary/80 border border-border text-foreground font-medium"
               >
                 {skill}
               </span>
@@ -86,7 +86,7 @@ export default function CandidateSummaryCard({
                 key={idx}
                 className="flex items-center gap-1.5 text-xs text-muted-foreground"
               >
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-slush-mint shrink-0" />
                 <span>{st}</span>
               </div>
             ))}

@@ -134,8 +134,8 @@ export default function ChatSessionPage({
               >
                 <Pencil className="w-3 h-3" />
               </button>
-              <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-secondary text-muted-foreground border border-border shrink-0">
-                Career Copilot
+              <span className="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20 shrink-0">
+                Finder AI
               </span>
             </div>
           )}
@@ -143,7 +143,7 @@ export default function ChatSessionPage({
           {/* Quick New Chat Button */}
           <Link
             href="/"
-            className="p-1.5 rounded-lg border border-border/80 bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground text-xs font-medium inline-flex items-center gap-1.5 transition-colors"
+            className="p-1.5 px-2.5 rounded-xl border border-border/80 bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground text-xs font-medium inline-flex items-center gap-1.5 transition-colors"
             title="New Chat"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -184,7 +184,7 @@ export default function ChatSessionPage({
       </div>
 
       {/* Floating Bottom Prompt Omnibar with Ambient Bottom Fade */}
-      <div className="absolute bottom-0 inset-x-0 z-20 pb-4 pt-6 bg-gradient-to-t from-background via-background/95 to-transparent pointer-events-none pr-3 sm:pr-4">
+      <div className="absolute bottom-14 md:bottom-0 inset-x-0 z-20 pb-3 md:pb-4 pt-6 bg-gradient-to-t from-background via-background/95 to-transparent pointer-events-none pr-3 sm:pr-4">
         <div className="pointer-events-auto">
           <OmniPromptInput
             isSticky={true}

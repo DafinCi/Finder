@@ -61,7 +61,7 @@ export default function SessionHistoryList({
         {[...Array(4)].map((_, i) => (
           <div
             key={i}
-            className="h-8 bg-secondary/50 rounded-lg animate-pulse"
+            className="h-8 bg-secondary/50 rounded-xl animate-pulse"
           />
         ))}
       </div>
@@ -70,7 +70,7 @@ export default function SessionHistoryList({
 
   if (error) {
     return (
-      <div className="p-3 mx-1 my-2 rounded-lg border border-destructive/20 bg-destructive/10 text-center space-y-2 text-xs">
+      <div className="p-3 mx-1 my-2 rounded-xl border border-destructive/20 bg-destructive/10 text-center space-y-2 text-xs">
         <div className="flex items-center justify-center gap-1.5 text-destructive font-medium">
           <AlertCircle className="w-3.5 h-3.5 shrink-0" />
           <span>Failed to load history</span>
@@ -79,7 +79,7 @@ export default function SessionHistoryList({
           <button
             type="button"
             onClick={onRetry}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-secondary hover:bg-secondary/80 text-foreground text-[11px] font-semibold transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground text-[11px] font-semibold transition-colors cursor-pointer"
           >
             <RotateCcw className="w-3 h-3" />
             <span>Retry</span>
@@ -105,7 +105,7 @@ export default function SessionHistoryList({
             return (
               <div
                 key={session.id}
-                className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-secondary/80 border border-primary/40 text-xs my-0.5"
+                className="flex items-center gap-1 px-2 py-1.5 rounded-xl bg-secondary/80 border border-primary/40 text-xs my-0.5"
               >
                 <input
                   type="text"
@@ -118,7 +118,7 @@ export default function SessionHistoryList({
                   autoFocus
                   maxLength={100}
                   disabled={isSavingRename}
-                  className="flex-1 bg-background text-foreground text-xs px-2 py-1 rounded border border-border focus:outline-none focus:ring-1 focus:ring-primary min-w-0"
+                  className="flex-1 bg-background text-foreground text-xs px-2 py-1 rounded-lg border border-border focus:outline-none focus:ring-1 focus:ring-primary min-w-0"
                   aria-label="Edit session title"
                 />
                 <button
@@ -130,7 +130,7 @@ export default function SessionHistoryList({
                     handleSaveRename(session.id);
                   }}
                   aria-label="Save changes"
-                  className="p-1 hover:text-primary rounded hover:bg-secondary cursor-pointer disabled:opacity-40"
+                  className="p-1 hover:text-primary rounded-lg hover:bg-secondary cursor-pointer disabled:opacity-40"
                   title="Save"
                 >
                   {isSavingRename ? (
@@ -148,7 +148,7 @@ export default function SessionHistoryList({
                     setEditingId(null);
                   }}
                   aria-label="Cancel editing"
-                  className="p-1 hover:text-muted-foreground rounded hover:bg-secondary cursor-pointer disabled:opacity-40"
+                  className="p-1 hover:text-muted-foreground rounded-lg hover:bg-secondary cursor-pointer disabled:opacity-40"
                   title="Cancel"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -160,7 +160,7 @@ export default function SessionHistoryList({
           return (
             <div
               key={session.id}
-              className={`group relative flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+              className={`group relative flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
                 isActive
                   ? "bg-secondary text-foreground font-semibold"
                   : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
