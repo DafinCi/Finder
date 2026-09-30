@@ -9,6 +9,12 @@ import {
   Clock,
   AlertCircle,
   FileCheck,
+  Eye,
+  ExternalLink,
+  ShieldCheck,
+  Copy,
+  Check,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { onboardingService } from "@/features/onboarding/services/onboarding.service";
@@ -20,6 +26,7 @@ interface ResumeMetadata {
   uploaded_at: string;
   status: string;
   walrus_blob_id?: string | null;
+  walrus_status?: "pending" | "stored" | "failed" | null;
 }
 
 interface ProfileResumeCardProps {
@@ -38,13 +45,29 @@ export function ProfileResumeCard({
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStatus, setProcessingStatus] = useState<string>("");
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [copiedBlobId, setCopiedBlobId] = useState(false);
+  const [isSyncingWalrus, setIsSyncingWalrus] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  const loadResumeMeta = async () => {
+    try {
+      setLoadingMeta(true);
+      const res = await fetch("/api/profile/resume");
+      if (res.ok) {
+        const data = await res.json();
+        setMetadata(data.resume || null);
+      }
+    } catch {
+      // Fallback: metadata will show clean default
+    } finally {
+      setLoadingMeta(false);
+    }
+  };
+
   useEffect(() => {
     let cancelled = false;
-
-    async function loadResumeMeta() {
+    async function init() {
       try {
         setLoadingMeta(true);
         const res = await fetch("/api/profile/resume");
@@ -55,19 +78,47 @@ export function ProfileResumeCard({
           }
         }
       } catch {
-        // Fallback: metadata will show clean default
+        // Fallback
       } finally {
         if (!cancelled) {
           setLoadingMeta(false);
         }
       }
     }
-
-    loadResumeMeta();
+    init();
     return () => {
       cancelled = true;
     };
   }, [resumeId]);
+
+  const handleCopyBlobId = (blobId: string) => {
+    navigator.clipboard.writeText(blobId);
+    setCopiedBlobId(true);
+    toast.success("Walrus Blob ID copied to clipboard.");
+    setTimeout(() => setCopiedBlobId(false), 2000);
+  };
+
+  const handleSyncToWalrus = async () => {
+    try {
+      setIsSyncingWalrus(true);
+      const res = await fetch("/api/profile/resume/walrus-sync", {
+        method: "POST",
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to publish to Walrus.");
+      }
+
+      toast.success("Resume synchronized to Walrus Testnet.");
+      await loadResumeMeta();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Sync error.";
+      toast.error(msg);
+    } finally {
+      setIsSyncingWalrus(false);
+    }
+  };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -119,6 +170,7 @@ export function ProfileResumeCard({
 
       toast.success("Resume updated and profile synchronized.");
       await onProfileUpdated();
+      await loadResumeMeta();
     } catch (err: unknown) {
       const msg =
         err instanceof Error ? err.message : "Failed to process resume.";
@@ -179,7 +231,7 @@ export function ProfileResumeCard({
             <span>Loading document details...</span>
           </div>
         ) : metadata ? (
-          <div className="p-3.5 rounded-lg bg-secondary/40 border border-border/80 space-y-2">
+          <div className="p-3.5 rounded-lg bg-secondary/40 border border-border/80 space-y-3">
             <div className="flex items-start gap-3">
               <div className="w-9 h-9 rounded-md bg-primary/15 border border-primary/30 flex items-center justify-center text-primary shrink-0 mt-0.5">
                 <FileCheck className="w-4 h-4" />
@@ -199,14 +251,86 @@ export function ProfileResumeCard({
               </div>
             </div>
 
-            {metadata?.walrus_blob_id && (
-              <div className="pt-2 border-t border-border/60 text-[10px] text-muted-foreground flex items-center justify-between">
-                <span>Walrus Decentralized Storage:</span>
-                <span className="font-mono text-primary font-medium truncate max-w-[120px]">
-                  {metadata.walrus_blob_id.slice(0, 8)}...
+            {/* Walrus Decentralized Storage Status Block */}
+            <div className="pt-2.5 border-t border-border/70 space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-primary" />
+                  Walrus Decentralized Storage:
                 </span>
+
+                {metadata?.walrus_blob_id ? (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                    <CheckCircle2 className="w-3 h-3" />
+                    Stored
+                  </span>
+                ) : metadata?.walrus_status === "pending" || isSyncingWalrus ? (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    Syncing...
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleSyncToWalrus}
+                    disabled={isSyncingWalrus}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 cursor-pointer transition-colors"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    Sync to Walrus
+                  </button>
+                )}
               </div>
-            )}
+
+              {metadata?.walrus_blob_id && (
+                <div className="space-y-1.5 pt-0.5">
+                  <div className="flex items-center justify-between gap-2 p-1.5 px-2 rounded-md bg-secondary/80 border border-border text-[11px]">
+                    <span
+                      className="font-mono text-foreground font-medium truncate max-w-[170px]"
+                      title={metadata.walrus_blob_id}
+                    >
+                      {metadata.walrus_blob_id.slice(0, 8)}...
+                      {metadata.walrus_blob_id.slice(-6)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleCopyBlobId(metadata.walrus_blob_id!)}
+                      aria-label="Copy Walrus Blob ID"
+                      className="p-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                      title="Copy Blob ID"
+                    >
+                      {copiedBlobId ? (
+                        <Check className="w-3 h-3 text-emerald-500" />
+                      ) : (
+                        <Copy className="w-3 h-3" />
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-3 text-[11px] pt-0.5">
+                    <a
+                      href={`/api/walrus/blob/${metadata.walrus_blob_id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-primary hover:underline font-medium"
+                    >
+                      <FileText className="w-3 h-3" />
+                      <span>Open Walrus PDF</span>
+                    </a>
+                    <span className="text-muted-foreground">•</span>
+                    <a
+                      href={`https://walruscan.com/testnet/blob/${metadata.walrus_blob_id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-primary hover:underline font-medium"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      <span>Verify on Walruscan</span>
+                    </a>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           <div className="p-4 rounded-lg bg-secondary/20 border border-dashed border-border/80 text-center space-y-1.5">
@@ -257,30 +381,52 @@ export function ProfileResumeCard({
           id="profile-resume-upload-input"
         />
 
-        <Button
-          type="button"
-          variant="outline"
-          disabled={isProcessing}
-          onClick={() => fileInputRef.current?.click()}
-          className="w-full min-h-[44px] h-11 text-xs font-semibold gap-2 border-border hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-primary transition-all"
-        >
-          {isProcessing ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin text-primary" />
-              <span>Processing Resume...</span>
-            </>
-          ) : (
-            <>
-              <UploadCloud className="w-4 h-4 text-primary" />
-              <span>
-                {metadata ? "Replace Resume (PDF)" : "Upload Resume (PDF)"}
-              </span>
-            </>
+        <div className="flex flex-col sm:flex-row gap-2">
+          {metadata && (
+            <a
+              href="/api/profile/resume/view"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1"
+            >
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full min-h-[44px] h-11 text-xs font-semibold gap-2 border-border hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-primary transition-all"
+              >
+                <Eye className="w-4 h-4 text-primary" />
+                <span>View Resume</span>
+              </Button>
+            </a>
           )}
-        </Button>
+
+          <Button
+            type="button"
+            variant={metadata ? "outline" : "default"}
+            disabled={isProcessing}
+            onClick={() => fileInputRef.current?.click()}
+            className={`${
+              metadata ? "flex-1" : "w-full"
+            } min-h-[44px] h-11 text-xs font-semibold gap-2 border-border hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-primary transition-all`}
+          >
+            {isProcessing ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                <span>Processing Resume...</span>
+              </>
+            ) : (
+              <>
+                <UploadCloud className="w-4 h-4" />
+                <span>
+                  {metadata ? "Replace Resume" : "Upload Resume (PDF)"}
+                </span>
+              </>
+            )}
+          </Button>
+        </div>
 
         <p className="text-[10px] text-muted-foreground text-center">
-          Supported: PDF up to 5 MB. Confirmed profile settings are preserved.
+          Supported: PDF up to 5 MB. Dual-stored on Cloud &amp; Walrus Testnet.
         </p>
       </div>
     </div>

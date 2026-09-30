@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
     if (profile?.resumeId) {
       const { data } = await supabaseAdmin
         .from("resumes")
-        .select("id, file_name, uploaded_at, status, walrus_blob_id")
+        .select("id, file_name, uploaded_at, status, walrus_blob_id, walrus_status")
         .eq("id", profile.resumeId)
         .maybeSingle();
       resumeRecord = data;
@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
     if (!resumeRecord) {
       const { data: fallbackRecord } = await supabaseAdmin
         .from("resumes")
-        .select("id, file_name, uploaded_at, status, walrus_blob_id")
+        .select("id, file_name, uploaded_at, status, walrus_blob_id, walrus_status")
         .eq("profile_id", user.id)
         .neq("status", "failed")
         .order("uploaded_at", { ascending: false })

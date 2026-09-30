@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { walrusClient } from "@/lib/walrus/walrus-client";
 
 export async function POST(req: NextRequest) {
   try {
@@ -162,6 +163,7 @@ export async function POST(req: NextRequest) {
         storage_path: storagePath,
         raw_text: rawText,
         status: "uploaded",
+        walrus_status: "pending",
       })
       .select("id")
       .single();
@@ -174,6 +176,36 @@ export async function POST(req: NextRequest) {
         { status: 500 },
       );
     }
+
+    // Non-blocking background sync to Walrus Testnet (epochs=50 for ~50 days retention)
+    // Does not delay client response or risk serverless gateway timeout
+    (async () => {
+      try {
+        const walrusResult = await walrusClient.storeBlob(buffer, {
+          epochs: 50,
+          deletable: true,
+        });
+        await supabaseAdmin
+          .from("resumes")
+          .update({
+            walrus_blob_id: walrusResult.blobId,
+            walrus_status: "stored",
+          })
+          .eq("id", resumeRecord.id);
+        console.log(
+          `[WALRUS] Successfully published resume ${resumeRecord.id} -> ${walrusResult.blobId}`,
+        );
+      } catch (walrusErr) {
+        console.warn(
+          `[WALRUS] Background sync warning for resume ${resumeRecord.id}:`,
+          walrusErr,
+        );
+        await supabaseAdmin
+          .from("resumes")
+          .update({ walrus_status: "failed" })
+          .eq("id", resumeRecord.id);
+      }
+    })().catch(() => {});
 
     const sessionId = formData.get("sessionId") as string | null;
     const prompt = (formData.get("prompt") as string | null) || "";
