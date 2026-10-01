@@ -28,10 +28,8 @@ const POPULAR_ROLES = [
   "Backend Engineer",
   "Fullstack Engineer",
   "Mobile Developer",
-  "DevOps Engineer",
+  "DevOps / SRE",
   "UI/UX Designer",
-  "Data Analyst",
-  "Product Manager",
 ];
 
 export function StepManualRole({
@@ -70,7 +68,7 @@ export function StepManualRole({
   const handleToggleEmployment = (type: EmploymentType) => {
     const exists = state.employmentTypes.includes(type);
     if (exists) {
-      if (state.employmentTypes.length === 1) return; // Keep at least one
+      if (state.employmentTypes.length === 1) return;
       setEmploymentTypes(state.employmentTypes.filter((t) => t !== type));
     } else {
       setEmploymentTypes([...state.employmentTypes, type]);
@@ -81,23 +79,22 @@ export function StepManualRole({
   const canContinue = Boolean(roleInput.trim());
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Title */}
-      <div className="space-y-1.5">
-        <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-          What role are you looking for?
+      <div className="space-y-1">
+        <h2 className="text-lg sm:text-xl font-bold tracking-tight text-foreground font-heading">
+          What role are you targeting?
         </h2>
-        <p className="text-xs text-muted-foreground leading-relaxed">
-          Tell us your ideal job title and current career stage so we can match
-          relevant opportunities.
+        <p className="text-xs sm:text-sm text-muted-foreground">
+          Specify your target job title, seniority, and employment type.
         </p>
       </div>
 
-      {/* Target Role Field */}
-      <div className="space-y-2.5">
+      {/* Target Role Input & Chips */}
+      <div className="space-y-2">
         <label
           htmlFor="manual-target-role"
-          className="text-xs font-semibold text-foreground block"
+          className="text-xs sm:text-sm font-semibold text-foreground block"
         >
           Target Job Title
         </label>
@@ -107,44 +104,41 @@ export function StepManualRole({
           value={roleInput}
           onChange={(e) => setRoleInput(e.target.value)}
           onBlur={handleInputBlur}
-          placeholder="e.g. Frontend Engineer, Data Scientist"
-          className="w-full min-h-[44px] px-3.5 text-sm rounded-sm bg-background border border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none transition-colors"
+          placeholder="e.g. Frontend Engineer, Product Manager"
+          className="w-full min-h-[42px] px-3.5 text-sm rounded-sm bg-background border border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none transition-colors"
         />
 
-        {/* Quick Suggestions Chips */}
-        <div className="space-y-1.5 pt-1">
-          <span className="text-[11px] text-muted-foreground block">
-            Popular suggestions:
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pt-0.5">
+          <span className="text-xs text-muted-foreground shrink-0">
+            Popular:
           </span>
-          <div className="flex flex-wrap gap-1.5">
-            {POPULAR_ROLES.map((role) => {
-              const isSelected =
-                roleInput.trim().toLowerCase() === role.toLowerCase();
-              return (
-                <button
-                  key={role}
-                  type="button"
-                  onClick={() => handleRoleSelect(role)}
-                  className={`min-h-[36px] px-3 py-1 rounded-md text-xs font-medium border transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
-                    isSelected
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-secondary/40 text-muted-foreground border-border hover:bg-secondary hover:text-foreground"
-                  }`}
-                >
-                  {role}
-                </button>
-              );
-            })}
-          </div>
+          {POPULAR_ROLES.map((role) => {
+            const isSelected =
+              roleInput.trim().toLowerCase() === role.toLowerCase();
+            return (
+              <button
+                key={role}
+                type="button"
+                onClick={() => handleRoleSelect(role)}
+                className={`px-3 py-1 rounded-md text-xs font-medium border transition-colors cursor-pointer shrink-0 ${
+                  isSelected
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-secondary/40 text-muted-foreground border-border hover:bg-secondary hover:text-foreground"
+                }`}
+              >
+                {role}
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* Seniority Level */}
       <div className="space-y-2">
-        <span className="text-xs font-semibold text-foreground block">
+        <span className="text-xs sm:text-sm font-semibold text-foreground block">
           Experience Level
         </span>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
           {SENIORITY_LEVEL_OPTIONS.map((opt) => {
             const isSelected = currentLevel === opt.value;
             return (
@@ -152,20 +146,14 @@ export function StepManualRole({
                 key={opt.value}
                 type="button"
                 onClick={() => setTargetLevel(opt.value)}
-                className={`min-h-[44px] p-2.5 rounded-sm border text-left transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
+                className={`py-2 px-2 rounded-sm border text-center transition-all cursor-pointer ${
                   isSelected
-                    ? "border-primary bg-primary/10 text-foreground"
-                    : "border-border bg-card/60 text-muted-foreground hover:border-border/80 hover:text-foreground"
+                    ? "border-primary bg-primary/10 text-foreground font-semibold"
+                    : "border-border/70 bg-card/60 text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold">{opt.label}</span>
-                  {isSelected && (
-                    <Check className="w-3.5 h-3.5 text-primary shrink-0" />
-                  )}
-                </div>
-                <span className="text-[10px] text-muted-foreground block truncate mt-0.5">
-                  {opt.description}
+                <span className="text-xs sm:text-sm block truncate">
+                  {opt.label}
                 </span>
               </button>
             );
@@ -175,10 +163,10 @@ export function StepManualRole({
 
       {/* Employment Type */}
       <div className="space-y-2">
-        <span className="text-xs font-semibold text-foreground block">
+        <span className="text-xs sm:text-sm font-semibold text-foreground block">
           Employment Type
         </span>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
           {EMPLOYMENT_TYPE_OPTIONS.map((opt) => {
             const isSelected = state.employmentTypes.includes(opt.value);
             return (
@@ -186,17 +174,17 @@ export function StepManualRole({
                 key={opt.value}
                 type="button"
                 onClick={() => handleToggleEmployment(opt.value)}
-                className={`min-h-[44px] p-2.5 rounded-sm border text-left transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
+                className={`py-2 px-3 rounded-sm border text-center transition-all cursor-pointer ${
                   isSelected
-                    ? "border-primary bg-primary/10 text-foreground"
-                    : "border-border bg-card/60 text-muted-foreground hover:border-border/80 hover:text-foreground"
+                    ? "border-primary bg-primary/10 text-foreground font-semibold"
+                    : "border-border/70 bg-card/60 text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold">{opt.label}</span>
+                <div className="flex items-center justify-center gap-1.5">
                   {isSelected && (
-                    <Check className="w-3.5 h-3.5 text-primary shrink-0" />
+                    <Check className="w-4 h-4 text-primary shrink-0" />
                   )}
+                  <span className="text-xs sm:text-sm">{opt.label}</span>
                 </div>
               </button>
             );
@@ -205,16 +193,16 @@ export function StepManualRole({
       </div>
 
       {/* Actions */}
-      <div className="pt-4 flex items-center justify-between gap-3 border-t border-border">
+      <div className="pt-3.5 flex items-center justify-between gap-3 border-t border-border/80">
         <Button
           type="button"
           variant="ghost"
           onClick={onBack}
           disabled={isSaving}
-          className="min-h-[44px] text-xs text-muted-foreground hover:text-foreground"
+          className="min-h-[44px] text-xs sm:text-sm text-muted-foreground hover:text-foreground cursor-pointer"
         >
-          <ArrowLeft className="w-3.5 h-3.5 mr-1.5" />
-          Back to Options
+          <ArrowLeft className="w-4 h-4 mr-1.5" />
+          Back
         </Button>
 
         <Button
@@ -227,17 +215,17 @@ export function StepManualRole({
             await onNext();
           }}
           disabled={isSaving || !canContinue}
-          className="min-h-[44px] text-xs font-semibold px-5"
+          className="min-h-[44px] text-sm font-semibold px-5 cursor-pointer"
         >
           {isSaving ? (
             <>
-              <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+              <Loader2 className="w-4 h-4 animate-spin mr-1.5" />
               Saving...
             </>
           ) : (
             <>
               Next: Work Preferences
-              <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+              <ArrowRight className="w-4 h-4 ml-1.5" />
             </>
           )}
         </Button>

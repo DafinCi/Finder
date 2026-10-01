@@ -73,7 +73,7 @@ export function StepCvQuickReview({
     const exists = state.workModes.includes(mode);
     if (exists) {
       if (state.workModes.length === 1) {
-        return; // Keep at least one selected
+        return;
       }
       setWorkModes(state.workModes.filter((m) => m !== mode));
     } else {
@@ -92,237 +92,214 @@ export function StepCvQuickReview({
   const currentLevel: TargetLevel = state.targetLevel || "mid_level";
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="space-y-1.5">
-        <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-          Review your profile
-        </h2>
-        <p className="text-xs text-muted-foreground leading-relaxed">
-          Here is what we extracted from your resume. Everything can be adjusted
-          here, and fine-tuned anytime later in your Profile.
-        </p>
-      </div>
-
-      {/* Resume File Banner */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-sm bg-secondary/40 border border-border">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-8 h-8 rounded-sm bg-primary/10 text-primary flex items-center justify-center shrink-0">
-            <FileText className="w-4 h-4" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs font-semibold text-foreground truncate">
-              {state.resumeFileName || "Uploaded Resume"}
-            </p>
-            <p className="text-[11px] text-emerald-400 font-medium">
-              Parsed successfully
-            </p>
-          </div>
+    <div className="space-y-4">
+      {/* Top Header & File Tag */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 border-b border-border/70">
+        <div>
+          <h2 className="text-lg sm:text-xl font-bold tracking-tight text-foreground font-heading">
+            Review Extracted Profile
+          </h2>
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            Extracted from your resume. Adjust parameters or explore matches
+            directly.
+          </p>
         </div>
 
-        <button
-          type="button"
-          onClick={onUploadDifferentResume}
-          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground underline cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none rounded-sm px-1 py-0.5"
-        >
-          <RotateCcw className="w-3.5 h-3.5" />
-          Replace resume
-        </button>
-      </div>
-
-      {/* Section 1: Target Role */}
-      <div className="space-y-2">
-        <label
-          htmlFor="primary-role-input"
-          className="text-xs font-semibold text-foreground block"
-        >
-          Target Job Title
-        </label>
-        <input
-          id="primary-role-input"
-          type="text"
-          value={roleInput}
-          onChange={(e) => setRoleInput(e.target.value)}
-          onBlur={handleRoleBlur}
-          onKeyDown={handleRoleKeyDown}
-          placeholder="e.g. Frontend Engineer, Product Manager"
-          className="w-full min-h-[44px] px-3.5 text-sm rounded-sm bg-background border border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none transition-colors"
-        />
-        <p className="text-[11px] text-muted-foreground">
-          Tip: You can change this title anytime to focus your matching results.
-        </p>
-      </div>
-
-      {/* Section 2: Seniority Level */}
-      <div className="space-y-2">
-        <span className="text-xs font-semibold text-foreground block">
-          Experience Level
-        </span>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-          {SENIORITY_LEVEL_OPTIONS.map((opt) => {
-            const isSelected = currentLevel === opt.value;
-            return (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => setTargetLevel(opt.value)}
-                className={`min-h-[44px] p-2.5 rounded-sm border text-left transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
-                  isSelected
-                    ? "border-primary bg-primary/10 text-foreground"
-                    : "border-border bg-card/60 text-muted-foreground hover:border-border/80 hover:text-foreground"
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold">{opt.label}</span>
-                  {isSelected && (
-                    <Check className="w-3.5 h-3.5 text-primary shrink-0" />
-                  )}
-                </div>
-                <span className="text-[10px] text-muted-foreground block truncate mt-0.5">
-                  {opt.description}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Section 3: Work Mode */}
-      <div className="space-y-2">
-        <span className="text-xs font-semibold text-foreground block">
-          Work Environment
-        </span>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          {WORK_MODE_OPTIONS.map((opt) => {
-            const isSelected = state.workModes.includes(opt.value);
-            return (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => handleToggleWorkMode(opt.value)}
-                className={`min-h-[44px] p-2.5 rounded-sm border text-left transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
-                  isSelected
-                    ? "border-primary bg-primary/10 text-foreground"
-                    : "border-border bg-card/60 text-muted-foreground hover:border-border/80 hover:text-foreground"
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold">{opt.label}</span>
-                  {isSelected && (
-                    <Check className="w-3.5 h-3.5 text-primary shrink-0" />
-                  )}
-                </div>
-                <span className="text-[10px] text-muted-foreground block mt-0.5">
-                  {opt.description}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Section 4: Extracted Skills */}
-      <div className="space-y-2.5">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-foreground">
-            Top Skills ({state.skills.length})
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-sm bg-secondary/60 border border-border/70 text-xs sm:text-sm shrink-0">
+          <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+          <span className="font-medium text-foreground max-w-[160px] truncate">
+            {state.resumeFileName || "Resume.pdf"}
           </span>
-          <span className="text-[11px] text-muted-foreground">
-            Click X to remove any irrelevant skill
-          </span>
-        </div>
-
-        <div className="flex flex-wrap gap-1.5 p-3 rounded-sm border border-border/80 bg-secondary/20 min-h-[56px] items-center">
-          {state.skills.length === 0 ? (
-            <p className="text-xs text-muted-foreground italic">
-              No skills selected yet. Add one below.
-            </p>
-          ) : (
-            state.skills.map((s) => (
-              <span
-                key={s.skill}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-card border border-border text-foreground shadow-2xs"
-              >
-                <span>{s.skill}</span>
-                <button
-                  type="button"
-                  onClick={() => removeSkill(s.skill)}
-                  aria-label={`Remove ${s.skill}`}
-                  className="text-muted-foreground hover:text-destructive cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none rounded-xs p-0.5"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            ))
-          )}
-        </div>
-
-        {/* Quick Suggestions */}
-        {state.skills.length < 5 && (
-          <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-            <span className="text-[11px] text-muted-foreground mr-1">
-              Suggestions:
-            </span>
-            {COMMON_POPULAR_SKILLS.filter(
-              (name) => !state.skills.some((s) => matchesSkill(s.skill, name)),
-            )
-              .slice(0, 5)
-              .map((name) => (
-                <button
-                  key={name}
-                  type="button"
-                  onClick={() => addCustomSkill(name, "core")}
-                  className="min-h-[30px] px-2.5 py-0.5 rounded-md text-xs font-medium border border-border bg-secondary/40 text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
-                >
-                  + {name}
-                </button>
-              ))}
-          </div>
-        )}
-
-        {/* Quick Add Skill Form */}
-        <form onSubmit={handleAddSkill} className="flex gap-2">
-          <input
-            type="text"
-            value={newSkillInput}
-            onChange={(e) => setNewSkillInput(e.target.value)}
-            placeholder="Add missing skill (e.g. Next.js, Docker)..."
-            className="flex-1 min-h-[44px] px-3 text-xs rounded-sm bg-background border border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
-          />
-          <Button
-            type="submit"
-            variant="outline"
-            disabled={!newSkillInput.trim()}
-            className="min-h-[44px] px-4 text-xs font-semibold"
+          <button
+            type="button"
+            onClick={onUploadDifferentResume}
+            className="text-muted-foreground hover:text-foreground underline text-xs cursor-pointer ml-1"
+            title="Replace resume"
           >
-            <Plus className="w-3.5 h-3.5 mr-1" />
-            Add
-          </Button>
-        </form>
+            <RotateCcw className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
 
-      {/* Helpful Context */}
-      <div className="p-3.5 rounded-sm bg-secondary/30 border border-border text-xs text-muted-foreground space-y-1">
-        <p className="font-medium text-foreground">
-          Salary, dealbreakers, and past experience
-        </p>
-        <p>
-          You can add detailed compensation expectations, hard dealbreakers, and
-          work history anytime from your Profile page after completing setup.
-        </p>
+      {/* 2-Column Responsive Body */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
+        {/* Left Column: Target Role & Work Preferences */}
+        <div className="space-y-3.5">
+          {/* Target Role */}
+          <div className="space-y-1.5">
+            <label
+              htmlFor="primary-role-input"
+              className="text-xs sm:text-sm font-semibold text-foreground block"
+            >
+              Target Job Title
+            </label>
+            <input
+              id="primary-role-input"
+              type="text"
+              value={roleInput}
+              onChange={(e) => setRoleInput(e.target.value)}
+              onBlur={handleRoleBlur}
+              onKeyDown={handleRoleKeyDown}
+              placeholder="e.g. Frontend Engineer"
+              className="w-full min-h-[42px] px-3.5 text-sm rounded-sm bg-background border border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none transition-colors"
+            />
+          </div>
+
+          {/* Seniority Level */}
+          <div className="space-y-1.5">
+            <span className="text-xs sm:text-sm font-semibold text-foreground block">
+              Experience Level
+            </span>
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+              {SENIORITY_LEVEL_OPTIONS.map((opt) => {
+                const isSelected = currentLevel === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setTargetLevel(opt.value)}
+                    className={`py-2 px-1.5 rounded-sm border text-center transition-all cursor-pointer ${
+                      isSelected
+                        ? "border-primary bg-primary/10 text-foreground font-semibold"
+                        : "border-border/70 bg-card/60 text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <span className="text-xs sm:text-sm block truncate">
+                      {opt.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Work Mode */}
+          <div className="space-y-1.5">
+            <span className="text-xs sm:text-sm font-semibold text-foreground block">
+              Work Environment
+            </span>
+            <div className="grid grid-cols-3 gap-2">
+              {WORK_MODE_OPTIONS.map((opt) => {
+                const isSelected = state.workModes.includes(opt.value);
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => handleToggleWorkMode(opt.value)}
+                    className={`py-2 px-3 rounded-sm border text-center transition-all cursor-pointer ${
+                      isSelected
+                        ? "border-primary bg-primary/10 text-foreground font-semibold"
+                        : "border-border/70 bg-card/60 text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <div className="flex items-center justify-center gap-1.5">
+                      {isSelected && (
+                        <Check className="w-4 h-4 text-primary shrink-0" />
+                      )}
+                      <span className="text-xs sm:text-sm">{opt.label}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Skills Tag Cloud & Quick Add */}
+        <div className="space-y-2.5">
+          <div className="flex items-center justify-between">
+            <span className="text-xs sm:text-sm font-semibold text-foreground">
+              Extracted Skills ({state.skills.length})
+            </span>
+            <span className="text-xs text-muted-foreground">
+              Tap X to remove
+            </span>
+          </div>
+
+          {/* Skills Chip Box */}
+          <div className="flex flex-wrap gap-1.5 p-3 rounded-sm border border-border/80 bg-secondary/30 min-h-[90px] max-h-[115px] overflow-y-auto custom-scrollbar items-center">
+            {state.skills.length === 0 ? (
+              <p className="text-xs sm:text-sm text-muted-foreground italic py-1">
+                No skills selected yet. Add one below.
+              </p>
+            ) : (
+              state.skills.map((s) => (
+                <span
+                  key={s.skill}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-card border border-border text-foreground shadow-2xs"
+                >
+                  <span className="truncate max-w-[130px]">{s.skill}</span>
+                  <button
+                    type="button"
+                    onClick={() => removeSkill(s.skill)}
+                    aria-label={`Remove ${s.skill}`}
+                    className="text-muted-foreground hover:text-destructive cursor-pointer p-0.5"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))
+            )}
+          </div>
+
+          {/* Quick Suggestions */}
+          {state.skills.length < 5 && (
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+              <span className="text-xs text-muted-foreground shrink-0">
+                Quick add:
+              </span>
+              {COMMON_POPULAR_SKILLS.filter(
+                (name) =>
+                  !state.skills.some((s) => matchesSkill(s.skill, name)),
+              )
+                .slice(0, 4)
+                .map((name) => (
+                  <button
+                    key={name}
+                    type="button"
+                    onClick={() => addCustomSkill(name, "core")}
+                    className="px-2.5 py-1 rounded-md text-xs font-medium border border-border bg-secondary/50 text-muted-foreground hover:text-foreground transition-colors cursor-pointer shrink-0"
+                  >
+                    + {name}
+                  </button>
+                ))}
+            </div>
+          )}
+
+          {/* Quick Add Skill Form */}
+          <form onSubmit={handleAddSkill} className="flex gap-2 pt-0.5">
+            <input
+              type="text"
+              value={newSkillInput}
+              onChange={(e) => setNewSkillInput(e.target.value)}
+              placeholder="Add skill (e.g. Docker, Next.js)..."
+              className="flex-1 min-h-[40px] px-3 text-sm rounded-sm bg-background border border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none"
+            />
+            <Button
+              type="submit"
+              variant="outline"
+              size="sm"
+              disabled={!newSkillInput.trim()}
+              className="min-h-[40px] px-4 text-xs sm:text-sm font-semibold cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5 mr-1" />
+              Add
+            </Button>
+          </form>
+        </div>
       </div>
 
-      {/* Actions */}
-      <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border">
+      {/* Docked Action Footer */}
+      <div className="pt-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border/80">
         <Button
           type="button"
           variant="ghost"
           onClick={onSwitchToManual}
           disabled={isSaving}
-          className="w-full sm:w-auto min-h-[44px] text-xs text-muted-foreground hover:text-foreground justify-center"
+          className="w-full sm:w-auto min-h-[44px] text-xs sm:text-sm text-muted-foreground hover:text-foreground justify-center cursor-pointer"
         >
-          <SlidersHorizontal className="w-3.5 h-3.5 mr-1.5" />
-          Customize step-by-step instead
+          <SlidersHorizontal className="w-4 h-4 mr-2" />
+          Customize step-by-step
         </Button>
 
         <Button
@@ -330,17 +307,17 @@ export function StepCvQuickReview({
           variant="default"
           onClick={onConfirmAndExplore}
           disabled={isSaving || !roleInput.trim()}
-          className="w-full sm:w-auto min-h-[44px] text-sm font-semibold px-6 justify-center"
+          className="w-full sm:w-auto min-h-[44px] text-sm font-semibold px-6 justify-center cursor-pointer"
         >
           {isSaving ? (
             <>
-              <Loader2 className="w-4 h-4 animate-spin mr-1.5" />
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
               Saving Profile...
             </>
           ) : (
             <>
               Explore Matching Jobs
-              <ArrowRight className="w-4 h-4 ml-1.5" />
+              <ArrowRight className="w-4 h-4 ml-2" />
             </>
           )}
         </Button>
