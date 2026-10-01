@@ -1,71 +1,43 @@
-// ==============================================================================
-// COMPONENT: ProfilePageSkeleton
-// Module: @/features/profile/components/ProfilePageSkeleton
-// ==============================================================================
-
 import React from "react";
+import AppHeader from "@/components/layouts/AppHeader";
 
 export function ProfilePageSkeleton() {
   return (
-    <div className="flex-1 min-h-0 w-full h-full overflow-y-auto custom-scrollbar">
-      <div className="px-6 py-8 max-w-5xl mx-auto w-full space-y-6 animate-pulse">
-        {/* Header Skeleton */}
-        <div className="rounded-xl border border-border bg-card p-6 space-y-4">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-secondary shrink-0" />
-            <div className="space-y-2 flex-1">
-              <div className="h-6 w-48 bg-secondary rounded" />
-              <div className="h-4 w-72 bg-secondary/70 rounded" />
-            </div>
-          </div>
-          <div className="pt-4 border-t border-border/80 space-y-2">
-            <div className="h-3 w-40 bg-secondary rounded" />
-            <div className="h-2 w-full bg-secondary/60 rounded-full" />
-          </div>
-        </div>
+    <div className="flex-1 min-h-0 w-full h-full flex flex-col overflow-hidden">
+      <AppHeader title="Profile" />
 
-        {/* Bento Grid Skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Intent Card Skeleton */}
-          <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-            <div className="h-5 w-36 bg-secondary rounded" />
-            <div className="h-12 w-full bg-secondary/50 rounded-lg" />
-            <div className="space-y-2">
-              <div className="h-3 w-28 bg-secondary rounded" />
-              <div className="flex gap-2">
-                <div className="h-7 w-24 bg-secondary rounded-lg" />
-                <div className="h-7 w-28 bg-secondary rounded-lg" />
+      <div className="flex-1 min-h-0 w-full overflow-y-auto custom-scrollbar">
+        <div className="px-4 sm:px-6 py-6 sm:py-8 max-w-6xl mx-auto w-full space-y-6 animate-pulse">
+          {/* Document Sheet Skeleton */}
+          <div className="rounded-sm border border-border bg-card overflow-hidden">
+            {/* Banner Skeleton */}
+            <div className="h-28 sm:h-36 w-full bg-secondary/50" />
+
+            {/* Profile Info */}
+            <div className="px-6 pb-6 pt-0 text-center relative -mt-12 sm:-mt-14 space-y-4">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-secondary mx-auto border-4 border-card" />
+              <div className="space-y-2 max-w-xs mx-auto">
+                <div className="h-6 w-36 bg-secondary rounded-sm mx-auto" />
+                <div className="h-4 w-48 bg-secondary/70 rounded-sm mx-auto" />
               </div>
             </div>
-          </div>
 
-          {/* Preferences Card Skeleton */}
-          <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-            <div className="h-5 w-44 bg-secondary rounded" />
-            <div className="flex gap-2">
-              <div className="h-8 w-24 bg-secondary rounded-lg" />
-              <div className="h-8 w-24 bg-secondary rounded-lg" />
-            </div>
-            <div className="h-10 w-full bg-secondary/40 rounded-lg" />
-          </div>
-
-          {/* Skills Card Skeleton */}
-          <div className="rounded-xl border border-border bg-card p-5 space-y-4 md:col-span-2">
-            <div className="h-5 w-48 bg-secondary rounded" />
-            <div className="h-10 w-full bg-secondary/40 rounded-lg" />
-            <div className="flex flex-wrap gap-2 pt-2">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="h-8 w-28 bg-secondary rounded-lg" />
+            {/* Nav Skeleton */}
+            <div className="border-y border-border/80 px-6 py-2.5 flex gap-2">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-10 w-28 bg-secondary/60 rounded-sm" />
               ))}
             </div>
-          </div>
 
-          {/* Background Card Skeleton */}
-          <div className="rounded-xl border border-border bg-card p-5 space-y-4 md:col-span-2">
-            <div className="h-5 w-52 bg-secondary rounded" />
-            <div className="space-y-3">
-              <div className="h-16 w-full bg-secondary/30 rounded-lg" />
-              <div className="h-16 w-full bg-secondary/30 rounded-lg" />
+            {/* Content Sections Skeleton */}
+            <div className="divide-y divide-border/60">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="p-6 space-y-3">
+                  <div className="h-5 w-36 bg-secondary rounded-sm" />
+                  <div className="h-4 w-72 bg-secondary/60 rounded-sm" />
+                  <div className="h-16 w-full bg-secondary/30 rounded-sm mt-2" />
+                </div>
+              ))}
             </div>
           </div>
         </div>

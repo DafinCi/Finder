@@ -67,7 +67,7 @@ export default function ChatSessionPage({
               openDrawer();
             }
           }}
-          className={`sticky top-0 z-20 h-16 border-b border-border bg-card flex items-center justify-between shrink-0 select-none group focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary cursor-pointer ${
+          className={`sticky top-0 z-20 h-16 border-b border-border/80 bg-sidebar flex items-center justify-between shrink-0 select-none group focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary cursor-pointer ${
             collapsed ? "pl-14 pr-4 md:pr-6" : "px-4 md:px-6"
           }`}
           title="Click anywhere for agent details"
