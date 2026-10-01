@@ -29,7 +29,7 @@ describe("Per-Session Agent Nicknames Scoping and Isolation", () => {
     const getAgentName = (
       sessionId?: string,
       sessionsMap: Record<string, string> = {},
-      globalName = DEFAULT_NAME
+      globalName = DEFAULT_NAME,
     ) => {
       if (sessionId && sessionsMap[sessionId]) {
         return sessionsMap[sessionId];
