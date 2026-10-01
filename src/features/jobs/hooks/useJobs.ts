@@ -12,6 +12,7 @@ import { toast } from "sonner";
 export const useJobs = (analysisId: string | null = null) => {
   const [matches, setMatches] = useState<FormattedJobMatch[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [requiresOnboarding, setRequiresOnboarding] = useState(false);
 
@@ -25,15 +26,16 @@ export const useJobs = (analysisId: string | null = null) => {
 
   const handleRefresh = useCallback(async () => {
     try {
-      setIsLoading(true);
+      setIsRefreshing(true);
       setError(null);
 
-      // Attempt V2 Recommendations first
+      let v2Failed = false;
       const v2Result = await jobsApi.getV2Recommendations(25).catch((err) => {
         console.warn(
           "V2 recommendations fetch warning, checking legacy fallback:",
           err,
         );
+        v2Failed = true;
         return null;
       });
 
@@ -62,12 +64,16 @@ export const useJobs = (analysisId: string | null = null) => {
         setMatches(legacyData);
       } else {
         setMatches([]);
+        if (v2Failed) {
+          setError("Unable to load job recommendations. Please check your connection and retry.");
+        }
       }
     } catch (err: unknown) {
       const errorObj = err as Error;
       console.error("useJobs Refresh Error:", errorObj);
       setError(errorObj.message || "Couldn't load job recommendations.");
     } finally {
+      setIsRefreshing(false);
       setIsLoading(false);
     }
   }, [analysisId]);
@@ -77,11 +83,13 @@ export const useJobs = (analysisId: string | null = null) => {
 
     async function loadInitial() {
       try {
+        let v2Failed = false;
         const v2Result = await jobsApi.getV2Recommendations(25).catch((err) => {
           console.warn(
             "V2 recommendations fetch warning, checking legacy fallback:",
             err,
           );
+          v2Failed = true;
           return null;
         });
 
@@ -112,7 +120,12 @@ export const useJobs = (analysisId: string | null = null) => {
           const legacyData = await jobsApi.getJobMatches(activeAnalysisId);
           if (!cancelled) setMatches(legacyData);
         } else {
-          if (!cancelled) setMatches([]);
+          if (!cancelled) {
+            setMatches([]);
+            if (v2Failed) {
+              setError("Unable to load job recommendations. Please check your connection and retry.");
+            }
+          }
         }
       } catch (err: unknown) {
         if (!cancelled) {
@@ -218,7 +231,14 @@ export const useJobs = (analysisId: string | null = null) => {
     filterLevel: string,
   ): boolean {
     if (filterLevel === "all") return true;
-    if (!jobLevel) return true;
+    if (
+      !jobLevel ||
+      jobLevel.toLowerCase() === "not specified" ||
+      jobLevel.toLowerCase() === "unspecified"
+    ) {
+      return filterLevel === "unspecified";
+    }
+    if (filterLevel === "unspecified") return false;
     const norm = jobLevel.toLowerCase();
 
     if (filterLevel === "junior") {
@@ -259,13 +279,15 @@ export const useJobs = (analysisId: string | null = null) => {
   }
 
   const filteredMatches = useMemo(() => {
+    const trimmedQuery = searchQuery.trim().toLowerCase();
+
     return matches.filter((match) => {
       if (showSavedOnly && !match.isSaved) return false;
 
       const matchesSearch =
-        searchQuery === "" ||
-        match.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        match.companyName?.toLowerCase().includes(searchQuery.toLowerCase());
+        trimmedQuery === "" ||
+        Boolean(match.title?.toLowerCase().includes(trimmedQuery)) ||
+        Boolean(match.companyName?.toLowerCase().includes(trimmedQuery));
       if (!matchesSearch) return false;
 
       if (selectedMatchLevel !== "all") {
@@ -351,6 +373,7 @@ export const useJobs = (analysisId: string | null = null) => {
     matches: filteredMatches,
     allMatches: matches,
     isLoading,
+    isRefreshing,
     error,
     requiresOnboarding,
     searchQuery,

@@ -16,12 +16,12 @@ export default function JobSummary({ stats }: JobSummaryProps) {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-      <div className="border border-border/80 bg-card/60 backdrop-blur-xs rounded-xl p-4 flex items-center gap-3.5 shadow-2xs">
-        <div className="p-2.5 bg-secondary/80 rounded-lg text-secondary-foreground border border-border/60">
+      <div className="border border-border/80 bg-card rounded-sm p-4 flex items-center gap-3.5 shadow-2xs">
+        <div className="p-2.5 bg-secondary/80 rounded-sm text-secondary-foreground border border-border/60">
           <Briefcase className="w-5 h-5 text-primary" />
         </div>
         <div>
-          <p className="text-[11px] text-muted-foreground uppercase font-semibold tracking-wider">
+          <p className="text-xs text-muted-foreground uppercase font-semibold tracking-wider">
             {isFiltered ? "Showing Matches" : "Total Matches"}
           </p>
           <h4 className="text-xl font-bold font-heading text-foreground">
@@ -33,12 +33,12 @@ export default function JobSummary({ stats }: JobSummaryProps) {
         </div>
       </div>
 
-      <div className="border border-border/80 bg-card/60 backdrop-blur-xs rounded-xl p-4 flex items-center gap-3.5 shadow-2xs">
-        <div className="p-2.5 bg-slush-mint/10 rounded-xl text-slush-mint border border-slush-mint/20">
+      <div className="border border-border/80 bg-card rounded-sm p-4 flex items-center gap-3.5 shadow-2xs">
+        <div className="p-2.5 bg-slush-mint/10 rounded-sm text-slush-mint border border-slush-mint/20">
           <Award className="w-5 h-5" />
         </div>
         <div>
-          <p className="text-[11px] text-muted-foreground uppercase font-semibold tracking-wider">
+          <p className="text-xs text-muted-foreground uppercase font-semibold tracking-wider">
             Highest Match
           </p>
           <div className="flex items-baseline gap-1.5">
@@ -49,12 +49,12 @@ export default function JobSummary({ stats }: JobSummaryProps) {
         </div>
       </div>
 
-      <div className="border border-border/80 bg-card/60 backdrop-blur-xs rounded-xl p-4 flex items-center gap-3.5 shadow-2xs">
-        <div className="p-2.5 bg-primary/10 rounded-xl text-primary border border-primary/20">
+      <div className="border border-border/80 bg-card rounded-sm p-4 flex items-center gap-3.5 shadow-2xs">
+        <div className="p-2.5 bg-primary/10 rounded-sm text-primary border border-primary/20">
           <TrendingUp className="w-5 h-5" />
         </div>
         <div>
-          <p className="text-[11px] text-muted-foreground uppercase font-semibold tracking-wider">
+          <p className="text-xs text-muted-foreground uppercase font-semibold tracking-wider">
             Average Match
           </p>
           <div className="flex items-baseline gap-1.5">

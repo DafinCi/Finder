@@ -175,9 +175,9 @@ export function toJobMatchingContext(job: RawJobInput): JobMatchingContext {
     id: String(job.id),
     title: String(job.title || "Job Opportunity").trim(),
     company,
-    location: job.location?.trim() || "Remote",
+    location: job.location?.trim() || "Unspecified",
     employment_type: job.job_type?.trim() || "full-time",
-    experience_level: job.experience_level?.trim() || "Mid-Level",
+    experience_level: job.experience_level?.trim() || "Unspecified",
     salary: job.salary_range?.trim() || null,
     requirements: Array.isArray(job.requirements)
       ? job.requirements.map((r) => String(r).trim()).filter(Boolean)

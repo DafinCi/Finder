@@ -25,7 +25,7 @@ export default function MatchBadge({
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[11px] font-semibold tracking-wide ${colorClass}`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-sm border text-xs font-semibold tracking-wide ${colorClass}`}
     >
       <span className="w-1.5 h-1.5 rounded-full bg-current" />
       {showScoreOnly ? `${score} / 100` : `${text} • ${score} / 100`}

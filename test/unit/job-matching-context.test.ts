@@ -154,9 +154,9 @@ What we offer:
       expect(compact.id).toBe("job-min");
       expect(compact.title).toBe("Developer");
       expect(compact.company).toBe("Company");
-      expect(compact.location).toBe("Remote");
+      expect(compact.location).toBe("Unspecified");
       expect(compact.employment_type).toBe("full-time");
-      expect(compact.experience_level).toBe("Mid-Level");
+      expect(compact.experience_level).toBe("Unspecified");
       expect(compact.salary).toBeNull();
       expect(compact.requirements).toEqual([]);
     });

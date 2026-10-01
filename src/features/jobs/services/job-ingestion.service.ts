@@ -89,12 +89,12 @@ export function canonicalJobToDbRow(
     company_id: resolvedCompanyId || job.companyId || null,
     description: job.description,
     requirements: job.requirements || [],
-    location: job.location || "Remote",
+    location: job.location || null,
     job_type: job.jobType || "full-time",
     salary_range: job.salaryRange || null,
-    experience_level: job.experienceLevel || "Mid-Level",
+    experience_level: job.experienceLevel || null,
     is_active: job.isActive ?? true,
-    posted_at: job.postedAt || new Date().toISOString(),
+    posted_at: job.postedAt || null,
     last_synced_at: job.lastSyncedAt || new Date().toISOString(),
   };
 }

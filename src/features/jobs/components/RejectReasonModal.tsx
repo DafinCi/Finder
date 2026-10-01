@@ -33,19 +33,77 @@ export default function RejectReasonModal({
     null,
   );
   const modalRef = useRef<HTMLDivElement | null>(null);
+  const previousActiveElementRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
 
+    // Save previous active element for focus restoration
+    previousActiveElementRef.current = document.activeElement as HTMLElement | null;
+
+    // Move initial focus into modal
+    const focusTimer = setTimeout(() => {
+      if (modalRef.current) {
+        const firstFocusable = modalRef.current.querySelector<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        );
+        firstFocusable?.focus();
+      }
+    }, 50);
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        e.stopPropagation();
+        e.preventDefault();
         setSelectedReason(null);
         onCancel();
+        return;
+      }
+
+      if (e.key === "Tab") {
+        const container = modalRef.current;
+        if (!container) return;
+
+        const focusables = container.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        );
+
+        if (focusables.length === 0) {
+          e.preventDefault();
+          return;
+        }
+
+        const firstElement = focusables[0];
+        const lastElement = focusables[focusables.length - 1];
+
+        if (e.shiftKey) {
+          if (
+            document.activeElement === firstElement ||
+            document.activeElement === container
+          ) {
+            e.preventDefault();
+            e.stopPropagation();
+            lastElement.focus();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            e.preventDefault();
+            e.stopPropagation();
+            firstElement.focus();
+          }
+        }
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown, true); // Capture phase to prevent bubbling to drawer
+    return () => {
+      clearTimeout(focusTimer);
+      window.removeEventListener("keydown", handleKeyDown, true);
+      // Restore focus
+      if (previousActiveElementRef.current?.focus) {
+        previousActiveElementRef.current.focus();
+      }
+    };
   }, [isOpen, onCancel]);
 
   const handleCancel = () => {
@@ -70,12 +128,12 @@ export default function RejectReasonModal({
     >
       <div
         ref={modalRef}
-        className="w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl p-6 space-y-4 animate-in zoom-in-95 duration-200"
+        className="w-full max-w-md bg-card border border-border rounded-sm shadow-2xl p-6 space-y-4 animate-in zoom-in-95 duration-200"
       >
         {/* Header */}
         <div className="flex items-start justify-between gap-3 pb-2 border-b border-border/70">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-slush-ember/10 text-slush-ember border border-slush-ember/20">
+            <div className="p-2 rounded-sm bg-slush-ember/10 text-slush-ember border border-slush-ember/20">
               <ThumbsDown className="w-4 h-4" />
             </div>
             <div>
@@ -93,8 +151,8 @@ export default function RejectReasonModal({
           <button
             type="button"
             onClick={handleCancel}
-            aria-label="Close"
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+            aria-label="Close dialog"
+            className="p-1.5 rounded-sm text-muted-foreground hover:text-foreground hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -115,7 +173,7 @@ export default function RejectReasonModal({
                 key={opt.id}
                 type="button"
                 onClick={() => setSelectedReason(isSelected ? null : opt.id)}
-                className={`w-full text-left px-3 py-2 rounded-xl text-xs transition-all flex items-center justify-between border cursor-pointer ${
+                className={`w-full text-left px-3 py-2 rounded-sm text-xs transition-all flex items-center justify-between border cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
                   isSelected
                     ? "bg-primary/10 border-primary text-foreground font-medium"
                     : "bg-secondary/40 border-border/70 text-muted-foreground hover:text-foreground hover:bg-secondary"
@@ -135,14 +193,14 @@ export default function RejectReasonModal({
           <button
             type="button"
             onClick={handleCancel}
-            className="px-3.5 py-2 text-xs rounded-xl border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors cursor-pointer"
+            className="px-3.5 py-2 text-xs rounded-sm border border-border text-muted-foreground hover:text-foreground hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors cursor-pointer"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={handleConfirm}
-            className="px-4 py-2 text-xs rounded-xl bg-slush-ember hover:bg-slush-ember/90 text-white font-medium shadow-xs transition-colors cursor-pointer"
+            className="px-4 py-2 text-xs rounded-sm bg-slush-ember hover:bg-slush-ember/90 text-white font-medium shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors cursor-pointer"
           >
             {selectedReason ? "Submit & Exclude" : "Exclude without reason"}
           </button>
