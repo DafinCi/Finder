@@ -108,7 +108,7 @@ export function StepManualRole({
           onChange={(e) => setRoleInput(e.target.value)}
           onBlur={handleInputBlur}
           placeholder="e.g. Frontend Engineer, Data Scientist"
-          className="w-full min-h-[44px] px-3.5 text-sm rounded-lg bg-background border border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none transition-colors"
+          className="w-full min-h-[44px] px-3.5 text-sm rounded-sm bg-background border border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none transition-colors"
         />
 
         {/* Quick Suggestions Chips */}
@@ -152,7 +152,7 @@ export function StepManualRole({
                 key={opt.value}
                 type="button"
                 onClick={() => setTargetLevel(opt.value)}
-                className={`min-h-[44px] p-2.5 rounded-lg border text-left transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
+                className={`min-h-[44px] p-2.5 rounded-sm border text-left transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
                   isSelected
                     ? "border-primary bg-primary/10 text-foreground"
                     : "border-border bg-card/60 text-muted-foreground hover:border-border/80 hover:text-foreground"
@@ -186,7 +186,7 @@ export function StepManualRole({
                 key={opt.value}
                 type="button"
                 onClick={() => handleToggleEmployment(opt.value)}
-                className={`min-h-[44px] p-2.5 rounded-lg border text-left transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
+                className={`min-h-[44px] p-2.5 rounded-sm border text-left transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
                   isSelected
                     ? "border-primary bg-primary/10 text-foreground"
                     : "border-border bg-card/60 text-muted-foreground hover:border-border/80 hover:text-foreground"

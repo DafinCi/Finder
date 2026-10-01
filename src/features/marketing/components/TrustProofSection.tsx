@@ -65,7 +65,7 @@ export default function TrustProofSection() {
                 return (
                   <div
                     key={idx}
-                    className="rounded-xl border border-border/60 bg-secondary/30 p-4 space-y-2"
+                    className="rounded-sm border border-border/60 bg-secondary/30 p-4 space-y-2"
                   >
                     <div className="flex items-center gap-2">
                       <Icon className="w-4 h-4 text-primary" />

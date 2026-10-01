@@ -157,7 +157,7 @@ export function Step2CareerIntent({
 
         {/* Selected Roles with Priority Pills */}
         {state.targetRoles.length > 0 && (
-          <div className="p-3 rounded-xl bg-card border border-border/80 space-y-2">
+          <div className="p-3 rounded-sm bg-card border border-border/80 space-y-2">
             <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">
               Selected Targets (Click star to toggle Primary vs Secondary)
             </p>
@@ -167,7 +167,7 @@ export function Step2CareerIntent({
                 return (
                   <div
                     key={item.role}
-                    className={`inline-flex items-center gap-2 pl-3 pr-2 py-1.5 rounded-lg border text-xs font-medium transition-all ${
+                    className={`inline-flex items-center gap-2 pl-3 pr-2 py-1.5 rounded-sm border text-xs font-medium transition-all ${
                       isPrimary
                         ? "bg-primary/10 border-primary/40 text-foreground shadow-2xs"
                         : "bg-secondary/40 border-border/80 text-muted-foreground"
@@ -216,7 +216,7 @@ export function Step2CareerIntent({
                 key={role}
                 type="button"
                 onClick={() => handleTogglePresetRole(role)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-sm text-xs font-medium border transition-all cursor-pointer ${
                   isSelected
                     ? "bg-primary/15 border-primary/50 text-primary font-semibold"
                     : "bg-secondary/30 border-border/70 text-muted-foreground hover:text-foreground hover:bg-secondary/60"
@@ -236,7 +236,7 @@ export function Step2CareerIntent({
             placeholder="Add custom role (e.g. Solutions Architect)..."
             value={customRoleInput}
             onChange={(e) => setCustomRoleInput(e.target.value)}
-            className="flex-1 bg-secondary/40 border border-border/80 rounded-lg px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-sans"
+            className="flex-1 bg-secondary/40 border border-border/80 rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-sans"
           />
           <Button
             type="submit"
@@ -264,7 +264,7 @@ export function Step2CareerIntent({
                 key={opt.value}
                 type="button"
                 onClick={() => setTargetLevel(opt.value)}
-                className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                className={`p-3 rounded-sm border text-left transition-all cursor-pointer ${
                   isSelected
                     ? "bg-primary/10 border-primary text-foreground shadow-2xs"
                     : "bg-card/70 border-border/70 hover:border-border text-muted-foreground hover:text-foreground"
@@ -310,7 +310,7 @@ export function Step2CareerIntent({
                 key={opt.value}
                 type="button"
                 onClick={() => handleToggleEmploymentType(opt.value)}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
+                className={`px-3.5 py-1.5 rounded-sm text-xs font-medium border transition-all cursor-pointer ${
                   isSelected
                     ? "bg-primary/15 border-primary/50 text-primary font-semibold"
                     : "bg-secondary/30 border-border/70 text-muted-foreground hover:text-foreground"

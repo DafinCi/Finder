@@ -24,7 +24,7 @@ export default function SidebarFooter({ collapsed }: { collapsed: boolean }) {
           {/* Entire user profile area triggers navigation to /settings */}
           <Link
             href="/settings"
-            className={`flex items-center gap-2.5 flex-1 min-w-0 p-1.5 -ml-1 rounded-lg transition-colors cursor-pointer ${
+            className={`flex items-center gap-2.5 flex-1 min-w-0 p-1.5 -ml-1 rounded-sm transition-colors cursor-pointer ${
               isSettingsActive
                 ? "bg-secondary text-foreground font-semibold"
                 : "text-muted-foreground hover:bg-secondary/70 hover:text-foreground"

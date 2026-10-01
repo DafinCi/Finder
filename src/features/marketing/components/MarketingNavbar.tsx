@@ -54,7 +54,7 @@ export default function MarketingNavbar({
           {/* Brand Logo */}
           <Link
             href="/"
-            className="flex items-center gap-2.5 group focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary rounded-lg p-1"
+            className="flex items-center gap-2.5 group focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary rounded-sm p-1"
           >
             <Logo size={32} alt="" />
             <div className="flex flex-col leading-none">
@@ -90,7 +90,7 @@ export default function MarketingNavbar({
               href="https://github.com/DafinCi/Finder"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/70 border border-border/60 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/70 border border-border/60 transition-colors"
               title="View source on GitHub"
             >
               <GithubIcon className="w-3.5 h-3.5" />
@@ -132,7 +132,7 @@ export default function MarketingNavbar({
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-expanded={mobileMenuOpen}
               aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-              className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+              className="p-2 rounded-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
             >
               {mobileMenuOpen ? (
                 <X className="w-5 h-5" />
@@ -165,7 +165,7 @@ export default function MarketingNavbar({
               href="https://github.com/DafinCi/Finder"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground bg-secondary/50 border border-border"
+              className="flex items-center justify-center gap-2 py-2 rounded-sm text-xs font-medium text-muted-foreground hover:text-foreground bg-secondary/50 border border-border"
             >
               <GithubIcon className="w-4 h-4" />
               <span>View Source on GitHub</span>

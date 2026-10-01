@@ -23,7 +23,7 @@ export default function CandidateSummaryCard({
     analysis.career?.strengths || analysis.insights?.strengths || [];
 
   return (
-    <div className="w-full my-4 rounded-xl border border-border/80 bg-card/60 p-5 shadow-sm space-y-4">
+    <div className="w-full my-4 rounded-sm border border-border/80 bg-card/60 p-5 shadow-sm space-y-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-3">
         <div className="flex items-center gap-3">

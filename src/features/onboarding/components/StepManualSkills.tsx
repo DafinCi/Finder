@@ -1,14 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-  Check,
-  X,
-  Plus,
-  ArrowRight,
-  ArrowLeft,
-  Loader2,
-} from "lucide-react";
+import { Check, X, Plus, ArrowRight, ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   OnboardingFormState,
@@ -112,7 +105,7 @@ export function StepManualSkills({
           </span>
         </div>
 
-        <div className="flex flex-wrap gap-1.5 p-3 rounded-xl border border-border/80 bg-secondary/20 min-h-[56px] items-center">
+        <div className="flex flex-wrap gap-1.5 p-3 rounded-sm border border-border/80 bg-secondary/20 min-h-[56px] items-center">
           {state.skills.length === 0 ? (
             <p className="text-xs text-muted-foreground italic">
               No skills selected yet. Tap the suggested skills below or type
@@ -157,7 +150,7 @@ export function StepManualSkills({
                 key={skillName}
                 type="button"
                 onClick={() => toggleSkill(skillName)}
-                className={`min-h-[38px] px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
+                className={`min-h-[38px] px-3 py-1.5 rounded-sm text-xs font-medium border transition-colors cursor-pointer flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
                   isSelected
                     ? "bg-primary text-primary-foreground border-primary"
                     : "bg-secondary/40 text-muted-foreground border-border hover:bg-secondary hover:text-foreground"
@@ -190,7 +183,7 @@ export function StepManualSkills({
             value={customSkill}
             onChange={(e) => setCustomSkill(e.target.value)}
             placeholder="e.g. GraphQL, Tailwind CSS, Kubernetes..."
-            className="flex-1 min-h-[44px] px-3.5 text-xs rounded-lg bg-background border border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+            className="flex-1 min-h-[44px] px-3.5 text-xs rounded-sm bg-background border border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
           />
           <Button
             type="submit"
@@ -205,7 +198,7 @@ export function StepManualSkills({
       </div>
 
       {/* Context note */}
-      <div className="p-3.5 rounded-lg bg-secondary/30 border border-border text-xs text-muted-foreground space-y-1">
+      <div className="p-3.5 rounded-sm bg-secondary/30 border border-border text-xs text-muted-foreground space-y-1">
         <p className="font-medium text-foreground">
           Looking for salary ranges or specific dealbreakers?
         </p>

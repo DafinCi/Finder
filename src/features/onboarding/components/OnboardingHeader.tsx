@@ -38,7 +38,7 @@ export function OnboardingHeader({
       {/* Top Banner */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+          <div className="w-8 h-8 rounded-sm bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
             <Compass className="w-4 h-4" />
           </div>
           <div>
@@ -91,7 +91,7 @@ export function OnboardingHeader({
                 return (
                   <div
                     key={s.step}
-                    className={`flex items-center gap-2 p-2 rounded-lg border transition-all ${
+                    className={`flex items-center gap-2 p-2 rounded-sm border transition-all ${
                       isCurrent
                         ? "bg-card border-primary/40 shadow-2xs"
                         : isCompleted

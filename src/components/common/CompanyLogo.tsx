@@ -18,17 +18,17 @@ const SIZE_CONFIG = {
     sizes: "32px",
   },
   md: {
-    container: "w-11 h-11 rounded-lg text-sm",
+    container: "w-11 h-11 rounded-sm text-sm",
     icon: "w-5 h-5",
     sizes: "44px",
   },
   lg: {
-    container: "w-14 h-14 rounded-xl text-lg",
+    container: "w-14 h-14 rounded-sm text-lg",
     icon: "w-6 h-6",
     sizes: "56px",
   },
   xl: {
-    container: "w-16 h-16 rounded-xl text-xl",
+    container: "w-16 h-16 rounded-sm text-xl",
     icon: "w-7 h-7",
     sizes: "64px",
   },

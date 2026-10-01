@@ -106,12 +106,12 @@ export default function FeatureGridSection() {
             return (
               <div
                 key={idx}
-                className="rounded-xl border border-border/80 bg-card/70 p-6 flex flex-col justify-between space-y-5 hover:border-primary/40 transition-all hover:bg-card group"
+                className="rounded-sm border border-border/80 bg-card/70 p-6 flex flex-col justify-between space-y-5 hover:border-primary/40 transition-all hover:bg-card group"
               >
                 <div className="space-y-4">
                   {/* Top Bar: Icon + Tag */}
                   <div className="flex items-center justify-between">
-                    <div className="w-10 h-10 rounded-lg bg-secondary text-foreground flex items-center justify-center border border-border group-hover:border-primary/30 transition-colors">
+                    <div className="w-10 h-10 rounded-sm bg-secondary text-foreground flex items-center justify-center border border-border group-hover:border-primary/30 transition-colors">
                       <Icon className="w-5 h-5 text-primary" />
                     </div>
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-secondary/80 text-muted-foreground border border-border">
@@ -148,7 +148,7 @@ export default function FeatureGridSection() {
 
                 {/* User Benefit */}
                 <div className="pt-3 border-t border-border/60">
-                  <div className="flex items-start gap-2 text-xs text-foreground bg-secondary/40 p-2.5 rounded-lg border border-border/50">
+                  <div className="flex items-start gap-2 text-xs text-foreground bg-secondary/40 p-2.5 rounded-sm border border-border/50">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                     <span className="font-medium leading-relaxed">
                       {item.benefit}

@@ -70,7 +70,9 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const paramTab = new URLSearchParams(window.location.search).get("tab") as SettingsTab;
+      const paramTab = new URLSearchParams(window.location.search).get(
+        "tab",
+      ) as SettingsTab;
       if (paramTab && SETTINGS_TABS.some((tab) => tab.id === paramTab)) {
         setActiveTab(paramTab);
       }
@@ -92,8 +94,7 @@ export default function SettingsPage() {
   const userEmail = user?.email || "";
   const isSuiOnlyUser = Boolean(userEmail && isSyntheticSuiEmail(userEmail));
   const primaryRoleTitle =
-    primaryRole?.role ||
-    profile?.careerIntent?.target_roles?.[0]?.role;
+    primaryRole?.role || profile?.careerIntent?.target_roles?.[0]?.role;
 
   const currentTabConfig =
     SETTINGS_TABS.find((t) => t.id === activeTab) || SETTINGS_TABS[0];
@@ -116,7 +117,7 @@ export default function SettingsPage() {
       <main className="flex-1 min-h-0 w-full overflow-y-auto custom-scrollbar p-4 sm:p-6 lg:p-8">
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Horizontal Segmented Tabs Navigation */}
-          <div className="flex items-center gap-1.5 p-1 bg-secondary/50 rounded-xl border border-border/80 overflow-x-auto no-scrollbar">
+          <div className="flex items-center gap-1.5 p-1 bg-secondary/50 rounded-sm border border-border/80 overflow-x-auto no-scrollbar">
             {SETTINGS_TABS.map((tab) => {
               const isActive = activeTab === tab.id;
               const Icon = tab.icon;
@@ -127,7 +128,7 @@ export default function SettingsPage() {
                   type="button"
                   onClick={() => handleSelectTab(tab.id)}
                   className={`
-                    flex items-center gap-2 px-3.5 py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap cursor-pointer shrink-0
+                    flex items-center gap-2 px-3.5 py-2.5 rounded-sm text-xs sm:text-sm font-medium transition-all whitespace-nowrap cursor-pointer shrink-0
                     ${
                       isActive
                         ? "bg-card text-foreground font-semibold border border-border shadow-2xs"
@@ -159,7 +160,7 @@ export default function SettingsPage() {
           {/* Tab 1: Account & Identity (Single Canonical Profile & Credentials) */}
           {activeTab === "account" && (
             <div className="space-y-6">
-              <div className="rounded-xl border border-border bg-card p-5 sm:p-6 space-y-6 shadow-xs">
+              <div className="rounded-sm border border-border bg-card p-5 sm:p-6 space-y-6 shadow-xs">
                 {/* Canonical Profile Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-border/70">
                   <div className="flex items-center gap-4 min-w-0">
@@ -197,7 +198,7 @@ export default function SettingsPage() {
 
                   <Link
                     href="/profile"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-border bg-secondary/60 hover:bg-secondary text-foreground transition-colors cursor-pointer self-start sm:self-center shrink-0"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-sm border border-border bg-secondary/60 hover:bg-secondary text-foreground transition-colors cursor-pointer self-start sm:self-center shrink-0"
                   >
                     <span>View Career Profile</span>
                     <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
@@ -212,7 +213,7 @@ export default function SettingsPage() {
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                     {/* Email Card */}
-                    <div className="p-4 rounded-lg bg-secondary/30 border border-border/70 space-y-1.5">
+                    <div className="p-4 rounded-sm bg-secondary/30 border border-border/70 space-y-1.5">
                       <span className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider flex items-center gap-1.5">
                         <Mail className="w-3.5 h-3.5 text-muted-foreground" />
                         Email / Identifier
@@ -230,7 +231,7 @@ export default function SettingsPage() {
                     </div>
 
                     {/* Account ID Card */}
-                    <div className="p-4 rounded-lg bg-secondary/30 border border-border/70 space-y-1.5">
+                    <div className="p-4 rounded-sm bg-secondary/30 border border-border/70 space-y-1.5">
                       <div className="flex items-center justify-between">
                         <span className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider flex items-center gap-1.5">
                           <Shield className="w-3.5 h-3.5 text-muted-foreground" />
@@ -275,7 +276,7 @@ export default function SettingsPage() {
                   <button
                     type="button"
                     onClick={handleLogout}
-                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg border border-destructive/30 text-destructive hover:bg-destructive/10 hover:border-destructive/40 transition-colors cursor-pointer min-h-[44px]"
+                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-sm border border-destructive/30 text-destructive hover:bg-destructive/10 hover:border-destructive/40 transition-colors cursor-pointer min-h-[44px]"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                     <span>Sign Out</span>

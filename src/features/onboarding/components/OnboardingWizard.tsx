@@ -65,7 +65,7 @@ export function OnboardingWizard() {
 
   if (error && !state.profileId) {
     return (
-      <div className="p-8 rounded-xl border border-destructive/30 bg-destructive/10 text-center space-y-4 max-w-md mx-auto">
+      <div className="p-8 rounded-sm border border-destructive/30 bg-destructive/10 text-center space-y-4 max-w-md mx-auto">
         <AlertCircle className="w-10 h-10 text-destructive mx-auto" />
         <div className="space-y-1">
           <h2 className="text-sm font-semibold text-foreground">
@@ -97,7 +97,7 @@ export function OnboardingWizard() {
 
       {/* Active Profile Shortcut Banner */}
       {state.isExistingActiveProfile && (
-        <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+        <div className="p-4 rounded-sm border border-emerald-500/30 bg-emerald-500/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
           <div className="space-y-0.5">
             <p className="font-semibold text-foreground">
               You already have an active Career Profile
@@ -110,13 +110,13 @@ export function OnboardingWizard() {
           <div className="flex items-center gap-2 shrink-0">
             <Link
               href="/profile"
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-secondary text-foreground font-medium transition-colors"
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-sm border border-border bg-card hover:bg-secondary text-foreground font-medium transition-colors"
             >
               Manage in Profile
             </Link>
             <Link
               href="/jobs"
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity"
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-sm bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity"
             >
               View Matching Jobs
               <ArrowRight className="w-3.5 h-3.5" />

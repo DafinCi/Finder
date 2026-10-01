@@ -28,7 +28,7 @@ export default function MarketingFooter() {
                 href="https://github.com/DafinCi/Finder"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-secondary/60 text-foreground hover:bg-secondary text-[11px] font-medium transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm border border-border bg-secondary/60 text-foreground hover:bg-secondary text-[11px] font-medium transition-colors"
               >
                 <GithubIcon className="w-3.5 h-3.5" />
                 <span>GitHub Repository</span>

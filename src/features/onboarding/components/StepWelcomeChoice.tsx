@@ -83,7 +83,7 @@ export function StepWelcomeChoice({
       {localError && (
         <div
           role="alert"
-          className="p-3.5 rounded-lg bg-destructive/10 border border-destructive/30 flex items-center justify-between gap-2.5 text-destructive text-sm"
+          className="p-3.5 rounded-sm bg-destructive/10 border border-destructive/30 flex items-center justify-between gap-2.5 text-destructive text-sm"
         >
           <div className="flex items-center gap-2.5">
             <AlertCircle className="w-4 h-4 shrink-0" />
@@ -102,7 +102,7 @@ export function StepWelcomeChoice({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
         {/* Option A: Resume Upload (Fastest) */}
-        <div className="flex flex-col justify-between rounded-xl border border-primary/30 bg-card p-6 shadow-sm hover:border-primary/50 transition-colors">
+        <div className="flex flex-col justify-between rounded-sm border border-primary/30 bg-card p-6 shadow-sm hover:border-primary/50 transition-colors">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
@@ -130,7 +130,7 @@ export function StepWelcomeChoice({
             />
 
             {state.resumeExtracted ? (
-              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 space-y-2 text-center">
+              <div className="rounded-sm border border-emerald-500/30 bg-emerald-500/10 p-4 space-y-2 text-center">
                 <div className="flex items-center justify-center gap-1.5 text-emerald-400 font-medium text-xs">
                   <CheckCircle2 className="w-4 h-4" />
                   <span>Resume parsed successfully</span>
@@ -167,7 +167,7 @@ export function StepWelcomeChoice({
                     if (!isBusy) fileInputRef.current?.click();
                   }
                 }}
-                className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center space-y-2.5 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
+                className={`border-2 border-dashed rounded-sm p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center space-y-2.5 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
                   isDragOver
                     ? "border-primary bg-primary/10"
                     : "border-border/80 hover:border-primary/50 bg-secondary/30 hover:bg-secondary/50"
@@ -184,7 +184,7 @@ export function StepWelcomeChoice({
                   </div>
                 ) : (
                   <>
-                    <div className="w-10 h-10 rounded-lg bg-card border border-border flex items-center justify-center text-primary">
+                    <div className="w-10 h-10 rounded-sm bg-card border border-border flex items-center justify-center text-primary">
                       <Upload className="w-5 h-5" />
                     </div>
                     <div className="space-y-0.5">
@@ -229,7 +229,7 @@ export function StepWelcomeChoice({
         </div>
 
         {/* Option B: Manual Setup */}
-        <div className="flex flex-col justify-between rounded-xl border border-border bg-card p-6 shadow-sm hover:border-border/80 transition-colors">
+        <div className="flex flex-col justify-between rounded-sm border border-border bg-card p-6 shadow-sm hover:border-border/80 transition-colors">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground border border-border">
@@ -247,7 +247,7 @@ export function StepWelcomeChoice({
               </p>
             </div>
 
-            <div className="rounded-lg bg-secondary/30 border border-border/70 p-4 space-y-2.5 text-xs text-muted-foreground">
+            <div className="rounded-sm bg-secondary/30 border border-border/70 p-4 space-y-2.5 text-xs text-muted-foreground">
               <div className="flex items-start gap-2">
                 <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-[11px] font-bold flex items-center justify-center shrink-0">
                   1

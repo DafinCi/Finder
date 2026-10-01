@@ -77,7 +77,7 @@ export function SuiSignInButton({ mode = "signin" }: SuiSignInButtonProps) {
         <div
           role="alert"
           aria-live="polite"
-          className="rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-destructive text-xs font-medium flex items-start justify-between gap-2 animate-in fade-in duration-150"
+          className="rounded-sm bg-destructive/10 border border-destructive/20 p-3 text-destructive text-xs font-medium flex items-start justify-between gap-2 animate-in fade-in duration-150"
         >
           <div className="flex items-start gap-2">
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
@@ -95,7 +95,7 @@ export function SuiSignInButton({ mode = "signin" }: SuiSignInButtonProps) {
 
       {/* Connected Account Preview (If connected) */}
       {account && (
-        <div className="flex items-center justify-between p-2.5 rounded-lg bg-secondary/50 border border-border/80 text-xs">
+        <div className="flex items-center justify-between p-2.5 rounded-sm bg-secondary/50 border border-border/80 text-xs">
           <div className="flex items-center gap-2 truncate">
             <div className="w-5 h-5 rounded-md bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
               <Wallet className="w-3 h-3" />
@@ -132,7 +132,7 @@ export function SuiSignInButton({ mode = "signin" }: SuiSignInButtonProps) {
 
       {/* Wrong Network Warning */}
       {account && !isTestnet && (
-        <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[11px] flex items-center gap-1.5">
+        <div className="p-2 rounded-sm bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[11px] flex items-center gap-1.5">
           <AlertCircle className="w-3.5 h-3.5 shrink-0" />
           <span>Please switch your wallet to Sui Testnet to authenticate.</span>
         </div>

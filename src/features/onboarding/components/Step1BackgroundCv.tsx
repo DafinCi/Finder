@@ -88,7 +88,7 @@ export function Step1BackgroundCv({
 
       {/* Error Alert */}
       {localError && (
-        <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 flex items-center gap-2.5 text-destructive text-xs">
+        <div className="p-3 rounded-sm bg-destructive/10 border border-destructive/30 flex items-center gap-2.5 text-destructive text-xs">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{localError}</span>
         </div>
@@ -103,7 +103,7 @@ export function Step1BackgroundCv({
         onDragLeave={() => setIsDragOver(false)}
         onDrop={handleDrop}
         onClick={() => !isBusy && fileInputRef.current?.click()}
-        className={`relative border-2 border-dashed rounded-xl p-8 transition-all flex flex-col items-center justify-center text-center cursor-pointer ${
+        className={`relative border-2 border-dashed rounded-sm p-8 transition-all flex flex-col items-center justify-center text-center cursor-pointer ${
           isDragOver
             ? "border-primary bg-primary/5"
             : state.resumeExtracted
@@ -162,7 +162,7 @@ export function Step1BackgroundCv({
           </div>
         ) : (
           <div className="space-y-3 py-2 flex flex-col items-center">
-            <div className="w-11 h-11 rounded-xl bg-card border border-border flex items-center justify-center text-primary shadow-xs">
+            <div className="w-11 h-11 rounded-sm bg-card border border-border flex items-center justify-center text-primary shadow-xs">
               <Upload className="w-5 h-5" />
             </div>
             <div className="space-y-1">
@@ -182,7 +182,7 @@ export function Step1BackgroundCv({
 
       {/* Extracted Summary Preview (when resume is extracted) */}
       {state.resumeExtracted && (
-        <div className="rounded-xl border border-border/80 bg-card/60 p-4 space-y-3 animate-in fade-in duration-200">
+        <div className="rounded-sm border border-border/80 bg-card/60 p-4 space-y-3 animate-in fade-in duration-200">
           <div className="flex items-center justify-between pb-2 border-b border-border/60">
             <h3 className="text-xs font-semibold font-heading text-foreground">
               Extracted Profile Preview
@@ -193,7 +193,7 @@ export function Step1BackgroundCv({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-            <div className="p-2.5 rounded-lg bg-secondary/40 border border-border/60 space-y-1">
+            <div className="p-2.5 rounded-sm bg-secondary/40 border border-border/60 space-y-1">
               <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider block">
                 Skills Detected
               </span>
@@ -201,7 +201,7 @@ export function Step1BackgroundCv({
                 {state.skills.length} Capabilities
               </p>
             </div>
-            <div className="p-2.5 rounded-lg bg-secondary/40 border border-border/60 space-y-1">
+            <div className="p-2.5 rounded-sm bg-secondary/40 border border-border/60 space-y-1">
               <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider block">
                 Education
               </span>
@@ -212,7 +212,7 @@ export function Step1BackgroundCv({
                     : "None found")}
               </p>
             </div>
-            <div className="p-2.5 rounded-lg bg-secondary/40 border border-border/60 space-y-1">
+            <div className="p-2.5 rounded-sm bg-secondary/40 border border-border/60 space-y-1">
               <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider block">
                 Work History
               </span>

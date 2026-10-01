@@ -105,9 +105,9 @@ export function StepCvQuickReview({
       </div>
 
       {/* Resume File Banner */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl bg-secondary/40 border border-border">
+      <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-sm bg-secondary/40 border border-border">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 rounded-sm bg-primary/10 text-primary flex items-center justify-center shrink-0">
             <FileText className="w-4 h-4" />
           </div>
           <div className="min-w-0">
@@ -146,7 +146,7 @@ export function StepCvQuickReview({
           onBlur={handleRoleBlur}
           onKeyDown={handleRoleKeyDown}
           placeholder="e.g. Frontend Engineer, Product Manager"
-          className="w-full min-h-[44px] px-3.5 text-sm rounded-lg bg-background border border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none transition-colors"
+          className="w-full min-h-[44px] px-3.5 text-sm rounded-sm bg-background border border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none transition-colors"
         />
         <p className="text-[11px] text-muted-foreground">
           Tip: You can change this title anytime to focus your matching results.
@@ -166,7 +166,7 @@ export function StepCvQuickReview({
                 key={opt.value}
                 type="button"
                 onClick={() => setTargetLevel(opt.value)}
-                className={`min-h-[44px] p-2.5 rounded-lg border text-left transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
+                className={`min-h-[44px] p-2.5 rounded-sm border text-left transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
                   isSelected
                     ? "border-primary bg-primary/10 text-foreground"
                     : "border-border bg-card/60 text-muted-foreground hover:border-border/80 hover:text-foreground"
@@ -200,7 +200,7 @@ export function StepCvQuickReview({
                 key={opt.value}
                 type="button"
                 onClick={() => handleToggleWorkMode(opt.value)}
-                className={`min-h-[44px] p-2.5 rounded-lg border text-left transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
+                className={`min-h-[44px] p-2.5 rounded-sm border text-left transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
                   isSelected
                     ? "border-primary bg-primary/10 text-foreground"
                     : "border-border bg-card/60 text-muted-foreground hover:border-border/80 hover:text-foreground"
@@ -232,7 +232,7 @@ export function StepCvQuickReview({
           </span>
         </div>
 
-        <div className="flex flex-wrap gap-1.5 p-3 rounded-xl border border-border/80 bg-secondary/20 min-h-[56px] items-center">
+        <div className="flex flex-wrap gap-1.5 p-3 rounded-sm border border-border/80 bg-secondary/20 min-h-[56px] items-center">
           {state.skills.length === 0 ? (
             <p className="text-xs text-muted-foreground italic">
               No skills selected yet. Add one below.
@@ -287,7 +287,7 @@ export function StepCvQuickReview({
             value={newSkillInput}
             onChange={(e) => setNewSkillInput(e.target.value)}
             placeholder="Add missing skill (e.g. Next.js, Docker)..."
-            className="flex-1 min-h-[44px] px-3 text-xs rounded-lg bg-background border border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+            className="flex-1 min-h-[44px] px-3 text-xs rounded-sm bg-background border border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
           />
           <Button
             type="submit"
@@ -302,7 +302,7 @@ export function StepCvQuickReview({
       </div>
 
       {/* Helpful Context */}
-      <div className="p-3.5 rounded-lg bg-secondary/30 border border-border text-xs text-muted-foreground space-y-1">
+      <div className="p-3.5 rounded-sm bg-secondary/30 border border-border text-xs text-muted-foreground space-y-1">
         <p className="font-medium text-foreground">
           Salary, dealbreakers, and past experience
         </p>

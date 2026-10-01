@@ -98,7 +98,7 @@ export function StepManualPreferences({
                 key={opt.value}
                 type="button"
                 onClick={() => handleToggleWorkMode(opt.value)}
-                className={`min-h-[52px] p-3 rounded-xl border text-left transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
+                className={`min-h-[52px] p-3 rounded-sm border text-left transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
                   isSelected
                     ? "border-primary bg-primary/10 text-foreground"
                     : "border-border bg-card/60 text-muted-foreground hover:border-border/80 hover:text-foreground"
@@ -133,7 +133,7 @@ export function StepManualPreferences({
 
         {/* Selected Locations Chips */}
         {state.locations.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 p-2 rounded-lg bg-secondary/30 border border-border">
+          <div className="flex flex-wrap gap-1.5 p-2 rounded-sm bg-secondary/30 border border-border">
             {state.locations.map((loc) => (
               <span
                 key={loc}
@@ -168,7 +168,7 @@ export function StepManualPreferences({
               }
             }}
             placeholder="Type a city or country and press Add..."
-            className="flex-1 min-h-[44px] px-3.5 text-xs rounded-lg bg-background border border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+            className="flex-1 min-h-[44px] px-3.5 text-xs rounded-sm bg-background border border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
           />
           <Button
             type="button"

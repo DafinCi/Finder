@@ -37,11 +37,11 @@ export function ProfilePreferencesCard({
     : "Flexible (No minimum constraint)";
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 space-y-5 shadow-2xs">
+    <div className="rounded-sm border border-border bg-card p-5 space-y-5 shadow-2xs">
       {/* Header */}
       <div className="flex items-center justify-between gap-3 pb-3 border-b border-border/80">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-secondary border border-border flex items-center justify-center text-muted-foreground shrink-0">
+          <div className="w-8 h-8 rounded-sm bg-secondary border border-border flex items-center justify-center text-muted-foreground shrink-0">
             <SlidersHorizontal className="w-4 h-4" />
           </div>
           <div>
@@ -89,7 +89,7 @@ export function ProfilePreferencesCard({
             preferences.work_modes.map((wm) => (
               <span
                 key={wm}
-                className="px-3 py-1 rounded-lg bg-secondary/80 border border-border text-xs font-medium text-foreground"
+                className="px-3 py-1 rounded-sm bg-secondary/80 border border-border text-xs font-medium text-foreground"
               >
                 {WORK_MODE_LABELS[wm] || wm}
               </span>
@@ -149,7 +149,7 @@ export function ProfilePreferencesCard({
           <Banknote className="w-3 h-3 text-muted-foreground" />
           Salary Expectation
         </span>
-        <div className="p-2.5 rounded-lg bg-secondary/30 border border-border/80 text-xs flex items-center justify-between">
+        <div className="p-2.5 rounded-sm bg-secondary/30 border border-border/80 text-xs flex items-center justify-between">
           <span className="font-semibold text-foreground">
             {formattedSalary}
           </span>
@@ -204,8 +204,8 @@ export function ProfilePreferencesCard({
           </div>
         ) : (
           <p className="text-xs text-muted-foreground italic">
-            No negative preferences declared. Finder will not apply score penalties for
-            specific domains or technologies.
+            No negative preferences declared. Finder will not apply score
+            penalties for specific domains or technologies.
           </p>
         )}
       </div>

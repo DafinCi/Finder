@@ -112,11 +112,11 @@ export function WalrusStorageCard() {
   };
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 space-y-5 shadow-xs text-foreground">
+    <div className="rounded-sm border border-border bg-card p-5 space-y-5 shadow-xs text-foreground">
       {/* Header */}
       <div className="flex items-center justify-between pb-3 border-b border-border/80">
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-lg bg-secondary border border-border flex items-center justify-center text-muted-foreground shrink-0">
+          <div className="w-9 h-9 rounded-sm bg-secondary border border-border flex items-center justify-center text-muted-foreground shrink-0">
             <Database className="w-4 h-4" />
           </div>
           <div>
@@ -144,7 +144,7 @@ export function WalrusStorageCard() {
       ) : (
         <div className="space-y-4">
           {/* Section 1: Active Resume Document Blob */}
-          <div className="p-3.5 rounded-lg bg-secondary/30 border border-border/70 space-y-2.5 text-xs">
+          <div className="p-3.5 rounded-sm bg-secondary/30 border border-border/70 space-y-2.5 text-xs">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 font-semibold text-foreground">
                 <FileText className="w-4 h-4 text-muted-foreground" />
@@ -247,7 +247,7 @@ export function WalrusStorageCard() {
           </div>
 
           {/* Section 2: Sovereign Career Passport Snapshot */}
-          <div className="p-3.5 rounded-lg bg-secondary/30 border border-border/70 space-y-2.5 text-xs">
+          <div className="p-3.5 rounded-sm bg-secondary/30 border border-border/70 space-y-2.5 text-xs">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 font-semibold text-foreground">
                 <span>Sovereign Career Passport</span>
@@ -358,7 +358,7 @@ export function WalrusStorageCard() {
           </div>
 
           {/* Section 3: Protocol Architecture Details */}
-          <div className="p-3 rounded-lg bg-secondary/15 border border-border/50 text-[11px] text-muted-foreground space-y-1">
+          <div className="p-3 rounded-sm bg-secondary/15 border border-border/50 text-[11px] text-muted-foreground space-y-1">
             <div className="flex items-center gap-1.5 font-medium text-foreground">
               <ShieldCheck className="w-3.5 h-3.5 text-muted-foreground" />
               <span>Decentralized Architecture Specs</span>

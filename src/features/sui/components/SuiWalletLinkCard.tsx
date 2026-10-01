@@ -120,7 +120,7 @@ export function SuiWalletLinkCard() {
   const isTestnet = !currentNetwork || currentNetwork === "testnet";
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-sm space-y-4 text-foreground">
+    <div className="rounded-sm border border-border bg-card p-5 shadow-sm space-y-4 text-foreground">
       {/* Wallet Selection Modal */}
       <SuiWalletModal
         isOpen={modalOpen}
@@ -133,7 +133,7 @@ export function SuiWalletLinkCard() {
       {/* Header */}
       <div className="flex items-center justify-between pb-3 border-b border-border/80">
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-lg bg-secondary border border-border flex items-center justify-center text-muted-foreground shrink-0">
+          <div className="w-9 h-9 rounded-sm bg-secondary border border-border flex items-center justify-center text-muted-foreground shrink-0">
             <Wallet className="w-4 h-4" />
           </div>
           <div>
@@ -163,7 +163,7 @@ export function SuiWalletLinkCard() {
         <div
           role="alert"
           aria-live="polite"
-          className="rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-destructive text-xs font-medium flex items-start justify-between gap-2"
+          className="rounded-sm bg-destructive/10 border border-destructive/20 p-3 text-destructive text-xs font-medium flex items-start justify-between gap-2"
         >
           <div className="flex items-start gap-2">
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
@@ -188,7 +188,7 @@ export function SuiWalletLinkCard() {
       ) : linkedAddress ? (
         /* State A: Wallet IS Linked */
         <div className="space-y-4">
-          <div className="p-3 rounded-lg bg-secondary/40 border border-border/80 flex items-center justify-between text-xs">
+          <div className="p-3 rounded-sm bg-secondary/40 border border-border/80 flex items-center justify-between text-xs">
             <div className="flex flex-col gap-0.5 truncate mr-2">
               <span className="text-[11px] text-muted-foreground uppercase font-semibold tracking-wider">
                 Linked Sui Address
@@ -274,7 +274,7 @@ export function SuiWalletLinkCard() {
 
           {/* Connected wallet state */}
           {account && (
-            <div className="p-3 rounded-lg bg-secondary/40 border border-border/80 flex items-center justify-between text-xs">
+            <div className="p-3 rounded-sm bg-secondary/40 border border-border/80 flex items-center justify-between text-xs">
               <div className="flex flex-col truncate mr-2">
                 <span className="text-[11px] text-muted-foreground font-semibold">
                   Detected Wallet

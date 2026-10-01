@@ -40,11 +40,11 @@ export function ProfileIntentCard({
     : "Not specified";
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 space-y-5 shadow-2xs">
+    <div className="rounded-sm border border-border bg-card p-5 space-y-5 shadow-2xs">
       {/* Header */}
       <div className="flex items-center justify-between gap-3 pb-3 border-b border-border/80">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-secondary border border-border flex items-center justify-center text-muted-foreground shrink-0">
+          <div className="w-8 h-8 rounded-sm bg-secondary border border-border flex items-center justify-center text-muted-foreground shrink-0">
             <Target className="w-4 h-4" />
           </div>
           <div>
@@ -75,7 +75,7 @@ export function ProfileIntentCard({
           Primary Target Role
         </span>
         {primaryRole ? (
-          <div className="flex items-center justify-between p-3 rounded-lg bg-secondary border border-border">
+          <div className="flex items-center justify-between p-3 rounded-sm bg-secondary border border-border">
             <span className="text-sm font-bold text-foreground">
               {primaryRole.role}
             </span>
@@ -84,7 +84,7 @@ export function ProfileIntentCard({
             </span>
           </div>
         ) : (
-          <div className="p-3 rounded-lg bg-secondary/30 border border-dashed border-border text-xs text-muted-foreground">
+          <div className="p-3 rounded-sm bg-secondary/30 border border-dashed border-border text-xs text-muted-foreground">
             No primary role selected. Select the edit button to choose one.
           </div>
         )}
@@ -100,7 +100,7 @@ export function ProfileIntentCard({
             {secondaryRoles.map((r) => (
               <span
                 key={r.role}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-secondary/70 border border-border text-xs font-medium text-foreground"
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-sm bg-secondary/70 border border-border text-xs font-medium text-foreground"
               >
                 <span>{r.role}</span>
                 <span className="text-[10px] text-muted-foreground font-mono">

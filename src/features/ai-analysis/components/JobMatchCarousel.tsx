@@ -83,7 +83,7 @@ export default function JobMatchCarousel({
 
       {/* 1. Hero Card: Top Recommended Match */}
       {topJob && (
-        <div className="rounded-xl border border-primary/25 bg-card/60 p-4 sm:p-5 space-y-3.5 shadow-2xs">
+        <div className="rounded-sm border border-primary/25 bg-card/60 p-4 sm:p-5 space-y-3.5 shadow-2xs">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
             <div className="flex items-start gap-3 min-w-0">
@@ -130,7 +130,7 @@ export default function JobMatchCarousel({
 
           {/* AI Match Reason: Full Natural Auto-Height */}
           {topJob.reason && (
-            <div className="p-3 bg-secondary/35 border border-border/50 rounded-xl space-y-1">
+            <div className="p-3 bg-secondary/35 border border-border/50 rounded-sm space-y-1">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Match Assessment
               </span>
@@ -183,7 +183,7 @@ export default function JobMatchCarousel({
             {otherJobs.map((job) => (
               <div
                 key={job.id || job.job_id}
-                className="w-[285px] sm:w-[315px] shrink-0 snap-start flex flex-col justify-between p-3.5 rounded-xl border border-border/80 bg-card/40 hover:bg-card/70 hover:border-border transition-all duration-200 shadow-2xs"
+                className="w-[285px] sm:w-[315px] shrink-0 snap-start flex flex-col justify-between p-3.5 rounded-sm border border-border/80 bg-card/40 hover:bg-card/70 hover:border-border transition-all duration-200 shadow-2xs"
               >
                 <div className="space-y-2.5">
                   {/* Header */}
@@ -226,7 +226,7 @@ export default function JobMatchCarousel({
 
                   {/* AI Reason (Auto-Height, No Clamping) */}
                   {job.reason && (
-                    <p className="text-xs text-muted-foreground leading-relaxed bg-secondary/30 p-2.5 rounded-xl font-sans">
+                    <p className="text-xs text-muted-foreground leading-relaxed bg-secondary/30 p-2.5 rounded-sm font-sans">
                       {job.reason}
                     </p>
                   )}

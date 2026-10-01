@@ -24,7 +24,9 @@ const CATEGORY_LABELS: Record<MemoryCategory, string> = {
 export function MemoryManagementCard() {
   const [memories, setMemories] = useState<CareerMemory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "active" | "forgotten">("active");
+  const [filter, setFilter] = useState<"all" | "active" | "forgotten">(
+    "active",
+  );
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const fetchMemories = async () => {
@@ -75,10 +77,10 @@ export function MemoryManagementCard() {
   });
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+    <div className="rounded-sm border border-border bg-card p-5 space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/80">
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-lg bg-secondary border border-border flex items-center justify-center text-muted-foreground shrink-0">
+          <div className="w-9 h-9 rounded-sm bg-secondary border border-border flex items-center justify-center text-muted-foreground shrink-0">
             <Brain className="w-4 h-4" />
           </div>
           <div>
@@ -92,7 +94,7 @@ export function MemoryManagementCard() {
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex items-center rounded-lg bg-secondary/50 p-0.5 border border-border/60 text-xs">
+          <div className="flex items-center rounded-sm bg-secondary/50 p-0.5 border border-border/60 text-xs">
             <button
               type="button"
               onClick={() => setFilter("active")}
@@ -134,7 +136,7 @@ export function MemoryManagementCard() {
             disabled={isLoading}
             aria-label="Refresh memories"
             title="Refresh memories"
-            className="p-2 rounded-lg bg-secondary/30 border border-border/60 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors cursor-pointer"
+            className="p-2 rounded-sm bg-secondary/30 border border-border/60 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors cursor-pointer"
           >
             <RefreshCw
               className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`}
@@ -155,7 +157,8 @@ export function MemoryManagementCard() {
               : "No memories found for this filter."}
           </p>
           <p className="text-[11px] text-muted-foreground/80">
-            Tell Finder about your career target, tech stack, or work mode in chat.
+            Tell Finder about your career target, tech stack, or work mode in
+            chat.
           </p>
         </div>
       ) : (
@@ -167,7 +170,7 @@ export function MemoryManagementCard() {
             return (
               <div
                 key={mem.id}
-                className={`p-3.5 rounded-lg border transition-all space-y-2 ${
+                className={`p-3.5 rounded-sm border transition-all space-y-2 ${
                   isForgotten
                     ? "bg-secondary/15 border-border/40 opacity-60"
                     : "bg-secondary/30 border-border/70"
@@ -218,7 +221,7 @@ export function MemoryManagementCard() {
                       disabled={isDeleting}
                       aria-label="Forget this memory"
                       title="Forget this memory"
-                      className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors cursor-pointer"
+                      className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors cursor-pointer"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
