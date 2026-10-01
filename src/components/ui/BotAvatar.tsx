@@ -148,101 +148,67 @@ export default function BotAvatar({
       : undefined;
 
   return (
-    <div
-      role="img"
-      aria-label={ariaLabel || `${name} bot avatar`}
-      style={customStyle}
-      className={`relative inline-flex items-center justify-center rounded-full shrink-0 select-none border transition-colors ${palette.bg} ${palette.border} ${containerClass} ${className}`}
-    >
-      {/* Bot Bust Illustration (Head with half-body torso) */}
-      <svg
-        viewBox="0 0 40 40"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        className="w-[78%] h-[78%] overflow-visible"
+    <div className="relative inline-flex shrink-0">
+      <div
+        role="img"
+        aria-label={ariaLabel || `${name} bot avatar`}
+        style={customStyle}
+        className={`inline-flex items-center justify-center overflow-hidden rounded-full shrink-0 select-none border transition-colors ${palette.bg} ${palette.border} ${containerClass} ${className}`}
       >
-        {/* Antenna */}
-        <line
-          x1="20"
-          y1="5"
-          x2="20"
-          y2="8"
-          stroke={palette.botColor}
-          strokeWidth="1.8"
-          strokeLinecap="round"
-        />
-        <circle cx="20" cy="4" r="1.6" fill={palette.botColor} />
-
-        {/* Ears / Side audio receivers */}
-        <rect
-          x="7.5"
-          y="12.5"
-          width="2.5"
-          height="6"
-          rx="1.25"
-          fill={palette.botColor}
-        />
-        <rect
-          x="30"
-          y="12.5"
-          width="2.5"
-          height="6"
-          rx="1.25"
-          fill={palette.botColor}
-        />
-
-        {/* Head Shell */}
-        <rect
-          x="9.5"
-          y="8"
-          width="21"
-          height="15"
-          rx="5"
-          fill={palette.botColor}
-        />
-
-        {/* Eyes Visor Screen */}
-        <rect
-          x="12.5"
-          y="11.5"
-          width="15"
-          height="6"
-          rx="3"
-          fill={palette.visorColor}
-        />
-
-        {/* Solid Eye Pupils */}
-        <circle cx="16" cy="14.5" r="1.3" fill={palette.eyeColor} />
-        <circle cx="24" cy="14.5" r="1.3" fill={palette.eyeColor} />
-
-        {/* Friendly Smile Arc */}
-        <path
-          d="M17.5 19.5 C18.5 21, 21.5 21, 22.5 19.5"
-          stroke={palette.visorColor}
-          strokeWidth="1.4"
-          strokeLinecap="round"
+        {/* Bot Bust Illustration (Head with half-body torso) */}
+        <svg
+          viewBox="0 0 40 40"
           fill="none"
-        />
+          xmlns="http://www.w3.org/2000/svg"
+          className="w-[78%] h-[78%] overflow-visible"
+        >
+          {/* Antenna */}
+          <line
+            x1="20"
+            y1="5"
+            x2="20"
+            y2="8"
+            stroke={palette.botColor}
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <circle cx="20" cy="4" r="1.6" fill={palette.botColor} />
 
-        {/* Neck Connector */}
-        <rect
-          x="18"
-          y="23"
-          width="4"
-          height="3"
-          rx="1"
-          fill={palette.botColor}
-        />
+          {/* Ears / Side audio receivers */}
+          <rect
+            x="6.5"
+            y="12.5"
+            width="2.5"
+            height="6"
+            rx="1.25"
+            fill={palette.botColor}
+          />
+          <rect
+            x="31"
+            y="12.5"
+            width="2.5"
+            height="6"
+            rx="1.25"
+            fill={palette.botColor}
+          />
 
-        {/* Half-body Torso / Curved Robotic Shoulders */}
-        <path
-          d="M7 38 C7 28.5, 12.5 26, 20 26 C27.5 26, 33 28.5, 33 38 Z"
-          fill={palette.botColor}
-        />
+          {/* Head Shell */}
+          <rect
+            x="8.5"
+            y="7.5"
+            width="23"
+            height="15.5"
+            rx="5"
+            fill={palette.botColor}
+          />
 
-        {/* Chest Core Indicator */}
-        <circle cx="20" cy="31" r="1.4" fill={palette.visorColor} />
-      </svg>
+          {/* Half-body Torso / Curved Robotic Shoulders */}
+          <path
+            d="M5 50 C5 29, 11 26, 20 26 C29 26, 35 29, 35 50 Z"
+            fill={palette.botColor}
+          />
+        </svg>
+      </div>
 
       {/* Optional Online / Activity Indicator */}
       {showStatusIndicator && (
