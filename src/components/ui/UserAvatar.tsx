@@ -107,7 +107,8 @@ export default function UserAvatar({
   "aria-label": ariaLabel,
 }: UserAvatarProps) {
   const colorSeed = seed || name;
-  const paletteIndex = getUserAvatarHash(colorSeed) % USER_AVATAR_PALETTES.length;
+  const paletteIndex =
+    getUserAvatarHash(colorSeed) % USER_AVATAR_PALETTES.length;
   const palette = USER_AVATAR_PALETTES[paletteIndex];
   const { containerClass, pixelSize } = getUserAvatarDimensions(size);
 
@@ -136,7 +137,7 @@ export default function UserAvatar({
 
           {/* Curved Shoulders and Torso */}
           <path
-            d="M5 40 C5 26, 11 24, 20 24 C29 24, 35 26, 35 40 Z"
+            d="M0 50 C0 29, 11 26, 20 26 C29 26, 35 29, 45 50 Z"
             fill={palette.userColor}
           />
         </svg>
