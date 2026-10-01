@@ -1,7 +1,7 @@
 "use client";
 
 import React, { use, useEffect } from "react";
-import { Bot, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { useAgent } from "@/contexts/AgentContext";
 import { useChat } from "@/features/chat/hooks/useChat";
@@ -114,9 +114,8 @@ export default function ChatSessionPage({
             <ChatTimelineSkeleton />
           ) : messages.length === 0 ? (
             /* Empty State: Only shown if definitely not loading and no messages */
-            <div className="flex-1 flex flex-col items-center justify-center text-center p-8 my-auto text-muted-foreground space-y-3 min-h-[50vh] animate-in fade-in duration-200">
-              <Bot className="w-8 h-8 opacity-40" />
-              <p className="text-sm font-medium">
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-8 my-auto text-muted-foreground space-y-2 min-h-[50vh] animate-in fade-in duration-200">
+              <p className="text-sm font-medium text-foreground/80">
                 No messages in this session yet.
               </p>
               <p className="text-xs text-muted-foreground/70">

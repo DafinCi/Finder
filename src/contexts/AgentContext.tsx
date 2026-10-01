@@ -37,9 +37,10 @@ export function AgentProvider({ children }: { children: ReactNode }) {
   // Load from localStorage on mount
   useEffect(() => {
     try {
+      // Clean up legacy global nickname so test strings never pollute new sessions
       const savedGlobal = localStorage.getItem(GLOBAL_AGENT_NICKNAME_KEY);
-      if (savedGlobal && savedGlobal.trim()) {
-        setGlobalAgentName(savedGlobal.trim());
+      if (savedGlobal) {
+        localStorage.removeItem(GLOBAL_AGENT_NICKNAME_KEY);
       }
 
       const savedSessions = localStorage.getItem(SESSION_AGENT_NICKNAMES_KEY);

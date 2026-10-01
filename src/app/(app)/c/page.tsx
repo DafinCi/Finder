@@ -8,12 +8,9 @@ import OmniPromptInput from "@/features/chat/components/OmniPromptInput";
 import ChatActionPills from "@/features/chat/components/ChatActionPills";
 import { chatService } from "@/features/chat/services/chat.service";
 import { generateSmartSessionTitle } from "@/features/chat/utils/title-generator";
-import { useAgent } from "@/contexts/AgentContext";
-import BotAvatar from "@/components/ui/BotAvatar";
 
 export default function AppChatHomePage() {
   const router = useRouter();
-  const { agentName } = useAgent();
   const [isLoading, setIsLoading] = useState(false);
   const [statusText, setStatusText] = useState("");
 
@@ -77,22 +74,14 @@ export default function AppChatHomePage() {
   return (
     <div className="flex-1 flex flex-col items-center justify-center h-full px-4 py-8 animate-in fade-in duration-300 relative overflow-y-auto custom-scrollbar chat-wallpaper">
       <div className="w-full max-w-4xl text-center space-y-7 my-auto">
-        {/* Friendly Agent Greeting */}
-        <div className="flex flex-col items-center gap-3">
-          <BotAvatar
-            name={agentName}
-            size="xl"
-            showStatusIndicator
-            indicatorStatus="online"
-          />
-          <div className="space-y-1.5">
-            <h1 className="text-2xl sm:text-3xl font-bold font-heading text-foreground tracking-tight">
-              Hey, I&apos;m {agentName}
-            </h1>
-            <p className="text-sm sm:text-base text-muted-foreground">
-              What can I help you explore today?
-            </p>
-          </div>
+        {/* Clean Action-Focused Greeting */}
+        <div className="space-y-2">
+          <h1 className="text-2xl sm:text-3xl font-bold font-heading text-foreground tracking-tight">
+            What can I help you explore today?
+          </h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
+            Ask about roles, analyze your resume, or practice interview questions.
+          </p>
         </div>
 
         {/* Omni-Prompt Input */}
