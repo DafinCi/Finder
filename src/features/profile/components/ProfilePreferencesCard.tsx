@@ -5,7 +5,6 @@ import {
   SlidersHorizontal,
   MapPin,
   Banknote,
-  Sparkles,
   AlertTriangle,
   Edit3,
   ShieldAlert,
@@ -165,8 +164,7 @@ export function ProfilePreferencesCard({
       {/* Priorities */}
       {preferences?.priorities && preferences.priorities.length > 0 && (
         <div className="pt-2 border-t border-border/60 space-y-1.5">
-          <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-            <Sparkles className="w-3 h-3 text-primary" />
+          <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
             Candidate Priorities
           </span>
           <div className="flex flex-wrap gap-1.5">

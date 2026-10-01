@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { FileText, Copy, Check, Sparkles, ThumbsUp, ThumbsDown } from "lucide-react";
+import { FileText, Copy, Check, Brain, ThumbsUp, ThumbsDown } from "lucide-react";
 import { toast } from "sonner";
 import { ChatMessage } from "@/types/chat";
 import CandidateSummaryCard from "@/features/ai-analysis/components/CandidateSummaryCard";
@@ -12,11 +12,15 @@ import ActionProposalCard from "./ActionProposalCard";
 interface ChatMessageItemProps {
   message: ChatMessage;
   onAskAboutJob?: (jobTitle: string, company: string) => void;
+  isFirstInGroup?: boolean;
+  isLastInGroup?: boolean;
 }
 
 export default function ChatMessageItem({
   message,
   onAskAboutJob,
+  isFirstInGroup = true,
+  isLastInGroup = true,
 }: ChatMessageItemProps) {
   const isUser = message.role === "user";
   const attachment = message.metadata?.attachment;
@@ -27,6 +31,7 @@ export default function ChatMessageItem({
   const [feedback, setFeedback] = useState<"helpful" | "unhelpful" | null>(
     (message.metadata?.feedback as "helpful" | "unhelpful") || null,
   );
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
 
   const handleCopy = async () => {
     if (!message.content) return;
@@ -40,20 +45,46 @@ export default function ChatMessageItem({
     }
   };
 
-  const handleFeedback = (type: "helpful" | "unhelpful") => {
-    const newFeedback = feedback === type ? null : type;
-    setFeedback(newFeedback);
-    if (newFeedback === "helpful") {
-      toast.success("Feedback recorded: helpful response");
-    } else if (newFeedback === "unhelpful") {
-      toast.info("Feedback recorded: unhelpful response");
+  const handleFeedback = async (type: "helpful" | "unhelpful") => {
+    if (isStreaming || message.id.startsWith("stream-") || isSubmittingFeedback) {
+      return;
+    }
+
+    const previousFeedback = feedback;
+    const nextFeedback = feedback === type ? null : type;
+
+    // Optimistic UI: Update visual state immediately for instant feedback
+    setFeedback(nextFeedback);
+    setIsSubmittingFeedback(true);
+
+    try {
+      const res = await fetch(`/api/chat/message/${message.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ feedback: nextFeedback }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to update feedback");
+      }
+    } catch {
+      // Rollback to previous state on failure
+      setFeedback(previousFeedback);
+      toast.error("Failed to record feedback. Please try again.");
+    } finally {
+      setIsSubmittingFeedback(false);
     }
   };
 
   if (isUser) {
     return (
-      <div className="flex justify-end my-4 animate-in fade-in duration-200">
-        <div className="flex flex-col items-end max-w-xl space-y-2">
+      <div
+        className={`flex justify-end animate-in fade-in duration-200 ${
+          isFirstInGroup ? "mt-4 sm:mt-5" : "mt-1.5"
+        }`}
+      >
+        <div className="flex flex-col items-end max-w-xl space-y-1.5">
           {/* Attachment Preview Badge */}
           {attachment && (
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-sm bg-secondary/80 border border-border text-xs text-foreground font-medium shadow-2xs">
@@ -75,7 +106,11 @@ export default function ChatMessageItem({
 
   // Assistant Message (Neutral surface with deliberate AI evaluation actions)
   return (
-    <div className="group relative my-6 animate-in fade-in duration-300">
+    <div
+      className={`group relative animate-in fade-in duration-300 ${
+        isFirstInGroup ? "mt-5 sm:mt-6" : "mt-2"
+      }`}
+    >
       <div className="space-y-3">
         {/* Rich Markdown Text Content */}
         {message.content ? (
@@ -106,9 +141,9 @@ export default function ChatMessageItem({
 
         {/* Sovereign Memory Updated Badge */}
         {message.metadata?.memory_updated && (
-          <div className="flex items-center gap-1.5 py-1 text-[11px] text-muted-foreground">
-            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary/10 border border-primary/25 text-primary font-medium">
-              <Sparkles className="w-3.5 h-3.5" />
+          <div className="flex items-center gap-1.5 py-1 text-[11px]">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm bg-secondary border border-border text-secondary-foreground font-medium text-[11px]">
+              <Brain className="w-3.5 h-3.5 text-muted-foreground" />
               Sovereign Career Memory Updated
             </span>
           </div>
@@ -142,9 +177,11 @@ export default function ChatMessageItem({
             <button
               type="button"
               onClick={() => handleFeedback("helpful")}
+              disabled={isStreaming || message.id.startsWith("stream-")}
               aria-label="Mark response as helpful"
+              aria-busy={isSubmittingFeedback}
               title="Helpful response"
-              className={`p-1.5 rounded-sm text-xs transition-colors cursor-pointer ${
+              className={`p-1.5 rounded-sm text-xs transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                 feedback === "helpful"
                   ? "text-slush-mint bg-slush-mint/10 border border-slush-mint/25"
                   : "text-muted-foreground hover:text-foreground hover:bg-secondary/70"
@@ -156,9 +193,11 @@ export default function ChatMessageItem({
             <button
               type="button"
               onClick={() => handleFeedback("unhelpful")}
+              disabled={isStreaming || message.id.startsWith("stream-")}
               aria-label="Mark response as unhelpful"
+              aria-busy={isSubmittingFeedback}
               title="Unhelpful response"
-              className={`p-1.5 rounded-sm text-xs transition-colors cursor-pointer ${
+              className={`p-1.5 rounded-sm text-xs transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                 feedback === "unhelpful"
                   ? "text-slush-ember bg-slush-ember/10 border border-slush-ember/25"
                   : "text-muted-foreground hover:text-foreground hover:bg-secondary/70"

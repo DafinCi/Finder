@@ -132,4 +132,50 @@ describe("PATCH /api/chat/message/[id]", () => {
     expect(json.success).toBe(true);
     expect(json.metadata.action_proposal.status).toBe("applied");
   });
+
+  it("should return 200 and persist feedback in metadata", async () => {
+    mockAuthUser.mockResolvedValueOnce({
+      data: { user: { id: "user-legit" } },
+      error: null,
+    });
+    mockAdminSingle.mockResolvedValueOnce({
+      data: {
+        id: "msg-1",
+        session_id: "session-123",
+        metadata: {
+          previous_info: "sample",
+        },
+      },
+      error: null,
+    });
+
+    const req = new NextRequest("http://localhost:3000/api/chat/message/msg-1", {
+      method: "PATCH",
+      body: JSON.stringify({ feedback: "helpful" }),
+    });
+
+    const res = await PATCH(req, { params: Promise.resolve({ id: "msg-1" }) });
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.success).toBe(true);
+    expect(json.metadata.feedback).toBe("helpful");
+    expect(json.metadata.previous_info).toBe("sample");
+  });
+
+  it("should reject invalid feedback value with 400", async () => {
+    mockAuthUser.mockResolvedValueOnce({
+      data: { user: { id: "user-legit" } },
+      error: null,
+    });
+
+    const req = new NextRequest("http://localhost:3000/api/chat/message/msg-1", {
+      method: "PATCH",
+      body: JSON.stringify({ feedback: "invalid_feedback_type" }),
+    });
+
+    const res = await PATCH(req, { params: Promise.resolve({ id: "msg-1" }) });
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toContain("Invalid feedback value");
+  });
 });

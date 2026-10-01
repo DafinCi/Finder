@@ -2,7 +2,16 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  Code,
+  AlertCircle,
+  RotateCcw,
+  Briefcase,
+  Target,
+  FileText,
+  GraduationCap,
+} from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useCareerProfile } from "../hooks/useCareerProfile";
 import { ProfileHeader } from "../components/ProfileHeader";
@@ -22,6 +31,7 @@ export default function ProfileOverviewView() {
   const {
     profile,
     isLoading,
+    isRefreshing,
     isMutating,
     error,
     primaryRole,
@@ -47,17 +57,48 @@ export default function ProfileOverviewView() {
     "intent" | "preferences" | "skills" | "background" | null
   >(null);
 
-  if (isLoading) {
+  if (isLoading && !profile) {
     return <ProfilePageSkeleton />;
+  }
+
+  // If loading failed and there is no profile cached in state
+  if (error && !profile) {
+    return (
+      <div className="flex-1 min-h-0 w-full h-full overflow-y-auto custom-scrollbar flex items-center justify-center p-6">
+        <div className="max-w-md w-full rounded-sm border border-destructive/30 bg-card p-8 text-center space-y-5 shadow-xs">
+          <div className="w-14 h-14 rounded-sm bg-destructive/10 border border-destructive/20 text-destructive flex items-center justify-center mx-auto">
+            <AlertCircle className="w-7 h-7" />
+          </div>
+
+          <div className="space-y-2">
+            <h2 className="text-lg font-bold font-heading text-foreground">
+              Unable to Load Career Profile
+            </h2>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              {error ||
+                "An error occurred while retrieving your profile. Please check your connection and try again."}
+            </p>
+          </div>
+
+          <Button
+            onClick={() => refreshProfile()}
+            className="w-full min-h-[44px] h-11 gap-2 text-xs font-semibold cursor-pointer rounded-sm"
+          >
+            <RotateCcw className="w-4 h-4" />
+            <span>Retry</span>
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   // If user has no profile or profile hasn't been initialized
   if (!profile) {
     return (
       <div className="flex-1 min-h-0 w-full h-full overflow-y-auto custom-scrollbar flex items-center justify-center p-6">
-        <div className="max-w-md w-full rounded-2xl border border-border bg-card p-8 text-center space-y-5 shadow-xs">
-          <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center mx-auto">
-            <Sparkles className="w-7 h-7" />
+        <div className="max-w-md w-full rounded-sm border border-border bg-card p-8 text-center space-y-5 shadow-xs">
+          <div className="w-14 h-14 rounded-sm bg-primary/10 border border-primary/20 text-primary flex items-center justify-center mx-auto">
+            <Briefcase className="w-7 h-7" />
           </div>
 
           <div className="space-y-2">
@@ -71,7 +112,7 @@ export default function ProfileOverviewView() {
           </div>
 
           <Link href="/onboarding" className="block">
-            <Button className="w-full min-h-[44px] h-11 gap-2 text-xs font-semibold cursor-pointer">
+            <Button className="w-full min-h-[44px] h-11 gap-2 text-xs font-semibold cursor-pointer rounded-sm">
               <span>Start Career Onboarding</span>
               <ArrowRight className="w-4 h-4" />
             </Button>
@@ -86,63 +127,123 @@ export default function ProfileOverviewView() {
   };
 
   return (
-    <div className="flex-1 min-h-0 w-full h-full overflow-y-auto custom-scrollbar">
-      <div className="px-6 py-8 max-w-5xl mx-auto w-full space-y-6">
-        {/* Profile Header */}
-        <ProfileHeader
-          user={user}
-          profile={profile}
-          completenessScore={completenessScore}
-          isMutating={isMutating}
-          onRefresh={refreshProfile}
-        />
-
-        {/* Bento Grid 2.0 */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Row 1, Col 1-2: Consolidated Target Roles & Match Preferences */}
-          <div className="lg:col-span-2">
-            <ProfileTargetPreferencesCard
-              careerIntent={profile.careerIntent}
-              preferences={profile.preferences}
-              constraints={profile.constraints}
-              primaryRole={primaryRole}
-              secondaryRoles={secondaryRoles}
-              onEditIntent={() => setActiveModal("intent")}
-              onEditPreferences={() => setActiveModal("preferences")}
-            />
+    <div className="flex-1 min-h-0 w-full h-full overflow-y-auto custom-scrollbar scroll-smooth">
+      <div className="px-4 sm:px-6 py-6 sm:py-8 max-w-6xl mx-auto w-full space-y-6">
+        {/* Error banner when refreshing existing profile */}
+        {error && profile && (
+          <div className="p-4 rounded-sm border border-destructive/20 bg-destructive/10 text-destructive text-sm flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => refreshProfile()}
+              className="text-xs font-semibold underline hover:no-underline cursor-pointer"
+            >
+              Retry
+            </button>
           </div>
+        )}
 
-          {/* Row 1, Col 3: Active Resume & Document Source */}
-          <div className="lg:col-span-1">
-            <ProfileResumeCard
-              resumeId={profile.resumeId}
-              expectedVersion={profile.profileVersion}
-              onProfileUpdated={refreshProfile}
-            />
-          </div>
+        {/* Unified Career Profile Document Sheet */}
+        <div className="rounded-sm border border-border bg-card shadow-xs overflow-hidden">
+          {/* Profile Hero Header with Centered Avatar and Chat-Wallpaper Cover */}
+          <ProfileHeader
+            user={user}
+            profile={profile}
+            completenessScore={completenessScore}
+            isRefreshing={isRefreshing}
+            isMutating={isMutating}
+            onRefresh={refreshProfile}
+          />
 
-          {/* Row 2: Skills & Capabilities (Spans 3 cols) */}
-          <div className="lg:col-span-3">
-            <ProfileSkillsCard
-              coreSkills={coreSkills}
-              supportingSkills={supportingSkills}
-              toolSkills={toolSkills}
-              suppressedSkills={suppressedSkills}
-              isMutating={isMutating}
-              onAddSkill={(skill, cat) => addSkill(skill, cat)}
-              onSuppressSkill={(skill) => suppressSkill(skill)}
-              onRestoreSkill={(skill) => restoreSkill(skill)}
-              onConfirmSkill={handleConfirmSkill}
-              onManage={() => setActiveModal("skills")}
-            />
-          </div>
+          {/* Sticky Navigation Bar across Desktop & Mobile (min 44px touch targets) */}
+          <nav
+            aria-label="Profile Sections"
+            className="sticky top-0 z-20 bg-card/95 backdrop-blur-xs border-y border-border/80 px-4 sm:px-6 py-2 flex items-center gap-2 overflow-x-auto no-scrollbar"
+          >
+            <a
+              href="#section-preferences"
+              className="min-h-[44px] h-11 px-3.5 rounded-sm border border-border/70 bg-secondary/50 hover:bg-secondary text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-2 whitespace-nowrap transition-colors"
+            >
+              <Target className="w-3.5 h-3.5 text-primary" />
+              <span>Target & Preferences</span>
+            </a>
+            <a
+              href="#section-resume"
+              className="min-h-[44px] h-11 px-3.5 rounded-sm border border-border/70 bg-secondary/50 hover:bg-secondary text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-2 whitespace-nowrap transition-colors"
+            >
+              <FileText className="w-3.5 h-3.5 text-primary" />
+              <span>Resume & Walrus</span>
+            </a>
+            <a
+              href="#section-skills"
+              className="min-h-[44px] h-11 px-3.5 rounded-sm border border-border/70 bg-secondary/50 hover:bg-secondary text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-2 whitespace-nowrap transition-colors"
+            >
+              <Code className="w-3.5 h-3.5 text-primary" />
+              <span>Skills Inventory</span>
+            </a>
+            <a
+              href="#section-background"
+              className="min-h-[44px] h-11 px-3.5 rounded-sm border border-border/70 bg-secondary/50 hover:bg-secondary text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-2 whitespace-nowrap transition-colors"
+            >
+              <GraduationCap className="w-3.5 h-3.5 text-primary" />
+              <span>Work & Background</span>
+            </a>
+          </nav>
 
-          {/* Row 3: Career Background (Spans 3 cols) */}
-          <div className="lg:col-span-3">
-            <ProfileBackgroundCard
-              background={profile.background}
-              onEdit={() => setActiveModal("background")}
-            />
+          {/* Document Sections with clean continuous divider lines */}
+          <div className="divide-y divide-border/80">
+            {/* Section 1: Career Goals & Work Preferences */}
+            <section id="section-preferences" className="scroll-mt-14">
+              <ProfileTargetPreferencesCard
+                careerIntent={profile.careerIntent}
+                preferences={profile.preferences}
+                constraints={profile.constraints}
+                primaryRole={primaryRole}
+                secondaryRoles={secondaryRoles}
+                onEditIntent={() => setActiveModal("intent")}
+                onEditPreferences={() => setActiveModal("preferences")}
+                className="p-5 sm:p-7 space-y-6"
+              />
+            </section>
+
+            {/* Section 2: Resume & Document Source */}
+            <section id="section-resume" className="scroll-mt-14">
+              <ProfileResumeCard
+                resumeId={profile.resumeId}
+                expectedVersion={profile.profileVersion}
+                onProfileUpdated={refreshProfile}
+                className="p-5 sm:p-7 space-y-4"
+              />
+            </section>
+
+            {/* Section 3: Skills & Capabilities */}
+            <section id="section-skills" className="scroll-mt-14">
+              <ProfileSkillsCard
+                coreSkills={coreSkills}
+                supportingSkills={supportingSkills}
+                toolSkills={toolSkills}
+                suppressedSkills={suppressedSkills}
+                isMutating={isMutating}
+                onAddSkill={(skill, cat) => addSkill(skill, cat)}
+                onSuppressSkill={(skill) => suppressSkill(skill)}
+                onRestoreSkill={(skill) => restoreSkill(skill)}
+                onConfirmSkill={handleConfirmSkill}
+                onManage={() => setActiveModal("skills")}
+                className="p-5 sm:p-7 space-y-6"
+              />
+            </section>
+
+            {/* Section 4: Career Background & Education */}
+            <section id="section-background" className="scroll-mt-14">
+              <ProfileBackgroundCard
+                background={profile.background}
+                onEdit={() => setActiveModal("background")}
+                className="p-5 sm:p-7 space-y-6"
+              />
+            </section>
           </div>
         </div>
 

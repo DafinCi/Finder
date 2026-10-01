@@ -109,8 +109,6 @@ export default function AgentInfoDrawer({
               name={currentAgentName}
               seed={sessionId}
               size="xl"
-              showStatusIndicator
-              indicatorStatus="online"
               className="shadow-sm"
             />
 

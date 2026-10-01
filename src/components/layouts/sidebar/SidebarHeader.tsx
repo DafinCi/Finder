@@ -16,9 +16,9 @@ export default function SidebarHeader({ collapsed }: { collapsed: boolean }) {
   return (
     <div className="h-16 flex items-center justify-between border-b border-border/60 px-4 shrink-0">
       <Link href="/" className="flex items-center gap-2.5 group">
-        <Logo size={30} alt="" />
+        <Logo size={42} alt="" />
         <div className="flex flex-col leading-none">
-          <span className="text-[20px] font-heading font-bold tracking-tight text-foreground">
+          <span className="text-[24px] font-heading tracking-tight text-foreground -translate-x-2">
             Finder
           </span>
         </div>

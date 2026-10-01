@@ -11,6 +11,8 @@ import {
   Loader2,
   Calendar,
   ExternalLink,
+  Edit3,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -52,21 +54,52 @@ export function EditBackgroundDialog({
   const [expIsCurrent, setExpIsCurrent] = useState(false);
   const [expSummary, setExpSummary] = useState("");
   const [expTech, setExpTech] = useState("");
+  const [editingExpId, setEditingExpId] = useState<string | null>(null);
 
   // Education form state
   const [eduInstitution, setEduInstitution] = useState("");
   const [eduDegree, setEduDegree] = useState("");
   const [eduField, setEduField] = useState("");
   const [eduYear, setEduYear] = useState<string>("");
+  const [editingEduId, setEditingEduId] = useState<string | null>(null);
 
   // Project form state
   const [projTitle, setProjTitle] = useState("");
   const [projDesc, setProjDesc] = useState("");
   const [projTech, setProjTech] = useState("");
   const [projUrl, setProjUrl] = useState("");
+  const [editingProjId, setEditingProjId] = useState<string | null>(null);
 
   const [isSaving, setIsSaving] = useState(false);
   const modalRef = useRef<HTMLDivElement | null>(null);
+  const triggerElementRef = useRef<HTMLElement | null>(null);
+
+  const resetExpForm = () => {
+    setExpCompany("");
+    setExpRole("");
+    setExpStartDate("");
+    setExpEndDate("");
+    setExpIsCurrent(false);
+    setExpSummary("");
+    setExpTech("");
+    setEditingExpId(null);
+  };
+
+  const resetEduForm = () => {
+    setEduInstitution("");
+    setEduDegree("");
+    setEduField("");
+    setEduYear("");
+    setEditingEduId(null);
+  };
+
+  const resetProjForm = () => {
+    setProjTitle("");
+    setProjDesc("");
+    setProjTech("");
+    setProjUrl("");
+    setEditingProjId(null);
+  };
 
   // Sync state on open
   useEffect(() => {
@@ -75,150 +108,278 @@ export function EditBackgroundDialog({
       setEducationList(background?.education || []);
       setProjectList(background?.projects || []);
 
-      // Reset sub-forms
-      setExpCompany("");
-      setExpRole("");
-      setExpStartDate("");
-      setExpEndDate("");
-      setExpIsCurrent(false);
-      setExpSummary("");
-      setExpTech("");
-
-      setEduInstitution("");
-      setEduDegree("");
-      setEduField("");
-      setEduYear("");
-
-      setProjTitle("");
-      setProjDesc("");
-      setProjTech("");
-      setProjUrl("");
+      resetExpForm();
+      resetEduForm();
+      resetProjForm();
     }
   }, [isOpen, background]);
 
-  // Handle ESC key
+  // Focus trap, autofocus, and ESC key
   useEffect(() => {
     if (!isOpen) return;
+    triggerElementRef.current = document.activeElement as HTMLElement | null;
+
+    const focusTimer = setTimeout(() => {
+      if (modalRef.current) {
+        const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        );
+        if (focusable.length > 0) {
+          focusable[0].focus();
+        }
+      }
+    }, 50);
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && !isSaving) {
+        e.stopPropagation();
         onClose();
+        return;
+      }
+
+      if (e.key === "Tab" && modalRef.current) {
+        const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => {
+      clearTimeout(focusTimer);
+      window.removeEventListener("keydown", handleKeyDown, true);
+      triggerElementRef.current?.focus();
+    };
   }, [isOpen, isSaving, onClose]);
 
   if (!isOpen) return null;
 
-  // Add Experience
-  const handleAddExperience = (e: React.FormEvent) => {
+  // Experience Handlers
+  const handleStartEditExperience = (exp: WorkExperienceEvidence) => {
+    setExpCompany(exp.company_name);
+    setExpRole(exp.role_title);
+    setExpStartDate(exp.start_date || "");
+    setExpEndDate(exp.end_date || "");
+    setExpIsCurrent(Boolean(exp.is_current));
+    setExpSummary(exp.description_summary || "");
+    setExpTech(exp.technologies_used?.join(", ") || "");
+    setEditingExpId(exp.id);
+  };
+
+  const handleSaveExperience = (e: React.FormEvent) => {
     e.preventDefault();
     if (!expCompany.trim() || !expRole.trim()) {
       toast.warning("Company name and job title are required.");
       return;
     }
 
-    const newExp: WorkExperienceEvidence = {
-      id: `exp-${Date.now()}`,
-      company_name: expCompany.trim(),
-      role_title: expRole.trim(),
-      start_date: expStartDate.trim() || null,
-      end_date: expIsCurrent ? null : expEndDate.trim() || null,
-      is_current: expIsCurrent,
-      description_summary: expSummary.trim(),
-      technologies_used: expTech
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean),
-      provenance: {
-        source: "user_explicit",
-        confidence: 1.0,
-        updated_at: new Date().toISOString(),
-      },
-    };
+    if (editingExpId) {
+      setExperienceList((prev) =>
+        prev.map((item) =>
+          item.id === editingExpId
+            ? {
+                ...item,
+                company_name: expCompany.trim(),
+                role_title: expRole.trim(),
+                start_date: expStartDate.trim() || null,
+                end_date: expIsCurrent ? null : expEndDate.trim() || null,
+                is_current: expIsCurrent,
+                description_summary: expSummary.trim(),
+                technologies_used: expTech
+                  .split(",")
+                  .map((t) => t.trim())
+                  .filter(Boolean),
+                provenance: {
+                  source: "user_explicit",
+                  confidence: 1.0,
+                  updated_at: new Date().toISOString(),
+                },
+              }
+            : item,
+        ),
+      );
+      toast.success("Work experience updated.");
+      resetExpForm();
+    } else {
+      const newExp: WorkExperienceEvidence = {
+        id: `exp-${Date.now()}`,
+        company_name: expCompany.trim(),
+        role_title: expRole.trim(),
+        start_date: expStartDate.trim() || null,
+        end_date: expIsCurrent ? null : expEndDate.trim() || null,
+        is_current: expIsCurrent,
+        description_summary: expSummary.trim(),
+        technologies_used: expTech
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean),
+        provenance: {
+          source: "user_explicit",
+          confidence: 1.0,
+          updated_at: new Date().toISOString(),
+        },
+      };
 
-    setExperienceList((prev) => [newExp, ...prev]);
-    setExpCompany("");
-    setExpRole("");
-    setExpStartDate("");
-    setExpEndDate("");
-    setExpIsCurrent(false);
-    setExpSummary("");
-    setExpTech("");
-    toast.success("Work experience added to list.");
+      setExperienceList((prev) => [newExp, ...prev]);
+      toast.success("Work experience added to list.");
+      resetExpForm();
+    }
   };
 
   const handleRemoveExperience = (id: string) => {
     setExperienceList((prev) => prev.filter((item) => item.id !== id));
+    if (editingExpId === id) {
+      resetExpForm();
+    }
   };
 
-  // Add Education
-  const handleAddEducation = (e: React.FormEvent) => {
+  // Education Handlers
+  const handleStartEditEducation = (edu: EducationEvidence) => {
+    setEduInstitution(edu.institution);
+    setEduDegree(edu.degree || "");
+    setEduField(edu.field_of_study || "");
+    setEduYear(edu.graduation_year ? String(edu.graduation_year) : "");
+    setEditingEduId(edu.id);
+  };
+
+  const handleSaveEducation = (e: React.FormEvent) => {
     e.preventDefault();
     if (!eduInstitution.trim()) {
       toast.warning("Institution name is required.");
       return;
     }
 
-    const newEdu: EducationEvidence = {
-      id: `edu-${Date.now()}`,
-      institution: eduInstitution.trim(),
-      degree: eduDegree.trim(),
-      field_of_study: eduField.trim(),
-      graduation_year: eduYear ? Number(eduYear) : null,
-      provenance: {
-        source: "user_explicit",
-        confidence: 1.0,
-        updated_at: new Date().toISOString(),
-      },
-    };
+    if (editingEduId) {
+      setEducationList((prev) =>
+        prev.map((item) =>
+          item.id === editingEduId
+            ? {
+                ...item,
+                institution: eduInstitution.trim(),
+                degree: eduDegree.trim(),
+                field_of_study: eduField.trim(),
+                graduation_year: eduYear ? Number(eduYear) : null,
+                provenance: {
+                  source: "user_explicit",
+                  confidence: 1.0,
+                  updated_at: new Date().toISOString(),
+                },
+              }
+            : item,
+        ),
+      );
+      toast.success("Education record updated.");
+      resetEduForm();
+    } else {
+      const newEdu: EducationEvidence = {
+        id: `edu-${Date.now()}`,
+        institution: eduInstitution.trim(),
+        degree: eduDegree.trim(),
+        field_of_study: eduField.trim(),
+        graduation_year: eduYear ? Number(eduYear) : null,
+        provenance: {
+          source: "user_explicit",
+          confidence: 1.0,
+          updated_at: new Date().toISOString(),
+        },
+      };
 
-    setEducationList((prev) => [newEdu, ...prev]);
-    setEduInstitution("");
-    setEduDegree("");
-    setEduField("");
-    setEduYear("");
-    toast.success("Education record added.");
+      setEducationList((prev) => [newEdu, ...prev]);
+      toast.success("Education record added.");
+      resetEduForm();
+    }
   };
 
   const handleRemoveEducation = (id: string) => {
     setEducationList((prev) => prev.filter((item) => item.id !== id));
+    if (editingEduId === id) {
+      resetEduForm();
+    }
   };
 
-  // Add Project
-  const handleAddProject = (e: React.FormEvent) => {
+  // Project Handlers
+  const handleStartEditProject = (proj: ProjectEvidence) => {
+    setProjTitle(proj.title);
+    setProjDesc(proj.description || "");
+    setProjTech(proj.technologies_used?.join(", ") || "");
+    setProjUrl(proj.url || "");
+    setEditingProjId(proj.id);
+  };
+
+  const handleSaveProject = (e: React.FormEvent) => {
     e.preventDefault();
     if (!projTitle.trim()) {
       toast.warning("Project title is required.");
       return;
     }
 
-    const newProj: ProjectEvidence = {
-      id: `proj-${Date.now()}`,
-      title: projTitle.trim(),
-      description: projDesc.trim(),
-      technologies_used: projTech
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean),
-      url: projUrl.trim() || undefined,
-      provenance: {
-        source: "user_explicit",
-        confidence: 1.0,
-        updated_at: new Date().toISOString(),
-      },
-    };
+    if (editingProjId) {
+      setProjectList((prev) =>
+        prev.map((item) =>
+          item.id === editingProjId
+            ? {
+                ...item,
+                title: projTitle.trim(),
+                description: projDesc.trim(),
+                technologies_used: projTech
+                  .split(",")
+                  .map((t) => t.trim())
+                  .filter(Boolean),
+                url: projUrl.trim() || undefined,
+                provenance: {
+                  source: "user_explicit",
+                  confidence: 1.0,
+                  updated_at: new Date().toISOString(),
+                },
+              }
+            : item,
+        ),
+      );
+      toast.success("Project updated.");
+      resetProjForm();
+    } else {
+      const newProj: ProjectEvidence = {
+        id: `proj-${Date.now()}`,
+        title: projTitle.trim(),
+        description: projDesc.trim(),
+        technologies_used: projTech
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean),
+        url: projUrl.trim() || undefined,
+        provenance: {
+          source: "user_explicit",
+          confidence: 1.0,
+          updated_at: new Date().toISOString(),
+        },
+      };
 
-    setProjectList((prev) => [newProj, ...prev]);
-    setProjTitle("");
-    setProjDesc("");
-    setProjTech("");
-    setProjUrl("");
-    toast.success("Project added.");
+      setProjectList((prev) => [newProj, ...prev]);
+      toast.success("Project added.");
+      resetProjForm();
+    }
   };
 
   const handleRemoveProject = (id: string) => {
     setProjectList((prev) => prev.filter((item) => item.id !== id));
+    if (editingProjId === id) {
+      resetProjForm();
+    }
   };
 
   // Submit all background changes
@@ -248,12 +409,12 @@ export function EditBackgroundDialog({
     >
       <div
         ref={modalRef}
-        className="w-full max-w-2xl bg-card border border-border rounded-xl shadow-2xl flex flex-col h-[85vh] overflow-hidden animate-in zoom-in-95 duration-200"
+        className="w-full max-w-2xl bg-card border border-border rounded-sm shadow-2xl flex flex-col h-[85vh] overflow-hidden animate-in zoom-in-95 duration-200"
       >
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-border/80 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-primary/10 text-primary border border-primary/20">
+            <div className="p-2 rounded-sm bg-primary/10 text-primary border border-primary/20">
               <GraduationCap className="w-4 h-4" />
             </div>
             <div>
@@ -273,7 +434,7 @@ export function EditBackgroundDialog({
             onClick={onClose}
             disabled={isSaving}
             aria-label="Close background dialog"
-            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary focus-visible:ring-2 focus-visible:ring-primary transition-colors cursor-pointer"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-sm text-muted-foreground hover:text-foreground hover:bg-secondary focus-visible:ring-2 focus-visible:ring-primary transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -327,13 +488,29 @@ export function EditBackgroundDialog({
           {activeTab === "experience" && (
             <div className="space-y-6">
               <form
-                onSubmit={handleAddExperience}
-                className="p-4 rounded-xl bg-secondary/20 border border-border/80 space-y-3"
+                onSubmit={handleSaveExperience}
+                className="p-4 rounded-sm bg-secondary/20 border border-border/80 space-y-3"
               >
-                <h3 className="text-xs font-bold text-foreground flex items-center gap-1">
-                  <Plus className="w-3.5 h-3.5 text-primary" />
-                  Add Work Experience
-                </h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold text-foreground flex items-center gap-1">
+                    {editingExpId ? (
+                      <>
+                        <Edit3 className="w-3.5 h-3.5 text-primary" />
+                        <span>Edit Work Experience</span>
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-3.5 h-3.5 text-primary" />
+                        <span>Add Work Experience</span>
+                      </>
+                    )}
+                  </h3>
+                  {editingExpId && (
+                    <span className="text-[10px] text-primary font-semibold">
+                      Editing active item
+                    </span>
+                  )}
+                </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <input
@@ -341,14 +518,14 @@ export function EditBackgroundDialog({
                     value={expCompany}
                     onChange={(e) => setExpCompany(e.target.value)}
                     placeholder="Company Name *"
-                    className="bg-card border border-border rounded-md px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    className="bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   />
                   <input
                     type="text"
                     value={expRole}
                     onChange={(e) => setExpRole(e.target.value)}
                     placeholder="Job Title / Role *"
-                    className="bg-card border border-border rounded-md px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    className="bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   />
                 </div>
 
@@ -358,7 +535,7 @@ export function EditBackgroundDialog({
                     value={expStartDate}
                     onChange={(e) => setExpStartDate(e.target.value)}
                     placeholder="Start Date (e.g. Jan 2023)"
-                    className="bg-card border border-border rounded-md px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    className="bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   />
                   <input
                     type="text"
@@ -370,7 +547,7 @@ export function EditBackgroundDialog({
                         ? "Present"
                         : "End Date (e.g. Dec 2024)"
                     }
-                    className="bg-card border border-border rounded-md px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
+                    className="bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
                   />
                 </div>
 
@@ -392,7 +569,7 @@ export function EditBackgroundDialog({
                   onChange={(e) => setExpSummary(e.target.value)}
                   placeholder="Key responsibilities and achievements..."
                   rows={2}
-                  className="w-full bg-card border border-border rounded-md px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary resize-none"
+                  className="w-full bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary resize-none"
                 />
 
                 <input
@@ -400,17 +577,39 @@ export function EditBackgroundDialog({
                   value={expTech}
                   onChange={(e) => setExpTech(e.target.value)}
                   placeholder="Technologies used (comma-separated: React, TypeScript, Docker)..."
-                  className="w-full bg-card border border-border rounded-md px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  className="w-full bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 />
 
-                <Button
-                  type="submit"
-                  size="sm"
-                  className="min-h-[44px] h-11 px-4 text-xs font-semibold gap-1"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add Experience</span>
-                </Button>
+                {editingExpId ? (
+                  <div className="flex items-center gap-2 pt-1">
+                    <Button
+                      type="submit"
+                      size="sm"
+                      className="min-h-[44px] h-11 px-4 text-xs font-semibold gap-1 rounded-sm"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Update Experience</span>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={resetExpForm}
+                      className="min-h-[44px] h-11 px-4 text-xs font-medium rounded-sm"
+                    >
+                      <span>Cancel Edit</span>
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    type="submit"
+                    size="sm"
+                    className="min-h-[44px] h-11 px-4 text-xs font-semibold gap-1 rounded-sm"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Experience</span>
+                  </Button>
+                )}
               </form>
 
               {/* Saved Work Experience List */}
@@ -423,7 +622,7 @@ export function EditBackgroundDialog({
                   experienceList.map((exp) => (
                     <div
                       key={exp.id}
-                      className="p-3.5 rounded-lg border border-border bg-card/60 flex items-start justify-between gap-3"
+                      className="p-3.5 rounded-sm border border-border bg-card/60 flex items-start justify-between gap-3"
                     >
                       <div className="space-y-1">
                         <h4 className="text-xs font-bold text-foreground">
@@ -444,15 +643,26 @@ export function EditBackgroundDialog({
                         )}
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveExperience(exp.id)}
-                        className="min-h-[36px] min-w-[36px] flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
-                        title="Remove this experience"
-                        aria-label="Remove this experience"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleStartEditExperience(exp)}
+                          className="min-h-[36px] min-w-[36px] flex items-center justify-center rounded-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors cursor-pointer"
+                          title="Edit this experience"
+                          aria-label="Edit this experience"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveExperience(exp.id)}
+                          className="min-h-[36px] min-w-[36px] flex items-center justify-center rounded-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                          title="Remove this experience"
+                          aria-label="Remove this experience"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   ))
                 ) : (
@@ -468,20 +678,36 @@ export function EditBackgroundDialog({
           {activeTab === "education" && (
             <div className="space-y-6">
               <form
-                onSubmit={handleAddEducation}
-                className="p-4 rounded-xl bg-secondary/20 border border-border/80 space-y-3"
+                onSubmit={handleSaveEducation}
+                className="p-4 rounded-sm bg-secondary/20 border border-border/80 space-y-3"
               >
-                <h3 className="text-xs font-bold text-foreground flex items-center gap-1">
-                  <Plus className="w-3.5 h-3.5 text-primary" />
-                  Add Education Record
-                </h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold text-foreground flex items-center gap-1">
+                    {editingEduId ? (
+                      <>
+                        <Edit3 className="w-3.5 h-3.5 text-primary" />
+                        <span>Edit Education Record</span>
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-3.5 h-3.5 text-primary" />
+                        <span>Add Education Record</span>
+                      </>
+                    )}
+                  </h3>
+                  {editingEduId && (
+                    <span className="text-[10px] text-primary font-semibold">
+                      Editing active item
+                    </span>
+                  )}
+                </div>
 
                 <input
                   type="text"
                   value={eduInstitution}
                   onChange={(e) => setEduInstitution(e.target.value)}
                   placeholder="Institution or University *"
-                  className="w-full bg-card border border-border rounded-md px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  className="w-full bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 />
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -490,32 +716,54 @@ export function EditBackgroundDialog({
                     value={eduDegree}
                     onChange={(e) => setEduDegree(e.target.value)}
                     placeholder="Degree (e.g. Bachelor's, Master's)"
-                    className="bg-card border border-border rounded-md px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    className="bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   />
                   <input
                     type="text"
                     value={eduField}
                     onChange={(e) => setEduField(e.target.value)}
                     placeholder="Field of Study / Major"
-                    className="bg-card border border-border rounded-md px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    className="bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   />
                   <input
                     type="number"
                     value={eduYear}
                     onChange={(e) => setEduYear(e.target.value)}
                     placeholder="Graduation Year (e.g. 2024)"
-                    className="bg-card border border-border rounded-md px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    className="bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   />
                 </div>
 
-                <Button
-                  type="submit"
-                  size="sm"
-                  className="min-h-[44px] h-11 px-4 text-xs font-semibold gap-1"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add Education</span>
-                </Button>
+                {editingEduId ? (
+                  <div className="flex items-center gap-2 pt-1">
+                    <Button
+                      type="submit"
+                      size="sm"
+                      className="min-h-[44px] h-11 px-4 text-xs font-semibold gap-1 rounded-sm"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Update Education</span>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={resetEduForm}
+                      className="min-h-[44px] h-11 px-4 text-xs font-medium rounded-sm"
+                    >
+                      <span>Cancel Edit</span>
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    type="submit"
+                    size="sm"
+                    className="min-h-[44px] h-11 px-4 text-xs font-semibold gap-1 rounded-sm"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Education</span>
+                  </Button>
+                )}
               </form>
 
               {/* Saved Education History */}
@@ -528,7 +776,7 @@ export function EditBackgroundDialog({
                   educationList.map((edu) => (
                     <div
                       key={edu.id}
-                      className="p-3.5 rounded-lg border border-border bg-card/60 flex items-start justify-between gap-3"
+                      className="p-3.5 rounded-sm border border-border bg-card/60 flex items-start justify-between gap-3"
                     >
                       <div className="space-y-0.5">
                         <h4 className="text-xs font-bold text-foreground">
@@ -545,15 +793,26 @@ export function EditBackgroundDialog({
                         )}
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveEducation(edu.id)}
-                        className="min-h-[36px] min-w-[36px] flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
-                        title="Remove this education"
-                        aria-label="Remove this education"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleStartEditEducation(edu)}
+                          className="min-h-[36px] min-w-[36px] flex items-center justify-center rounded-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors cursor-pointer"
+                          title="Edit this education"
+                          aria-label="Edit this education"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveEducation(edu.id)}
+                          className="min-h-[36px] min-w-[36px] flex items-center justify-center rounded-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                          title="Remove this education"
+                          aria-label="Remove this education"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   ))
                 ) : (
@@ -569,20 +828,36 @@ export function EditBackgroundDialog({
           {activeTab === "projects" && (
             <div className="space-y-6">
               <form
-                onSubmit={handleAddProject}
-                className="p-4 rounded-xl bg-secondary/20 border border-border/80 space-y-3"
+                onSubmit={handleSaveProject}
+                className="p-4 rounded-sm bg-secondary/20 border border-border/80 space-y-3"
               >
-                <h3 className="text-xs font-bold text-foreground flex items-center gap-1">
-                  <Plus className="w-3.5 h-3.5 text-primary" />
-                  Add Project
-                </h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold text-foreground flex items-center gap-1">
+                    {editingProjId ? (
+                      <>
+                        <Edit3 className="w-3.5 h-3.5 text-primary" />
+                        <span>Edit Project</span>
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-3.5 h-3.5 text-primary" />
+                        <span>Add Project</span>
+                      </>
+                    )}
+                  </h3>
+                  {editingProjId && (
+                    <span className="text-[10px] text-primary font-semibold">
+                      Editing active item
+                    </span>
+                  )}
+                </div>
 
                 <input
                   type="text"
                   value={projTitle}
                   onChange={(e) => setProjTitle(e.target.value)}
                   placeholder="Project Title *"
-                  className="w-full bg-card border border-border rounded-md px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  className="w-full bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 />
 
                 <textarea
@@ -590,7 +865,7 @@ export function EditBackgroundDialog({
                   onChange={(e) => setProjDesc(e.target.value)}
                   placeholder="Brief description of the project..."
                   rows={2}
-                  className="w-full bg-card border border-border rounded-md px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary resize-none"
+                  className="w-full bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary resize-none"
                 />
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -599,25 +874,47 @@ export function EditBackgroundDialog({
                     value={projTech}
                     onChange={(e) => setProjTech(e.target.value)}
                     placeholder="Technologies (e.g. Next.js, PostgreSQL)"
-                    className="bg-card border border-border rounded-md px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    className="bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   />
                   <input
                     type="text"
                     value={projUrl}
                     onChange={(e) => setProjUrl(e.target.value)}
                     placeholder="Project URL (e.g. https://...)"
-                    className="bg-card border border-border rounded-md px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    className="bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   />
                 </div>
 
-                <Button
-                  type="submit"
-                  size="sm"
-                  className="min-h-[44px] h-11 px-4 text-xs font-semibold gap-1"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add Project</span>
-                </Button>
+                {editingProjId ? (
+                  <div className="flex items-center gap-2 pt-1">
+                    <Button
+                      type="submit"
+                      size="sm"
+                      className="min-h-[44px] h-11 px-4 text-xs font-semibold gap-1 rounded-sm"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Update Project</span>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={resetProjForm}
+                      className="min-h-[44px] h-11 px-4 text-xs font-medium rounded-sm"
+                    >
+                      <span>Cancel Edit</span>
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    type="submit"
+                    size="sm"
+                    className="min-h-[44px] h-11 px-4 text-xs font-semibold gap-1 rounded-sm"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Project</span>
+                  </Button>
+                )}
               </form>
 
               {/* Saved Projects List */}
@@ -630,7 +927,7 @@ export function EditBackgroundDialog({
                   projectList.map((proj) => (
                     <div
                       key={proj.id}
-                      className="p-3.5 rounded-lg border border-border bg-card/60 flex items-start justify-between gap-3"
+                      className="p-3.5 rounded-sm border border-border bg-card/60 flex items-start justify-between gap-3"
                     >
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
@@ -656,15 +953,26 @@ export function EditBackgroundDialog({
                         )}
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveProject(proj.id)}
-                        className="min-h-[36px] min-w-[36px] flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
-                        title="Remove this project"
-                        aria-label="Remove this project"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleStartEditProject(proj)}
+                          className="min-h-[36px] min-w-[36px] flex items-center justify-center rounded-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors cursor-pointer"
+                          title="Edit this project"
+                          aria-label="Edit this project"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveProject(proj.id)}
+                          className="min-h-[36px] min-w-[36px] flex items-center justify-center rounded-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                          title="Remove this project"
+                          aria-label="Remove this project"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   ))
                 ) : (
@@ -684,7 +992,7 @@ export function EditBackgroundDialog({
             variant="outline"
             onClick={onClose}
             disabled={isSaving}
-            className="min-h-[44px] h-11 px-4 text-xs font-medium"
+            className="min-h-[44px] h-11 px-4 text-xs font-medium rounded-sm"
           >
             Cancel
           </Button>
@@ -693,7 +1001,7 @@ export function EditBackgroundDialog({
             type="button"
             onClick={handleSubmit}
             disabled={isSaving}
-            className="min-h-[44px] h-11 px-5 text-xs font-semibold gap-1.5"
+            className="min-h-[44px] h-11 px-5 text-xs font-semibold gap-1.5 rounded-sm"
           >
             {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
             <span>Save Career Background</span>

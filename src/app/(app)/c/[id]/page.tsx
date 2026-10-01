@@ -79,8 +79,8 @@ export default function ChatSessionPage({
               name={currentAgentName}
               seed={id}
               size="md"
-              showStatusIndicator
-              indicatorStatus={isLoading ? "typing" : "online"}
+              showStatusIndicator={isLoading}
+              indicatorStatus="typing"
             />
             <div className="flex flex-col min-w-0">
               <span className="text-sm sm:text-base font-semibold text-foreground truncate leading-tight">

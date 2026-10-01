@@ -50,25 +50,36 @@ export default function ChatTimeline({
       role="log"
       aria-live="polite"
       aria-busy={isLoading}
-      className="w-full max-w-4xl lg:max-w-5xl mx-auto px-4 py-6 space-y-4"
+      className="w-full max-w-4xl lg:max-w-5xl mx-auto px-4 py-4 sm:py-6"
     >
-      {messages.map((message) => (
-        <ChatMessageItem
-          key={message.id}
-          message={message}
-          onAskAboutJob={onAskAboutJob}
-        />
-      ))}
+      {messages.map((message, index) => {
+        const prev = messages[index - 1];
+        const next = messages[index + 1];
+        const isFirstInGroup = !prev || prev.role !== message.role;
+        const isLastInGroup = !next || next.role !== message.role;
+
+        return (
+          <ChatMessageItem
+            key={message.id}
+            message={message}
+            onAskAboutJob={onAskAboutJob}
+            isFirstInGroup={isFirstInGroup}
+            isLastInGroup={isLastInGroup}
+          />
+        );
+      })}
 
       {isLoading && thinkingStatus ? (
-        <ChatThinking statusText={thinkingStatus} />
+        <div className="mt-4">
+          <ChatThinking statusText={thinkingStatus} />
+        </div>
       ) : null}
 
       {error && (
         <div
           role="alert"
           aria-live="polite"
-          className="border border-destructive/20 bg-destructive/10 rounded-sm p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs animate-in fade-in"
+          className="mt-4 border border-destructive/20 bg-destructive/10 rounded-sm p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs animate-in fade-in"
         >
           <div className="flex items-center gap-2 text-destructive font-medium">
             <AlertCircle className="w-4 h-4 shrink-0" />
