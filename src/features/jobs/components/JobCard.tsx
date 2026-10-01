@@ -4,7 +4,6 @@ import {
   Briefcase,
   Brain,
   ChevronRight,
-  AlertCircle,
   Bookmark,
   ThumbsDown,
   DollarSign,
@@ -99,7 +98,7 @@ export default function JobCard({
         </div>
 
         {/* Quick Save and Reject Actions */}
-        <div className="flex items-center gap-1.5 self-end sm:self-start">
+        <div className="flex items-center gap-2 self-end sm:self-start">
           {onToggleSave && (
             <button
               type="button"
@@ -109,7 +108,7 @@ export default function JobCard({
               }}
               title={isSaved ? "Remove from saved" : "Save job"}
               aria-label={isSaved ? "Remove from saved" : "Save job"}
-              className={`p-2 rounded-sm border transition-colors cursor-pointer ${
+              className={`h-11 w-11 sm:h-9 sm:w-9 flex items-center justify-center rounded-sm border transition-colors cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
                 isSaved
                   ? "bg-primary/10 border-primary text-primary"
                   : "bg-secondary/60 border-border/70 text-muted-foreground hover:text-foreground hover:bg-secondary"
@@ -130,7 +129,7 @@ export default function JobCard({
               }}
               title="Not interested"
               aria-label="Not interested in this role"
-              className="p-2 rounded-sm border border-border/70 bg-secondary/60 text-muted-foreground hover:text-slush-ember hover:border-slush-ember/40 hover:bg-slush-ember/10 transition-colors cursor-pointer"
+              className="h-11 w-11 sm:h-9 sm:w-9 flex items-center justify-center rounded-sm border border-border/70 bg-secondary/60 text-muted-foreground hover:text-slush-ember hover:border-slush-ember/40 hover:bg-slush-ember/10 transition-colors cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             >
               <ThumbsDown className="w-4 h-4" />
             </button>
@@ -156,62 +155,18 @@ export default function JobCard({
         )}
       </div>
 
-      {/* Score Breakdown Indicator (if available) */}
-      {scoreBreakdown && (
-        <div className="flex flex-wrap items-center gap-2 pt-1 pb-1">
-          <div className="flex items-center gap-1.5 text-xs bg-secondary/50 border border-border/70 px-2.5 py-0.5 rounded-sm text-muted-foreground">
-            <span>Role:</span>
-            <span className="font-semibold text-foreground">
-              {scoreBreakdown.role_score} / 100
-            </span>
+      {/* Fit Rationale Snippet */}
+      {reason && (
+        <div className="p-3 bg-secondary/40 border border-border/60 rounded-sm space-y-1 text-xs">
+          <div className="flex items-center gap-1.5 text-primary font-semibold text-[11px] uppercase tracking-wider">
+            <Brain className="w-3.5 h-3.5" />
+            <span>Why this matches you</span>
           </div>
-          <div className="flex items-center gap-1.5 text-xs bg-secondary/50 border border-border/70 px-2.5 py-0.5 rounded-sm text-muted-foreground">
-            <span>Skills:</span>
-            <span className="font-semibold text-foreground">
-              {scoreBreakdown.capability_score} / 100
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5 text-xs bg-secondary/50 border border-border/70 px-2.5 py-0.5 rounded-sm text-muted-foreground">
-            <span>Preferences:</span>
-            <span className="font-semibold text-foreground">
-              {scoreBreakdown.preference_score} / 100
-            </span>
-          </div>
-          {scoreBreakdown.negative_penalty > 0 && (
-            <div className="flex items-center gap-1 text-xs bg-slush-ember/10 border border-slush-ember/20 px-2.5 py-0.5 rounded-sm text-slush-ember font-medium">
-              <span>Penalty:</span>
-              <span>-{scoreBreakdown.negative_penalty} pts</span>
-            </div>
-          )}
+          <p className="line-clamp-2 leading-relaxed text-muted-foreground font-sans">
+            {reason}
+          </p>
         </div>
       )}
-
-      {/* Fit Rationale Box */}
-      <div className="p-3.5 bg-secondary/40 border border-border/60 rounded-sm space-y-1.5 text-xs">
-        <div className="flex items-center gap-1.5 text-primary font-semibold">
-          <Brain className="w-3.5 h-3.5" />
-          <span>Why this job fits</span>
-        </div>
-        <p className="leading-relaxed text-muted-foreground font-sans">
-          {reason || "Strong alignment with your profile and career direction."}
-        </p>
-
-        {missingSkills && missingSkills.length > 0 && (
-          <div className="pt-2 border-t border-border/40 mt-1.5 flex items-start gap-1.5 text-xs text-slush-yellow leading-relaxed">
-            <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-            <div>
-              <span className="font-semibold text-slush-yellow">
-                Skills not yet found in profile:
-              </span>{" "}
-              Consider highlighting or developing{" "}
-              <span className="font-semibold text-foreground">
-                {missingSkills.join(", ")}
-              </span>
-              .
-            </div>
-          </div>
-        )}
-      </div>
 
       {/* Bottom Footer Action */}
       <div className="flex items-center justify-between pt-1">
@@ -219,7 +174,7 @@ export default function JobCard({
           type="button"
           onClick={() => onSelect(match)}
           aria-label={`View details for ${title} at ${companyName}`}
-          className="w-full sm:w-auto min-h-[36px] flex items-center justify-center gap-1.5 px-4 py-2 border border-border/80 bg-secondary/60 hover:bg-primary hover:border-primary hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm text-xs font-semibold transition-all cursor-pointer shadow-2xs ml-auto"
+          className="w-full sm:w-auto min-h-[44px] sm:min-h-[38px] flex items-center justify-center gap-1.5 px-4 py-2 border border-border/80 bg-secondary/60 hover:bg-primary hover:border-primary hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm text-xs font-semibold transition-all cursor-pointer shadow-2xs ml-auto"
         >
           <span>View Details & Breakdown</span>
           <ChevronRight className="w-3.5 h-3.5 ml-0.5" />

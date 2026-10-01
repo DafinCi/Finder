@@ -25,7 +25,7 @@ export default function MobileBottomNav() {
         <Link
           href="/c"
           aria-current={isHomeActive ? "page" : undefined}
-          className={`flex flex-col items-center justify-center gap-1 min-h-[44px] rounded-xl transition-colors cursor-pointer ${
+          className={`flex flex-col items-center justify-center gap-1 min-h-[44px] rounded-sm transition-colors cursor-pointer ${
             isHomeActive
               ? "text-slush-lavender font-semibold"
               : "text-muted-foreground hover:text-foreground"
@@ -43,7 +43,7 @@ export default function MobileBottomNav() {
             collapsed ? "Open chat conversations" : "Close chat conversations"
           }
           aria-expanded={!collapsed}
-          className={`flex flex-col items-center justify-center gap-1 min-h-[44px] rounded-xl transition-colors cursor-pointer ${
+          className={`flex flex-col items-center justify-center gap-1 min-h-[44px] rounded-sm transition-colors cursor-pointer ${
             isChatsActive
               ? "text-slush-lavender font-semibold"
               : "text-muted-foreground hover:text-foreground"
@@ -57,7 +57,7 @@ export default function MobileBottomNav() {
         <Link
           href="/jobs"
           aria-current={isJobsActive ? "page" : undefined}
-          className={`flex flex-col items-center justify-center gap-1 min-h-[44px] rounded-xl transition-colors cursor-pointer ${
+          className={`flex flex-col items-center justify-center gap-1 min-h-[44px] rounded-sm transition-colors cursor-pointer ${
             isJobsActive
               ? "text-slush-lavender font-semibold"
               : "text-muted-foreground hover:text-foreground"
@@ -71,7 +71,7 @@ export default function MobileBottomNav() {
         <Link
           href="/profile"
           aria-current={isProfileActive ? "page" : undefined}
-          className={`flex flex-col items-center justify-center gap-1 min-h-[44px] rounded-xl transition-colors cursor-pointer ${
+          className={`flex flex-col items-center justify-center gap-1 min-h-[44px] rounded-sm transition-colors cursor-pointer ${
             isProfileActive
               ? "text-slush-lavender font-semibold"
               : "text-muted-foreground hover:text-foreground"
