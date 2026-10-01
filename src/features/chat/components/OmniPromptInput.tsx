@@ -198,7 +198,7 @@ export default function OmniPromptInput({
             placeholder={placeholder}
             rows={1}
             maxLength={MAX_PROMPT_CHARS}
-            disabled={isLoading}
+            readOnly={isLoading}
             aria-label="Message"
             className="flex-1 resize-none bg-transparent text-xs sm:text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none leading-relaxed py-2 px-1 min-h-[36px] max-h-[140px] overflow-y-auto custom-scrollbar"
           />
