@@ -50,25 +50,36 @@ export default function ChatTimeline({
       role="log"
       aria-live="polite"
       aria-busy={isLoading}
-      className="w-full max-w-3xl mx-auto px-4 py-6 space-y-4"
+      className="w-full max-w-4xl lg:max-w-5xl mx-auto px-4 py-4 sm:py-6"
     >
-      {messages.map((message) => (
-        <ChatMessageItem
-          key={message.id}
-          message={message}
-          onAskAboutJob={onAskAboutJob}
-        />
-      ))}
+      {messages.map((message, index) => {
+        const prev = messages[index - 1];
+        const next = messages[index + 1];
+        const isFirstInGroup = !prev || prev.role !== message.role;
+        const isLastInGroup = !next || next.role !== message.role;
+
+        return (
+          <ChatMessageItem
+            key={message.id}
+            message={message}
+            onAskAboutJob={onAskAboutJob}
+            isFirstInGroup={isFirstInGroup}
+            isLastInGroup={isLastInGroup}
+          />
+        );
+      })}
 
       {isLoading && thinkingStatus ? (
-        <ChatThinking statusText={thinkingStatus} />
+        <div className="mt-4">
+          <ChatThinking statusText={thinkingStatus} />
+        </div>
       ) : null}
 
       {error && (
         <div
           role="alert"
           aria-live="polite"
-          className="border border-destructive/20 bg-destructive/10 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs animate-in fade-in"
+          className="mt-4 border border-destructive/20 bg-destructive/10 rounded-sm p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs animate-in fade-in"
         >
           <div className="flex items-center gap-2 text-destructive font-medium">
             <AlertCircle className="w-4 h-4 shrink-0" />
@@ -78,7 +89,7 @@ export default function ChatTimeline({
             <button
               type="button"
               onClick={onRetry}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-destructive/15 text-destructive hover:bg-destructive/25 font-semibold transition-colors cursor-pointer w-fit"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-sm bg-destructive/15 text-destructive hover:bg-destructive/25 font-semibold transition-colors cursor-pointer w-fit"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Try again</span>
@@ -90,7 +101,7 @@ export default function ChatTimeline({
       {/* Bottom spacer ensures messages and actions clear the floating bottom omnibar */}
       <div
         ref={bottomRef}
-        className="h-36 sm:h-40 shrink-0"
+        className="h-28 md:h-24 shrink-0"
         aria-hidden="true"
       />
     </div>

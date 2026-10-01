@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { PanelLeftClose } from "lucide-react";
+import Logo from "@/components/common/Logo";
 import { useSidebar } from "@/contexts/SidebarContext";
 
 export default function SidebarHeader({ collapsed }: { collapsed: boolean }) {
@@ -13,15 +14,12 @@ export default function SidebarHeader({ collapsed }: { collapsed: boolean }) {
   }
 
   return (
-    <div className="h-14 flex items-center justify-between border-b border-border/60 px-4 shrink-0">
+    <div className="h-16 flex items-center justify-between border-b border-border/60 px-4 shrink-0">
       <Link href="/" className="flex items-center gap-2.5 group">
-        <div className="p-1.5 bg-primary text-primary-foreground rounded-lg shadow-xs transition-transform group-hover:scale-105"></div>
+        <Logo size={42} alt="" />
         <div className="flex flex-col leading-none">
-          <span className="text-[15px] font-heading font-bold tracking-tight text-foreground">
+          <span className="text-[24px] font-heading tracking-tight text-foreground -translate-x-2">
             Finder
-          </span>
-          <span className="text-[10px] text-muted-foreground tracking-widest mt-0.5 uppercase font-medium">
-            Career Copilot
           </span>
         </div>
       </Link>
@@ -31,7 +29,7 @@ export default function SidebarHeader({ collapsed }: { collapsed: boolean }) {
         onClick={toggleSidebar}
         title="Close sidebar"
         aria-label="Close sidebar"
-        className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-colors cursor-pointer"
+        className="p-1.5 rounded-sm text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-colors cursor-pointer md:hidden"
       >
         <PanelLeftClose className="w-4 h-4" />
       </button>

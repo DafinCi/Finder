@@ -16,22 +16,24 @@ import { BackgroundEvidence } from "../types/career-profile.types";
 interface ProfileBackgroundCardProps {
   background: BackgroundEvidence | undefined;
   onEdit: () => void;
+  className?: string;
 }
 
 export function ProfileBackgroundCard({
   background,
   onEdit,
+  className = "rounded-sm border border-border bg-card p-5 space-y-6 shadow-2xs",
 }: ProfileBackgroundCardProps) {
   const educationList = background?.education || [];
   const experienceList = background?.experience || [];
   const projectList = background?.projects || [];
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 space-y-6 shadow-2xs">
+    <div className={className}>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/80">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+          <div className="w-8 h-8 rounded-sm bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
             <GraduationCap className="w-4 h-4" />
           </div>
           <div>
@@ -49,7 +51,7 @@ export function ProfileBackgroundCard({
           variant="outline"
           size="sm"
           onClick={onEdit}
-          className="text-xs h-9 min-h-[36px] sm:h-8 gap-1.5 border-border hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-primary self-start sm:self-auto"
+          className="text-xs h-9 min-h-[36px] sm:h-8 gap-1.5 border-border hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-primary self-start sm:self-auto rounded-sm"
         >
           <Edit3 className="w-3.5 h-3.5 text-primary" />
           <span>Edit Background</span>
@@ -68,7 +70,7 @@ export function ProfileBackgroundCard({
             {experienceList.map((exp) => (
               <div
                 key={exp.id || `${exp.company_name}-${exp.role_title}`}
-                className="p-3.5 rounded-lg bg-secondary/30 border border-border/70 space-y-1.5"
+                className="p-3.5 rounded-sm bg-secondary/30 border border-border/70 space-y-1.5"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
@@ -97,7 +99,7 @@ export function ProfileBackgroundCard({
                     {exp.technologies_used.map((t) => (
                       <span
                         key={t}
-                        className="px-1.5 py-0.5 rounded bg-secondary text-[10px] text-foreground font-mono"
+                        className="px-1.5 py-0.5 rounded-sm bg-secondary text-[10px] text-foreground font-mono"
                       >
                         {t}
                       </span>
@@ -126,7 +128,7 @@ export function ProfileBackgroundCard({
             {educationList.map((edu) => (
               <div
                 key={edu.id || `${edu.institution}-${edu.degree}`}
-                className="p-3 rounded-lg bg-secondary/30 border border-border/70 space-y-1"
+                className="p-3 rounded-sm bg-secondary/30 border border-border/70 space-y-1"
               >
                 <h3 className="text-xs font-bold text-foreground">
                   {edu.institution}
@@ -162,7 +164,7 @@ export function ProfileBackgroundCard({
             {projectList.map((proj) => (
               <div
                 key={proj.id || proj.title}
-                className="p-3 rounded-lg bg-secondary/30 border border-border/70 space-y-1.5"
+                className="p-3 rounded-sm bg-secondary/30 border border-border/70 space-y-1.5"
               >
                 <div className="flex items-center justify-between gap-2">
                   <h3 className="text-xs font-bold text-foreground truncate">
@@ -193,7 +195,7 @@ export function ProfileBackgroundCard({
                       {proj.technologies_used.map((t) => (
                         <span
                           key={t}
-                          className="px-1.5 py-0.5 rounded bg-secondary text-[10px] text-foreground font-mono"
+                          className="px-1.5 py-0.5 rounded-sm bg-secondary text-[10px] text-foreground font-mono"
                         >
                           {t}
                         </span>

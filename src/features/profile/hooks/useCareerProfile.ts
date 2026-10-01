@@ -30,6 +30,7 @@ import {
 export interface UseCareerProfileResult {
   profile: CareerProfile | null;
   isLoading: boolean;
+  isRefreshing: boolean;
   isMutating: boolean;
   error: string | null;
 
@@ -81,13 +82,18 @@ export interface UseCareerProfileResult {
 export function useCareerProfile(): UseCareerProfileResult {
   const [profile, setProfile] = useState<CareerProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isMutating, setIsMutating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const refreshProfile =
     useCallback(async (): Promise<CareerProfile | null> => {
       try {
-        setIsLoading(true);
+        if (!profile) {
+          setIsLoading(true);
+        } else {
+          setIsRefreshing(true);
+        }
         setError(null);
         const data = await profileClientService.getProfile();
         setProfile(data);
@@ -98,8 +104,9 @@ export function useCareerProfile(): UseCareerProfileResult {
         return null;
       } finally {
         setIsLoading(false);
+        setIsRefreshing(false);
       }
-    }, []);
+    }, [profile]);
 
   useEffect(() => {
     let cancelled = false;
@@ -393,6 +400,7 @@ export function useCareerProfile(): UseCareerProfileResult {
   return {
     profile,
     isLoading,
+    isRefreshing,
     isMutating,
     error,
     primaryRole,

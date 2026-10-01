@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Sparkles, Menu, X, ArrowRight } from "lucide-react";
+import { Menu, X, ArrowRight } from "lucide-react";
 import { GithubIcon } from "@/components/common/GithubIcon";
+import Logo from "@/components/common/Logo";
 import { Button } from "@/components/ui/button";
 
 interface MarketingNavbarProps {
@@ -55,9 +56,7 @@ export default function MarketingNavbar({
             href="/"
             className="flex items-center gap-2.5 group focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary rounded-lg p-1"
           >
-            <div className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shadow-xs transition-transform group-hover:scale-105">
-              <Sparkles className="w-4 h-4 text-primary-foreground" />
-            </div>
+            <Logo size={32} alt="" />
             <div className="flex flex-col leading-none">
               <span className="text-base font-heading font-bold tracking-tight text-foreground">
                 Finder

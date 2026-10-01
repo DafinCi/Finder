@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { ChatSession } from "@/types/chat";
 import { GroupedSessions } from "@/features/chat/hooks/useSessions";
+import { useAgent } from "@/contexts/AgentContext";
+import BotAvatar from "@/components/ui/BotAvatar";
 
 interface SessionHistoryListProps {
   groupedSessions: GroupedSessions;
@@ -36,6 +38,7 @@ export default function SessionHistoryList({
   onDeleteSession,
 }: SessionHistoryListProps) {
   const pathname = usePathname();
+  const { getAgentName } = useAgent();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [isSavingRename, setIsSavingRename] = useState(false);
@@ -61,7 +64,7 @@ export default function SessionHistoryList({
         {[...Array(4)].map((_, i) => (
           <div
             key={i}
-            className="h-8 bg-secondary/50 rounded-lg animate-pulse"
+            className="h-8 bg-secondary/50 rounded-sm animate-pulse"
           />
         ))}
       </div>
@@ -70,7 +73,7 @@ export default function SessionHistoryList({
 
   if (error) {
     return (
-      <div className="p-3 mx-1 my-2 rounded-lg border border-destructive/20 bg-destructive/10 text-center space-y-2 text-xs">
+      <div className="p-3 mx-1 my-2 rounded-sm border border-destructive/20 bg-destructive/10 text-center space-y-2 text-xs">
         <div className="flex items-center justify-center gap-1.5 text-destructive font-medium">
           <AlertCircle className="w-3.5 h-3.5 shrink-0" />
           <span>Failed to load history</span>
@@ -79,7 +82,7 @@ export default function SessionHistoryList({
           <button
             type="button"
             onClick={onRetry}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-secondary hover:bg-secondary/80 text-foreground text-[11px] font-semibold transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-sm bg-secondary hover:bg-secondary/80 text-foreground text-[11px] font-semibold transition-colors cursor-pointer"
           >
             <RotateCcw className="w-3 h-3" />
             <span>Retry</span>
@@ -105,7 +108,7 @@ export default function SessionHistoryList({
             return (
               <div
                 key={session.id}
-                className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-secondary/80 border border-primary/40 text-xs my-0.5"
+                className="flex items-center gap-1 px-2 py-1.5 rounded-sm bg-secondary/80 border border-primary/40 text-xs my-0.5"
               >
                 <input
                   type="text"
@@ -118,7 +121,7 @@ export default function SessionHistoryList({
                   autoFocus
                   maxLength={100}
                   disabled={isSavingRename}
-                  className="flex-1 bg-background text-foreground text-xs px-2 py-1 rounded border border-border focus:outline-none focus:ring-1 focus:ring-primary min-w-0"
+                  className="flex-1 bg-background text-foreground text-xs px-2 py-1 rounded-sm border border-border focus:outline-none focus:ring-1 focus:ring-primary min-w-0"
                   aria-label="Edit session title"
                 />
                 <button
@@ -130,7 +133,7 @@ export default function SessionHistoryList({
                     handleSaveRename(session.id);
                   }}
                   aria-label="Save changes"
-                  className="p-1 hover:text-primary rounded hover:bg-secondary cursor-pointer disabled:opacity-40"
+                  className="p-1 hover:text-primary rounded-sm hover:bg-secondary cursor-pointer disabled:opacity-40"
                   title="Save"
                 >
                   {isSavingRename ? (
@@ -148,7 +151,7 @@ export default function SessionHistoryList({
                     setEditingId(null);
                   }}
                   aria-label="Cancel editing"
-                  className="p-1 hover:text-muted-foreground rounded hover:bg-secondary cursor-pointer disabled:opacity-40"
+                  className="p-1 hover:text-muted-foreground rounded-sm hover:bg-secondary cursor-pointer disabled:opacity-40"
                   title="Cancel"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -157,24 +160,43 @@ export default function SessionHistoryList({
             );
           }
 
+          const sessionAgentName = getAgentName(session.id);
+
           return (
             <div
               key={session.id}
-              className={`group relative flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+              className={`group relative flex items-center justify-between gap-3 px-3 py-2.5 rounded-sm transition-all cursor-pointer ${
                 isActive
-                  ? "bg-secondary text-foreground font-semibold"
-                  : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+                  ? "bg-secondary text-foreground font-semibold shadow-2xs"
+                  : "text-muted-foreground hover:bg-secondary/70 hover:text-muted-foreground"
               }`}
             >
               <Link
                 href={`/c/${session.id}`}
-                className="flex items-center gap-2.5 min-w-0 flex-1 mr-1"
-                title={session.title}
+                className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden pr-1"
+                title={`${sessionAgentName} - ${session.title}`}
               >
-                <span className="truncate">{session.title}</span>
+                {/* Bot Avatar with immutable Slush color locked to session.id seed */}
+                <BotAvatar
+                  name={sessionAgentName}
+                  seed={session.id}
+                  size="md"
+                  className="shrink-0"
+                />
+
+                {/* Agent Name + Session Title Subtext */}
+                <div className="flex flex-col min-w-0 flex-1">
+                  <span className="text-sm font-semibold text-foreground truncate leading-tight">
+                    {sessionAgentName}
+                  </span>
+                  <span className="text-xs text-muted-foreground truncate leading-tight mt-0.5">
+                    {session.title}
+                  </span>
+                </div>
               </Link>
 
-              <div className="flex items-center shrink-0 gap-0.5">
+              {/* Action Buttons: Positioned absolute right-2 so session text has 100% row width when browsing */}
+              <div className="absolute right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 bg-secondary/95 px-1 py-0.5 rounded-sm shadow-xs pointer-events-none group-hover:pointer-events-auto">
                 {onRenameSession && (
                   <button
                     type="button"
@@ -185,10 +207,10 @@ export default function SessionHistoryList({
                       setEditTitle(session.title);
                     }}
                     aria-label={`Rename ${session.title}`}
-                    className="opacity-70 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 min-w-[28px] min-h-[28px] flex items-center justify-center hover:text-foreground hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 rounded-md transition-all cursor-pointer"
+                    className="p-1 text-muted-foreground hover:text-foreground rounded-sm transition-colors cursor-pointer"
                     title="Rename"
                   >
-                    <Pencil className="w-3 h-3 text-muted-foreground hover:text-foreground" />
+                    <Pencil className="w-3.5 h-3.5" />
                   </button>
                 )}
 
@@ -204,11 +226,11 @@ export default function SessionHistoryList({
                         onDeleteSession(session.id);
                       }}
                       aria-label={`Delete session ${session.title}`}
-                      className="opacity-70 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 min-w-[28px] min-h-[28px] flex items-center justify-center hover:text-destructive hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-destructive/50 rounded-md transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="p-1 text-muted-foreground hover:text-destructive rounded-sm transition-colors cursor-pointer disabled:opacity-40"
                       title={isThisDeleting ? "Deleting..." : "Delete session"}
                     >
                       {isThisDeleting ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       ) : (
                         <Trash2 className="w-3.5 h-3.5" />
                       )}

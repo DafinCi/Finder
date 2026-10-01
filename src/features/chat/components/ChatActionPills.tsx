@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Sparkles, Briefcase, Code, HelpCircle } from "lucide-react";
+import { FileSearch, Briefcase, Code, HelpCircle } from "lucide-react";
 
 interface ChatActionPillsProps {
   onSelectPrompt: (promptText: string) => void;
@@ -9,7 +9,7 @@ interface ChatActionPillsProps {
 
 const suggestions = [
   {
-    icon: Sparkles,
+    icon: FileSearch,
     label: "Analyze my CV",
     prompt:
       "Please analyze my uploaded resume and match it against top technical positions.",
@@ -46,16 +46,16 @@ export default function ChatActionPills({
             key={idx}
             type="button"
             onClick={() => onSelectPrompt(item.prompt)}
-            className="flex items-center gap-2.5 p-3 rounded-lg border border-border bg-card/60 hover:bg-secondary/60 hover:border-border text-left transition-all duration-150 group cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring/30"
+            className="flex items-center gap-2.5 p-3 rounded-sm border border-border bg-card hover:bg-secondary/70 hover:border-primary/40 text-left transition-all duration-150 group cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/40"
           >
-            <div className="p-2 rounded-md bg-secondary text-primary border border-border/60 group-hover:bg-primary group-hover:text-primary-foreground transition-colors shrink-0">
+            <div className="p-2 rounded-sm bg-secondary text-primary border border-border/60 group-hover:bg-primary group-hover:text-primary-foreground transition-colors shrink-0">
               <Icon className="w-4 h-4" />
             </div>
             <div className="overflow-hidden">
-              <p className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors truncate">
+              <p className="text-sm font-semibold text-foreground truncate">
                 {item.label}
               </p>
-              <p className="text-[11px] text-muted-foreground line-clamp-1 mt-0.5">
+              <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
                 {item.prompt}
               </p>
             </div>

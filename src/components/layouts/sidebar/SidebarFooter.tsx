@@ -18,11 +18,11 @@ export default function SidebarFooter({ collapsed }: { collapsed: boolean }) {
       >
         {!collapsed ? (
           <>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-[6px] bg-secondary border border-border flex items-center justify-center text-[12px] font-bold text-foreground">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <div className="w-8 h-8 rounded-full bg-secondary border border-border flex items-center justify-center text-[12px] font-bold text-foreground shrink-0">
                 {initials}
               </div>
-              <div className="flex flex-col leading-none truncate max-w-[130px]">
+              <div className="flex flex-col leading-none truncate flex-1 min-w-0">
                 <span className="text-[13px] font-medium text-foreground truncate">
                   {userName}
                 </span>
@@ -34,7 +34,7 @@ export default function SidebarFooter({ collapsed }: { collapsed: boolean }) {
             <button
               onClick={handleLogout}
               aria-label="Logout"
-              className="p-1.5 rounded-[6px] border border-border bg-card/50 hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors duration-150"
+              className="p-1.5 rounded-sm border border-border bg-card/50 hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors duration-150 cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
             </button>
@@ -43,7 +43,7 @@ export default function SidebarFooter({ collapsed }: { collapsed: boolean }) {
           <button
             onClick={handleLogout}
             aria-label="Logout"
-            className="p-2 rounded-[6px] border border-border bg-card/50 hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors duration-150"
+            className="p-2 rounded-sm border border-border bg-card/50 hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors duration-150 cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
           </button>

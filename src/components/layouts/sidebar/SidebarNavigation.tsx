@@ -28,7 +28,7 @@ export default function SidebarNavigation({
       <nav className="flex-1 px-2 py-4 space-y-3 flex flex-col items-center">
         <Link
           href="/c"
-          className={`p-2.5 rounded-xl border transition-all ${
+          className={`p-2.5 rounded-sm border transition-all ${
             pathname === "/c"
               ? "bg-primary text-primary-foreground border-primary"
               : "bg-secondary/60 text-muted-foreground hover:text-foreground border-border"
@@ -39,7 +39,7 @@ export default function SidebarNavigation({
         </Link>
         <Link
           href="/jobs"
-          className={`p-2.5 rounded-xl border transition-all ${
+          className={`p-2.5 rounded-sm border transition-all ${
             pathname === "/jobs"
               ? "bg-primary text-primary-foreground border-primary"
               : "bg-secondary/60 text-muted-foreground hover:text-foreground border-border"
@@ -50,7 +50,7 @@ export default function SidebarNavigation({
         </Link>
         <Link
           href="/profile"
-          className={`p-2.5 rounded-xl border transition-all ${
+          className={`p-2.5 rounded-sm border transition-all ${
             pathname === "/profile"
               ? "bg-primary text-primary-foreground border-primary"
               : "bg-secondary/60 text-muted-foreground hover:text-foreground border-border"
@@ -61,7 +61,7 @@ export default function SidebarNavigation({
         </Link>
         <Link
           href="/settings"
-          className={`p-2.5 rounded-xl border transition-all ${
+          className={`p-2.5 rounded-sm border transition-all ${
             pathname === "/settings"
               ? "bg-primary text-primary-foreground border-primary"
               : "bg-secondary/60 text-muted-foreground hover:text-foreground border-border"
@@ -79,9 +79,9 @@ export default function SidebarNavigation({
       {/* Primary Action Button: New Chat */}
       <Link
         href="/c"
-        className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl bg-primary text-primary-foreground text-xs font-semibold shadow-xs hover:opacity-95 transition-all active:scale-[0.98] mb-3"
+        className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-sm bg-primary text-primary-foreground text-sm font-semibold shadow-xs hover:opacity-95 transition-all active:scale-[0.98] mb-3"
       >
-        <Plus className="w-4 h-4" />
+        <Plus className="w-[18px] h-[18px]" />
         <span>New Chat</span>
       </Link>
 
@@ -89,35 +89,35 @@ export default function SidebarNavigation({
       <div className="space-y-1 mb-3">
         <Link
           href="/jobs"
-          className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-sm text-sm font-medium transition-colors ${
             pathname === "/jobs"
               ? "bg-secondary text-foreground font-semibold"
-              : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+              : "text-muted-foreground hover:bg-secondary/70 hover:text-foreground"
           }`}
         >
-          <BriefcaseBusiness className="w-3.5 h-3.5 text-primary" />
+          <BriefcaseBusiness className="w-[18px] h-[18px] text-primary shrink-0" />
           <span>Jobs</span>
         </Link>
         <Link
           href="/profile"
-          className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-sm text-sm font-medium transition-colors ${
             pathname === "/profile"
               ? "bg-secondary text-foreground font-semibold"
-              : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+              : "text-muted-foreground hover:bg-secondary/70 hover:text-foreground"
           }`}
         >
-          <User className="w-3.5 h-3.5 text-primary" />
+          <User className="w-[18px] h-[18px] text-primary shrink-0" />
           <span>Profile</span>
         </Link>
         <Link
           href="/settings"
-          className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-sm text-sm font-medium transition-colors ${
             pathname === "/settings"
               ? "bg-secondary text-foreground font-semibold"
-              : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+              : "text-muted-foreground hover:bg-secondary/70 hover:text-foreground"
           }`}
         >
-          <Settings className="w-3.5 h-3.5 text-primary" />
+          <Settings className="w-[18px] h-[18px] text-primary shrink-0" />
           <span>Settings</span>
         </Link>
       </div>

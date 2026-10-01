@@ -72,13 +72,16 @@ export default function AppChatHomePage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center h-full px-4 py-8 animate-in fade-in duration-300 relative overflow-y-auto custom-scrollbar">
-      <div className="w-full max-w-2xl text-center space-y-7 my-auto">
-        {/* Hero Title */}
+    <div className="flex-1 flex flex-col items-center justify-center h-full px-4 py-8 animate-in fade-in duration-300 relative overflow-y-auto custom-scrollbar chat-wallpaper">
+      <div className="w-full max-w-4xl text-center space-y-7 my-auto">
+        {/* Clean Action-Focused Greeting */}
         <div className="space-y-2">
-          <h1 className="text-3xl sm:text-4xl font-bold font-heading text-foreground tracking-tight">
-            Where do you want to take your career today?
+          <h1 className="text-2xl sm:text-3xl font-bold font-heading text-foreground tracking-tight">
+            What can I help you explore today?
           </h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
+            Ask about roles, analyze your resume, or practice interview questions.
+          </p>
         </div>
 
         {/* Omni-Prompt Input */}
@@ -86,7 +89,7 @@ export default function AppChatHomePage() {
           <OmniPromptInput
             onSubmit={handleSubmit}
             isLoading={isLoading}
-            placeholder="Ask a question or drag & drop your CV (PDF)..."
+            placeholder="Type a message"
           />
         </div>
 
@@ -107,7 +110,7 @@ export default function AppChatHomePage() {
 
         {/* Trust & Privacy Footnote */}
         <div className="pt-2 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground/60">
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-500/70" />
+          <ShieldCheck className="w-3.5 h-3.5 text-slush-mint/80" />
           <span>Text-based PDF only. Your data stays private.</span>
         </div>
       </div>

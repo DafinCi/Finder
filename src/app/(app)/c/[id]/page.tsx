@@ -1,14 +1,15 @@
 "use client";
 
-import React, { use, useState } from "react";
-import Link from "next/link";
-import { Plus, Bot, Pencil, Check, X, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import React, { use, useEffect } from "react";
+import { ChevronRight } from "lucide-react";
 import { useSidebar } from "@/contexts/SidebarContext";
+import { useAgent } from "@/contexts/AgentContext";
 import { useChat } from "@/features/chat/hooks/useChat";
 import ChatTimeline from "@/features/chat/components/ChatTimeline";
 import OmniPromptInput from "@/features/chat/components/OmniPromptInput";
 import ChatTimelineSkeleton from "@/features/chat/skeletons/ChatTimelineSkeleton";
+import BotAvatar from "@/components/ui/BotAvatar";
+import AgentInfoDrawer from "@/features/chat/components/AgentInfoDrawer";
 
 export default function ChatSessionPage({
   params,
@@ -18,6 +19,22 @@ export default function ChatSessionPage({
   const { id } = use(params);
   const { collapsed } = useSidebar();
   const {
+    getAgentName,
+    setActiveSessionId,
+    isDrawerOpen,
+    openDrawer,
+    closeDrawer,
+  } = useAgent();
+
+  // Set active session in agent context
+  useEffect(() => {
+    setActiveSessionId(id);
+    return () => setActiveSessionId(null);
+  }, [id, setActiveSessionId]);
+
+  const currentAgentName = getAgentName(id);
+
+  const {
     session,
     messages,
     isLoading,
@@ -26,32 +43,7 @@ export default function ChatSessionPage({
     error,
     sendMessage,
     retryLastMessage,
-    updateTitle,
   } = useChat(id);
-
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [newTitle, setNewTitle] = useState("");
-  const [isSavingTitle, setIsSavingTitle] = useState(false);
-
-  const handleSaveTitle = async () => {
-    const trimmed = newTitle.trim();
-    if (!trimmed || trimmed === session?.title) {
-      setIsEditingTitle(false);
-      return;
-    }
-    try {
-      setIsSavingTitle(true);
-      await updateTitle(trimmed);
-      toast.success("Session renamed");
-      setIsEditingTitle(false);
-    } catch (err) {
-      toast.error("Couldn't rename session", {
-        description: (err as Error).message,
-      });
-    } finally {
-      setIsSavingTitle(false);
-    }
-  };
 
   const handleAskAboutJob = (jobTitle: string, company: string) => {
     sendMessage(
@@ -61,106 +53,69 @@ export default function ChatSessionPage({
   };
 
   return (
-    <div className="flex-1 relative h-full w-full overflow-hidden bg-background">
+    <div className="flex-1 relative h-full w-full overflow-hidden bg-background chat-wallpaper">
       {/* Full-Height Scrollable Stream */}
       <div className="h-full w-full overflow-y-auto custom-scrollbar">
-        {/* Session Topbar: Sticky inside scroll container so scrollbar spans full height */}
-        <div
-          className={`sticky top-0 z-20 h-14 border-b border-border/60 flex items-center justify-between bg-background/85 backdrop-blur-md shrink-0 transition-all duration-200 ${
+        {/* Session Topbar: Solid background header, full-bar click opens agent info drawer */}
+        <header
+          role="button"
+          tabIndex={0}
+          onClick={openDrawer}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              openDrawer();
+            }
+          }}
+          className={`sticky top-0 z-20 h-16 border-b border-border bg-card flex items-center justify-between shrink-0 select-none group focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary cursor-pointer ${
             collapsed ? "pl-14 pr-4 md:pr-6" : "px-4 md:px-6"
           }`}
+          title="Click anywhere for agent details"
+          aria-label="Click anywhere for agent details"
         >
-          {/* Session Title */}
-          {isEditingTitle ? (
-            <div className="flex items-center gap-1.5 min-w-0 max-w-sm">
-              <input
-                type="text"
-                value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleSaveTitle();
-                  if (e.key === "Escape") setIsEditingTitle(false);
-                }}
-                autoFocus
-                maxLength={100}
-                disabled={isSavingTitle}
-                className="bg-secondary text-foreground text-xs px-2.5 py-1 rounded-md border border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary w-full"
-                aria-label="Edit chat session title"
-              />
-              <button
-                type="button"
-                disabled={isSavingTitle}
-                onClick={handleSaveTitle}
-                className="p-1 hover:text-primary rounded hover:bg-secondary text-primary cursor-pointer disabled:opacity-40"
-                title="Save"
-              >
-                {isSavingTitle ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          {/* Left: Bot Avatar + Agent Identity */}
+          <div className="flex items-center gap-3 min-w-0">
+            <BotAvatar
+              name={currentAgentName}
+              seed={id}
+              size="md"
+              showStatusIndicator={isLoading}
+              indicatorStatus="typing"
+            />
+            <div className="flex flex-col min-w-0">
+              <span className="text-sm sm:text-base font-semibold text-foreground truncate leading-tight">
+                {currentAgentName}
+              </span>
+              <span className="text-xs sm:text-sm truncate leading-tight mt-0.5">
+                {isLoading ? (
+                  <span className="text-primary font-medium inline-flex items-center gap-1.5">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                    <span>{thinkingStatus || "Thinking..."}</span>
+                  </span>
                 ) : (
-                  <Check className="w-3.5 h-3.5" />
+                  <span className="text-muted-foreground">
+                    Click here for agent info
+                  </span>
                 )}
-              </button>
-              <button
-                type="button"
-                disabled={isSavingTitle}
-                onClick={() => setIsEditingTitle(false)}
-                className="p-1 hover:text-muted-foreground rounded hover:bg-secondary text-muted-foreground cursor-pointer disabled:opacity-40"
-                title="Cancel"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 min-w-0 max-w-md group">
-              <h2
-                className="text-sm font-semibold text-foreground truncate cursor-pointer hover:underline decoration-muted-foreground/40 underline-offset-4"
-                onClick={() => {
-                  setIsEditingTitle(true);
-                  setNewTitle(session?.title || "");
-                }}
-                title="Rename session"
-              >
-                {session?.title || "Chat session"}
-              </h2>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsEditingTitle(true);
-                  setNewTitle(session?.title || "");
-                }}
-                aria-label="Rename session"
-                className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-foreground hover:bg-secondary rounded transition-opacity cursor-pointer"
-                title="Rename session"
-              >
-                <Pencil className="w-3 h-3" />
-              </button>
-              <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-secondary text-muted-foreground border border-border shrink-0">
-                Career Copilot
               </span>
             </div>
-          )}
+          </div>
 
-          {/* Quick New Chat Button */}
-          <Link
-            href="/"
-            className="p-1.5 rounded-lg border border-border/80 bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground text-xs font-medium inline-flex items-center gap-1.5 transition-colors"
-            title="New Chat"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">New Chat</span>
-          </Link>
-        </div>
+          {/* Right: Subtle Chevron Indicator */}
+          <div className="text-muted-foreground/60 pr-1">
+            <ChevronRight className="w-5 h-5 opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+          </div>
+        </header>
 
         {/* Chat Content Body */}
-        <div className="min-h-[calc(100%-3.5rem)] flex flex-col justify-between">
+        <div className="min-h-[calc(100%-4rem)] flex flex-col justify-between">
           {/* Initial Loading Skeleton */}
           {isInitialLoading ? (
             <ChatTimelineSkeleton />
           ) : messages.length === 0 ? (
             /* Empty State: Only shown if definitely not loading and no messages */
-            <div className="flex-1 flex flex-col items-center justify-center text-center p-8 my-auto text-muted-foreground space-y-3 min-h-[50vh] animate-in fade-in duration-200">
-              <Bot className="w-8 h-8 opacity-40" />
-              <p className="text-sm font-medium">
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-8 my-auto text-muted-foreground space-y-2 min-h-[50vh] animate-in fade-in duration-200">
+              <p className="text-sm font-medium text-foreground/80">
                 No messages in this session yet.
               </p>
               <p className="text-xs text-muted-foreground/70">
@@ -184,16 +139,23 @@ export default function ChatSessionPage({
       </div>
 
       {/* Floating Bottom Prompt Omnibar with Ambient Bottom Fade */}
-      <div className="absolute bottom-0 inset-x-0 z-20 pb-4 pt-6 bg-gradient-to-t from-background via-background/95 to-transparent pointer-events-none pr-3 sm:pr-4">
+      <div className="absolute bottom-14 md:bottom-0 inset-x-0 z-20 pb-3 md:pb-4 pt-6 bg-gradient-to-t from-background via-background/95 to-transparent pointer-events-none pr-3 sm:pr-4">
         <div className="pointer-events-auto">
           <OmniPromptInput
             isSticky={true}
             onSubmit={(prompt, file) => sendMessage(prompt, file)}
             isLoading={isLoading}
-            placeholder="Ask a follow-up question or attach another CV..."
+            placeholder="Type a message"
           />
         </div>
       </div>
+
+      {/* Agent Contact Info Right Drawer */}
+      <AgentInfoDrawer
+        isOpen={isDrawerOpen}
+        onClose={closeDrawer}
+        sessionId={id}
+      />
     </div>
   );
 }

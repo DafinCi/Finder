@@ -49,7 +49,7 @@ export interface CanonicalJob {
   requirements: string[];
 
   /** Primary geographic or remote availability descriptor */
-  location: string;
+  location?: string | null;
 
   /** Remote eligibility flag */
   isRemote: boolean;

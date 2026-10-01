@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AlertCircle, CheckCircle2, ArrowRight } from "lucide-react";
 import { register } from "@/features/auth/services/auth.service";
+import Logo from "@/components/common/Logo";
 import { Button } from "@/components/ui/button";
 import { SuiSignInButton } from "@/features/sui/components/SuiSignInButton";
 
@@ -44,7 +45,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-md rounded-xl bg-card p-8 border border-border shadow-md space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 text-primary mb-1"></div>
+          <Logo size={40} alt="" className="mx-auto mb-1" />
           <h1 className="text-2xl font-bold font-heading text-foreground tracking-tight">
             Create Your Account
           </h1>

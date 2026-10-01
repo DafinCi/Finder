@@ -30,6 +30,7 @@ export interface FormattedJobMatch {
   sourceUrl?: string | null;
   source?: string;
   isSaved?: boolean;
+  postedAt?: string | null;
   scoreBreakdown?: MatchScoreBreakdown;
   qualitative?: QualitativeAnalysis;
 }
@@ -83,16 +84,18 @@ export const jobsApi = {
       title: rec.title,
       description: rec.description || "",
       requirements: rec.requirements || [],
-      location: rec.location,
+      location: rec.location || "Location not specified",
       workMode: rec.work_mode,
       experienceLevel: rec.experience_level || "Not specified",
       salaryRange: rec.salary_range,
       companyName: rec.company_name,
       companyLogo: rec.company_logo,
+      companyWebsite: (rec as any).company_website || null,
       applyUrl: rec.apply_url,
       sourceUrl: rec.source_url,
       source: rec.source || "manual",
       isSaved: savedJobIds.includes(rec.job_id),
+      postedAt: rec.posted_at || null,
       scoreBreakdown: rec.score_breakdown,
       qualitative: rec.qualitative,
     }));

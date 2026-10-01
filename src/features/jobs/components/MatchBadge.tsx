@@ -10,22 +10,22 @@ export default function MatchBadge({
   showScoreOnly = false,
 }: MatchBadgeProps) {
   let text = "Potential Match";
-  let colorClass = "bg-amber-500/10 text-amber-500 border-amber-500/20";
+  let colorClass = "bg-slush-yellow/10 text-slush-yellow border-slush-yellow/25";
 
   if (score >= 90) {
     text = "Excellent Match";
-    colorClass = "bg-emerald-500/10 text-emerald-500 border-emerald-500/20";
+    colorClass = "bg-slush-mint/10 text-slush-mint border-slush-mint/25";
   } else if (score >= 75) {
     text = "Strong Match";
-    colorClass = "bg-teal-500/10 text-teal-500 border-teal-500/20";
+    colorClass = "bg-primary/15 text-slush-lavender border-primary/30";
   } else if (score >= 60) {
     text = "Good Match";
-    colorClass = "bg-blue-500/10 text-blue-500 border-blue-500/20";
+    colorClass = "bg-slush-blue/10 text-slush-blue border-slush-blue/25";
   }
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-[12px] font-semibold ${colorClass}`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-sm border text-xs font-semibold tracking-wide ${colorClass}`}
     >
       <span className="w-1.5 h-1.5 rounded-full bg-current" />
       {showScoreOnly ? `${score} / 100` : `${text} • ${score} / 100`}

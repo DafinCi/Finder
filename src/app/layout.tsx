@@ -1,17 +1,11 @@
 import React, { ReactNode } from "react";
 import type { Metadata } from "next";
-import { Space_Grotesk, Inter } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
+const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  variable: "--font-body",
-  display: "swap",
-});
-
-const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin"],
-  variable: "--font-heading",
+  variable: "--font-sans",
   weight: ["400", "500", "600", "700"],
   display: "swap",
 });
@@ -28,10 +22,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"
-      className={`dark ${inter.variable} ${spaceGrotesk.variable} h-full antialiased`}
+      className={`dark ${plusJakartaSans.variable} h-full antialiased`}
       style={{ colorScheme: "dark" }}
     >
-      <body className="min-h-full flex flex-col bg-background font-body text-foreground">
+      <body className="min-h-full flex flex-col bg-background font-sans text-foreground">
         <AppProviders>{children}</AppProviders>
         <Toaster position="top-right" richColors />
       </body>

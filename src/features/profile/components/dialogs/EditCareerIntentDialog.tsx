@@ -42,6 +42,7 @@ export function EditCareerIntentDialog({
   const [customRoleInput, setCustomRoleInput] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const modalRef = useRef<HTMLDivElement | null>(null);
+  const triggerElementRef = useRef<HTMLElement | null>(null);
 
   // Sync state when dialog opens or careerIntent changes
   useEffect(() => {
@@ -67,16 +68,57 @@ export function EditCareerIntentDialog({
     }
   }, [isOpen, careerIntent]);
 
-  // Handle ESC key
+  // Focus trap, autofocus, and ESC key
   useEffect(() => {
     if (!isOpen) return;
+    triggerElementRef.current = document.activeElement as HTMLElement | null;
+
+    const focusTimer = setTimeout(() => {
+      if (modalRef.current) {
+        const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        );
+        if (focusable.length > 0) {
+          focusable[0].focus();
+        }
+      }
+    }, 50);
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && !isSaving) {
+        e.stopPropagation();
         onClose();
+        return;
+      }
+
+      if (e.key === "Tab" && modalRef.current) {
+        const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => {
+      clearTimeout(focusTimer);
+      window.removeEventListener("keydown", handleKeyDown, true);
+      triggerElementRef.current?.focus();
+    };
   }, [isOpen, isSaving, onClose]);
 
   if (!isOpen) return null;
@@ -197,12 +239,12 @@ export function EditCareerIntentDialog({
     >
       <div
         ref={modalRef}
-        className="w-full max-w-xl bg-card border border-border rounded-xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200"
+        className="w-full max-w-xl bg-card border border-border rounded-sm shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200"
       >
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-border/80 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-primary/10 text-primary border border-primary/20">
+            <div className="p-2 rounded-sm bg-primary/10 text-primary border border-primary/20">
               <Target className="w-4 h-4" />
             </div>
             <div>
@@ -222,7 +264,8 @@ export function EditCareerIntentDialog({
             type="button"
             onClick={onClose}
             disabled={isSaving}
-            className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors cursor-pointer"
+            aria-label="Close career intent dialog"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-sm text-muted-foreground hover:text-foreground hover:bg-secondary focus-visible:ring-2 focus-visible:ring-primary transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -254,11 +297,11 @@ export function EditCareerIntentDialog({
             </p>
 
             {primaryRole && (
-              <div className="p-2.5 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-between">
+              <div className="p-2.5 rounded-sm bg-primary/10 border border-primary/20 flex items-center justify-between">
                 <span className="text-xs font-bold text-primary">
                   {primaryRole}
                 </span>
-                <span className="text-[10px] bg-primary text-primary-foreground font-semibold px-2 py-0.5 rounded">
+                <span className="text-[10px] bg-primary text-primary-foreground font-semibold px-2 py-0.5 rounded-sm">
                   Primary
                 </span>
               </div>
@@ -273,7 +316,7 @@ export function EditCareerIntentDialog({
                     key={`primary-${role}`}
                     type="button"
                     onClick={() => handleSelectPrimary(role)}
-                    className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors cursor-pointer ${
+                    className={`px-2.5 py-1.5 rounded-sm text-xs font-medium border transition-colors cursor-pointer min-h-[36px] ${
                       isSelected
                         ? "bg-primary text-primary-foreground border-primary"
                         : "bg-secondary/60 text-muted-foreground hover:text-foreground border-border hover:bg-secondary"
@@ -316,7 +359,7 @@ export function EditCareerIntentDialog({
                     key={`sec-${role}`}
                     type="button"
                     onClick={() => handleToggleSecondary(role)}
-                    className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors cursor-pointer ${
+                    className={`px-2.5 py-1.5 rounded-sm text-xs font-medium border transition-colors cursor-pointer min-h-[36px] ${
                       isSecondary
                         ? "bg-secondary text-foreground font-bold border-primary/50"
                         : "bg-secondary/40 text-muted-foreground hover:text-foreground border-border"
@@ -335,7 +378,7 @@ export function EditCareerIntentDialog({
                 value={customRoleInput}
                 onChange={(e) => setCustomRoleInput(e.target.value)}
                 placeholder="+ Add custom role..."
-                className="flex-1 bg-secondary/30 border border-border rounded-md px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
+                className="flex-1 bg-secondary/30 border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               />
               <Button
                 type="button"
@@ -343,7 +386,7 @@ export function EditCareerIntentDialog({
                 variant="outline"
                 onClick={handleAddCustomRole}
                 disabled={!customRoleInput.trim()}
-                className="text-xs h-8"
+                className="text-xs min-h-[40px] px-3 rounded-sm"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Add</span>
@@ -364,7 +407,7 @@ export function EditCareerIntentDialog({
                     key={opt.value}
                     type="button"
                     onClick={() => setTargetLevel(opt.value)}
-                    className={`p-2.5 rounded-lg border text-left transition-colors cursor-pointer ${
+                    className={`p-2.5 rounded-sm border text-left transition-colors cursor-pointer min-h-[44px] ${
                       isSelected
                         ? "bg-primary/10 border-primary text-foreground"
                         : "bg-secondary/40 border-border text-muted-foreground hover:text-foreground hover:bg-secondary"
@@ -393,7 +436,7 @@ export function EditCareerIntentDialog({
                     key={emp.value}
                     type="button"
                     onClick={() => handleToggleEmployment(emp.value)}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
+                    className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-sm border text-xs font-medium transition-colors cursor-pointer min-h-[40px] ${
                       isSelected
                         ? "bg-primary text-primary-foreground border-primary"
                         : "bg-secondary/40 text-muted-foreground border-border hover:bg-secondary"
@@ -413,10 +456,9 @@ export function EditCareerIntentDialog({
           <Button
             type="button"
             variant="outline"
-            size="sm"
             onClick={onClose}
             disabled={isSaving}
-            className="text-xs h-9 min-h-[36px]"
+            className="min-h-[44px] h-11 px-4 text-xs font-medium rounded-sm"
           >
             Cancel
           </Button>
@@ -424,9 +466,8 @@ export function EditCareerIntentDialog({
           <Button
             type="submit"
             form="career-intent-form"
-            size="sm"
             disabled={isSaving || !primaryRole.trim()}
-            className="text-xs h-9 min-h-[36px] gap-1.5"
+            className="min-h-[44px] h-11 px-5 text-xs font-semibold gap-1.5 rounded-sm"
           >
             {isSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
             <span>Save Changes</span>

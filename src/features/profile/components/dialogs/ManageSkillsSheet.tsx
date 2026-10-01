@@ -9,7 +9,6 @@ import {
   Trash2,
   RotateCcw,
   CheckCircle2,
-  Sparkles,
   FileText,
   CheckCheck,
 } from "lucide-react";
@@ -75,17 +74,59 @@ export function ManageSkillsSheet({
     useState<SkillProficiencyClaim>("competent");
 
   const modalRef = useRef<HTMLDivElement | null>(null);
+  const triggerElementRef = useRef<HTMLElement | null>(null);
 
-  // Handle ESC key
+  // Focus trap, autofocus, and ESC key
   useEffect(() => {
     if (!isOpen) return;
+    triggerElementRef.current = document.activeElement as HTMLElement | null;
+
+    const focusTimer = setTimeout(() => {
+      if (modalRef.current) {
+        const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        );
+        if (focusable.length > 0) {
+          focusable[0].focus();
+        }
+      }
+    }, 50);
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && !isMutating) {
+        e.stopPropagation();
         onClose();
+        return;
+      }
+
+      if (e.key === "Tab" && modalRef.current) {
+        const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => {
+      clearTimeout(focusTimer);
+      window.removeEventListener("keydown", handleKeyDown, true);
+      triggerElementRef.current?.focus();
+    };
   }, [isOpen, isMutating, onClose]);
 
   if (!isOpen) return null;
@@ -135,8 +176,10 @@ export function ManageSkillsSheet({
       },
     }));
 
-    await onSyncSkills(updatedSkills);
-    toast.success("All skills confirmed.");
+    const ok = await onSyncSkills(updatedSkills);
+    if (ok) {
+      toast.success("All skills confirmed.");
+    }
   };
 
   return (
@@ -148,12 +191,12 @@ export function ManageSkillsSheet({
     >
       <div
         ref={modalRef}
-        className="w-full max-w-2xl bg-card border border-border rounded-xl shadow-2xl flex flex-col h-[85vh] overflow-hidden animate-in zoom-in-95 duration-200"
+        className="w-full max-w-2xl bg-card border border-border rounded-sm shadow-2xl flex flex-col h-[85vh] overflow-hidden animate-in zoom-in-95 duration-200"
       >
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-border/80 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-primary/10 text-primary border border-primary/20">
+            <div className="p-2 rounded-sm bg-primary/10 text-primary border border-primary/20">
               <Code className="w-4 h-4" />
             </div>
             <div>
@@ -174,7 +217,7 @@ export function ManageSkillsSheet({
             onClick={onClose}
             disabled={isMutating}
             aria-label="Close skills dialog"
-            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary focus-visible:ring-2 focus-visible:ring-primary transition-colors cursor-pointer"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-sm text-muted-foreground hover:text-foreground hover:bg-secondary focus-visible:ring-2 focus-visible:ring-primary transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -189,7 +232,7 @@ export function ManageSkillsSheet({
               value={newSkillName}
               onChange={(e) => setNewSkillName(e.target.value)}
               placeholder="+ Add new skill..."
-              className="flex-1 bg-card border border-border rounded-md px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="flex-1 bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             />
 
             <select
@@ -197,7 +240,7 @@ export function ManageSkillsSheet({
               onChange={(e) =>
                 setNewSkillCategory(e.target.value as SkillCategory)
               }
-              className="bg-card border border-border rounded-md px-2 py-2 text-xs text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="bg-card border border-border rounded-sm px-2 py-2 text-xs text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               <option value="core">Core</option>
               <option value="supporting">Supporting</option>
@@ -208,7 +251,7 @@ export function ManageSkillsSheet({
               type="submit"
               size="sm"
               disabled={!newSkillName.trim() || isMutating}
-              className="min-h-[40px] px-3 text-xs"
+              className="min-h-[40px] px-3 text-xs rounded-sm"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Add</span>
@@ -221,7 +264,7 @@ export function ManageSkillsSheet({
               <button
                 type="button"
                 onClick={() => setActiveTab("all")}
-                className={`px-2.5 py-1 rounded-md text-xs font-semibold whitespace-nowrap cursor-pointer ${
+                className={`px-2.5 py-1 rounded-sm text-xs font-semibold whitespace-nowrap cursor-pointer ${
                   activeTab === "all"
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:text-foreground hover:bg-secondary"
@@ -232,7 +275,7 @@ export function ManageSkillsSheet({
               <button
                 type="button"
                 onClick={() => setActiveTab("core")}
-                className={`px-2.5 py-1 rounded-md text-xs font-semibold whitespace-nowrap cursor-pointer ${
+                className={`px-2.5 py-1 rounded-sm text-xs font-semibold whitespace-nowrap cursor-pointer ${
                   activeTab === "core"
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:text-foreground hover:bg-secondary"
@@ -243,7 +286,7 @@ export function ManageSkillsSheet({
               <button
                 type="button"
                 onClick={() => setActiveTab("supporting")}
-                className={`px-2.5 py-1 rounded-md text-xs font-semibold whitespace-nowrap cursor-pointer ${
+                className={`px-2.5 py-1 rounded-sm text-xs font-semibold whitespace-nowrap cursor-pointer ${
                   activeTab === "supporting"
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:text-foreground hover:bg-secondary"
@@ -255,7 +298,7 @@ export function ManageSkillsSheet({
               <button
                 type="button"
                 onClick={() => setActiveTab("tool")}
-                className={`px-2.5 py-1 rounded-md text-xs font-semibold whitespace-nowrap cursor-pointer ${
+                className={`px-2.5 py-1 rounded-sm text-xs font-semibold whitespace-nowrap cursor-pointer ${
                   activeTab === "tool"
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:text-foreground hover:bg-secondary"
@@ -266,7 +309,7 @@ export function ManageSkillsSheet({
               <button
                 type="button"
                 onClick={() => setActiveTab("suppressed")}
-                className={`px-2.5 py-1 rounded-md text-xs font-semibold whitespace-nowrap cursor-pointer ${
+                className={`px-2.5 py-1 rounded-sm text-xs font-semibold whitespace-nowrap cursor-pointer ${
                   activeTab === "suppressed"
                     ? "bg-destructive text-destructive-foreground"
                     : "text-muted-foreground hover:text-foreground hover:bg-secondary"
@@ -284,7 +327,7 @@ export function ManageSkillsSheet({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search skills..."
-                className="w-full bg-card border border-border rounded-md pl-8 pr-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="w-full bg-card border border-border rounded-sm pl-8 pr-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               />
             </div>
           </div>
@@ -303,7 +346,7 @@ export function ManageSkillsSheet({
               variant="outline"
               onClick={handleConfirmAll}
               disabled={isMutating}
-              className="text-xs min-h-[32px] h-8 px-2.5 gap-1 border-blue-500/30 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 cursor-pointer"
+              className="text-xs min-h-[36px] h-9 px-3 gap-1 border-blue-500/30 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 cursor-pointer rounded-sm"
             >
               <CheckCheck className="w-3.5 h-3.5" />
               <span>Confirm All</span>
@@ -319,7 +362,7 @@ export function ManageSkillsSheet({
               filteredSuppressed.map((item) => (
                 <div
                   key={item.skill}
-                  className="flex items-center justify-between p-3 rounded-lg border border-border bg-card/60"
+                  className="flex items-center justify-between p-3 rounded-sm border border-border bg-card/60"
                 >
                   <div className="space-y-0.5">
                     <span className="text-xs font-bold text-muted-foreground line-through">
@@ -343,7 +386,7 @@ export function ManageSkillsSheet({
                     variant="outline"
                     onClick={() => onRestoreSkill(item.skill)}
                     disabled={isMutating}
-                    className="text-xs min-h-[36px] h-9 px-3 gap-1 text-primary hover:bg-primary/10 cursor-pointer"
+                    className="text-xs min-h-[44px] sm:min-h-[36px] h-9 px-3 gap-1 text-primary hover:bg-primary/10 cursor-pointer rounded-sm"
                   >
                     <RotateCcw className="w-3 h-3" />
                     <span>Restore</span>
@@ -365,7 +408,7 @@ export function ManageSkillsSheet({
               return (
                 <div
                   key={item.skill}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg border border-border bg-card/60 hover:bg-secondary/40 transition-colors"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-sm border border-border bg-card/60 hover:bg-secondary/40 transition-colors"
                 >
                   <div className="flex items-center gap-2.5">
                     <span className="text-xs font-bold text-foreground">
@@ -387,15 +430,14 @@ export function ManageSkillsSheet({
                           })
                         }
                         disabled={isMutating}
-                        className="text-[10px] text-blue-600 dark:text-blue-400 bg-blue-500/10 px-2 py-1 rounded flex items-center gap-1 hover:underline cursor-pointer"
+                        className="text-[10px] text-blue-600 dark:text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-sm flex items-center gap-1 hover:underline cursor-pointer"
                         title="Click to confirm"
                       >
                         <FileText className="w-2.5 h-2.5" />
                         <span>Confirm?</span>
                       </button>
                     ) : (
-                      <span className="text-[10px] text-purple-600 dark:text-purple-400 flex items-center gap-0.5">
-                        <Sparkles className="w-2.5 h-2.5" />
+                      <span className="text-[10px] text-muted-foreground flex items-center">
                         <span>Inferred</span>
                       </span>
                     )}
@@ -413,7 +455,7 @@ export function ManageSkillsSheet({
                       }
                       disabled={isMutating}
                       aria-label={`Category for ${item.skill}`}
-                      className="text-[11px] bg-secondary border border-border rounded px-2 py-1.5 text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      className="text-[11px] bg-secondary border border-border rounded-sm px-2 py-1.5 text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     >
                       <option value="core">Core</option>
                       <option value="supporting">Supporting</option>
@@ -431,7 +473,7 @@ export function ManageSkillsSheet({
                       }
                       disabled={isMutating}
                       aria-label={`Proficiency claim for ${item.skill}`}
-                      className="text-[11px] bg-secondary border border-border rounded px-2 py-1.5 text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      className="text-[11px] bg-secondary border border-border rounded-sm px-2 py-1.5 text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     >
                       <option value="foundational">Foundational</option>
                       <option value="competent">Competent</option>
@@ -443,7 +485,7 @@ export function ManageSkillsSheet({
                       type="button"
                       onClick={() => onSuppressSkill(item.skill)}
                       disabled={isMutating}
-                      className="min-h-[36px] min-w-[36px] flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                      className="min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] flex items-center justify-center rounded-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
                       title="Suppress skill from matching"
                       aria-label={`Suppress ${item.skill}`}
                     >
@@ -466,7 +508,7 @@ export function ManageSkillsSheet({
           <Button
             size="sm"
             onClick={onClose}
-            className="min-h-[44px] h-11 px-5 text-xs font-semibold"
+            className="min-h-[44px] h-11 px-5 text-xs font-semibold rounded-sm cursor-pointer"
           >
             Close
           </Button>

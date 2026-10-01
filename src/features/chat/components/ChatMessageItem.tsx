@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { FileText, Copy, Check, Sparkles } from "lucide-react";
+import { FileText, Copy, Check, Brain, ThumbsUp, ThumbsDown } from "lucide-react";
 import { toast } from "sonner";
 import { ChatMessage } from "@/types/chat";
 import CandidateSummaryCard from "@/features/ai-analysis/components/CandidateSummaryCard";
@@ -12,11 +12,15 @@ import ActionProposalCard from "./ActionProposalCard";
 interface ChatMessageItemProps {
   message: ChatMessage;
   onAskAboutJob?: (jobTitle: string, company: string) => void;
+  isFirstInGroup?: boolean;
+  isLastInGroup?: boolean;
 }
 
 export default function ChatMessageItem({
   message,
   onAskAboutJob,
+  isFirstInGroup = true,
+  isLastInGroup = true,
 }: ChatMessageItemProps) {
   const isUser = message.role === "user";
   const attachment = message.metadata?.attachment;
@@ -24,6 +28,10 @@ export default function ChatMessageItem({
   const jobMatches = message.metadata?.job_matches;
   const isStreaming = message.id.startsWith("stream-");
   const [copied, setCopied] = useState(false);
+  const [feedback, setFeedback] = useState<"helpful" | "unhelpful" | null>(
+    (message.metadata?.feedback as "helpful" | "unhelpful") || null,
+  );
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
 
   const handleCopy = async () => {
     if (!message.content) return;
@@ -37,21 +45,57 @@ export default function ChatMessageItem({
     }
   };
 
+  const handleFeedback = async (type: "helpful" | "unhelpful") => {
+    if (isStreaming || message.id.startsWith("stream-") || isSubmittingFeedback) {
+      return;
+    }
+
+    const previousFeedback = feedback;
+    const nextFeedback = feedback === type ? null : type;
+
+    // Optimistic UI: Update visual state immediately for instant feedback
+    setFeedback(nextFeedback);
+    setIsSubmittingFeedback(true);
+
+    try {
+      const res = await fetch(`/api/chat/message/${message.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ feedback: nextFeedback }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to update feedback");
+      }
+    } catch {
+      // Rollback to previous state on failure
+      setFeedback(previousFeedback);
+      toast.error("Failed to record feedback. Please try again.");
+    } finally {
+      setIsSubmittingFeedback(false);
+    }
+  };
+
   if (isUser) {
     return (
-      <div className="flex justify-end my-4 animate-in fade-in duration-200">
-        <div className="flex flex-col items-end max-w-xl space-y-2">
+      <div
+        className={`flex justify-end animate-in fade-in duration-200 ${
+          isFirstInGroup ? "mt-4 sm:mt-5" : "mt-1.5"
+        }`}
+      >
+        <div className="flex flex-col items-end max-w-xl space-y-1.5">
           {/* Attachment Preview Badge */}
           {attachment && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-secondary/80 border border-border text-xs text-foreground font-medium shadow-2xs">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-sm bg-secondary/80 border border-border text-xs text-foreground font-medium shadow-2xs">
               <FileText className="w-3.5 h-3.5 text-primary" />
               <span className="truncate max-w-xs">{attachment.name}</span>
             </div>
           )}
 
-          {/* User message text bubble */}
+          {/* User message text bubble: Slush-violet identity surface */}
           {message.content && (
-            <div className="px-4 py-2.5 rounded-2xl bg-secondary/80 text-foreground text-sm font-sans leading-relaxed border border-border/50 shadow-2xs">
+            <div className="px-4 py-2.5 rounded-sm bg-primary text-primary-foreground text-sm font-sans leading-relaxed shadow-2xs">
               {message.content}
             </div>
           )}
@@ -60,9 +104,13 @@ export default function ChatMessageItem({
     );
   }
 
-  // Assistant Message (Clean, avatar-free, industry-standard editorial style)
+  // Assistant Message (Neutral surface with deliberate AI evaluation actions)
   return (
-    <div className="group relative my-6 animate-in fade-in duration-300">
+    <div
+      className={`group relative animate-in fade-in duration-300 ${
+        isFirstInGroup ? "mt-5 sm:mt-6" : "mt-2"
+      }`}
+    >
       <div className="space-y-3">
         {/* Rich Markdown Text Content */}
         {message.content ? (
@@ -93,36 +141,69 @@ export default function ChatMessageItem({
 
         {/* Sovereign Memory Updated Badge */}
         {message.metadata?.memory_updated && (
-          <div className="flex items-center gap-1.5 py-1 text-[11px] text-muted-foreground">
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary/10 border border-primary/20 text-primary font-medium">
-              <Sparkles className="w-3.5 h-3.5" />
+          <div className="flex items-center gap-1.5 py-1 text-[11px]">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm bg-secondary border border-border text-secondary-foreground font-medium text-[11px]">
+              <Brain className="w-3.5 h-3.5 text-muted-foreground" />
               Sovereign Career Memory Updated
             </span>
           </div>
         )}
 
-        {/* Bottom Action: Always visible Quick Copy Button once response is fully rendered */}
+        {/* Bottom AI Actions: Evaluation & Utility */}
         {!isStreaming && message.content && (
-          <div className="flex items-center gap-2 pt-1">
+          <div className="flex items-center gap-1.5 pt-1">
             <button
               type="button"
               onClick={handleCopy}
               aria-label="Copy response to clipboard"
               title="Copy response"
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/70 focus:bg-secondary/70 focus:outline-none focus:ring-1 focus:ring-ring transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/70 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40 transition-colors cursor-pointer"
             >
               {copied ? (
                 <>
-                  <Check className="w-3.5 h-3.5 text-emerald-500" />
-                  <span className="text-[11px] text-emerald-500 font-medium">
+                  <Check className="w-3.5 h-3.5 text-slush-mint" />
+                  <span className="text-[11px] text-slush-mint font-medium">
                     Copied
                   </span>
                 </>
               ) : (
                 <>
                   <Copy className="w-3.5 h-3.5" />
+                  <span className="text-[11px] hidden sm:inline">Copy</span>
                 </>
               )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleFeedback("helpful")}
+              disabled={isStreaming || message.id.startsWith("stream-")}
+              aria-label="Mark response as helpful"
+              aria-busy={isSubmittingFeedback}
+              title="Helpful response"
+              className={`p-1.5 rounded-sm text-xs transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                feedback === "helpful"
+                  ? "text-slush-mint bg-slush-mint/10 border border-slush-mint/25"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/70"
+              }`}
+            >
+              <ThumbsUp className="w-3.5 h-3.5" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleFeedback("unhelpful")}
+              disabled={isStreaming || message.id.startsWith("stream-")}
+              aria-label="Mark response as unhelpful"
+              aria-busy={isSubmittingFeedback}
+              title="Unhelpful response"
+              className={`p-1.5 rounded-sm text-xs transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                feedback === "unhelpful"
+                  ? "text-slush-ember bg-slush-ember/10 border border-slush-ember/25"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/70"
+              }`}
+            >
+              <ThumbsDown className="w-3.5 h-3.5" />
             </button>
           </div>
         )}

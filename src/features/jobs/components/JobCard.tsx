@@ -4,7 +4,6 @@ import {
   Briefcase,
   Brain,
   ChevronRight,
-  AlertCircle,
   Bookmark,
   ThumbsDown,
   DollarSign,
@@ -45,15 +44,15 @@ export default function JobCard({
   const renderWorkModeBadge = () => {
     if (!workMode || workMode === "unknown") {
       return (
-        <span className="text-[11px] px-2 py-0.5 rounded bg-secondary/80 text-muted-foreground border border-border/60">
-          Work mode unspecified
+        <span className="text-xs px-2.5 py-0.5 rounded-sm bg-secondary/80 text-muted-foreground border border-border/60 font-medium">
+          Work mode not specified
         </span>
       );
     }
 
     if (workMode === "remote") {
       return (
-        <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 font-medium">
+        <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-sm bg-slush-mint/10 text-slush-mint border border-slush-mint/25 font-medium">
           <Laptop className="w-3 h-3" />
           <span>Remote</span>
         </span>
@@ -62,44 +61,44 @@ export default function JobCard({
 
     if (workMode === "hybrid") {
       return (
-        <span className="text-[11px] px-2 py-0.5 rounded bg-blue-500/10 text-blue-500 border border-blue-500/20 font-medium">
+        <span className="text-xs px-2.5 py-0.5 rounded-sm bg-primary/15 text-slush-lavender border border-primary/30 font-medium">
           Hybrid
         </span>
       );
     }
 
     return (
-      <span className="text-[11px] px-2 py-0.5 rounded bg-secondary text-muted-foreground border border-border/80 font-medium">
+      <span className="text-xs px-2.5 py-0.5 rounded-sm bg-secondary text-muted-foreground border border-border/80 font-medium">
         Onsite
       </span>
     );
   };
 
   return (
-    <div className="group border border-border/80 bg-card/60 hover:bg-card/90 rounded-xl p-5 transition-all duration-200 hover:border-primary/40 shadow-2xs flex flex-col gap-4">
+    <div className="group border border-border/80 bg-card hover:bg-card/90 rounded-sm p-5 transition-all duration-200 hover:border-primary/40 shadow-2xs flex flex-col gap-4">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-        <div className="flex gap-3.5 items-start">
+        <div className="flex gap-3.5 items-start min-w-0">
           <CompanyLogo src={companyLogo} name={companyName} size="md" />
-          <div className="space-y-1">
+          <div className="space-y-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-base font-semibold font-heading text-foreground group-hover:text-primary transition-colors">
-                {companyName}
+                {title}
               </h3>
               <MatchBadge score={matchScore} />
               {renderWorkModeBadge()}
               {match.source === "remotive" && (
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/90 bg-secondary/80 border border-border/70 px-1.5 py-0.5 rounded">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/90 bg-secondary/80 border border-border/70 px-2 py-0.5 rounded-sm">
                   via Remotive
                 </span>
               )}
             </div>
-            <p className="text-sm font-medium text-foreground">{title}</p>
+            <p className="text-xs sm:text-sm font-medium text-muted-foreground">{companyName}</p>
           </div>
         </div>
 
         {/* Quick Save and Reject Actions */}
-        <div className="flex items-center gap-1.5 self-end sm:self-start">
+        <div className="flex items-center gap-2 self-end sm:self-start">
           {onToggleSave && (
             <button
               type="button"
@@ -109,7 +108,7 @@ export default function JobCard({
               }}
               title={isSaved ? "Remove from saved" : "Save job"}
               aria-label={isSaved ? "Remove from saved" : "Save job"}
-              className={`p-2 rounded-lg border transition-colors cursor-pointer ${
+              className={`h-11 w-11 sm:h-9 sm:w-9 flex items-center justify-center rounded-sm border transition-colors cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
                 isSaved
                   ? "bg-primary/10 border-primary text-primary"
                   : "bg-secondary/60 border-border/70 text-muted-foreground hover:text-foreground hover:bg-secondary"
@@ -130,7 +129,7 @@ export default function JobCard({
               }}
               title="Not interested"
               aria-label="Not interested in this role"
-              className="p-2 rounded-lg border border-border/70 bg-secondary/60 text-muted-foreground hover:text-rose-500 hover:border-rose-500/40 hover:bg-rose-500/10 transition-colors cursor-pointer"
+              className="h-11 w-11 sm:h-9 sm:w-9 flex items-center justify-center rounded-sm border border-border/70 bg-secondary/60 text-muted-foreground hover:text-slush-ember hover:border-slush-ember/40 hover:bg-slush-ember/10 transition-colors cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             >
               <ThumbsDown className="w-4 h-4" />
             </button>
@@ -142,76 +141,32 @@ export default function JobCard({
       <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
         <span className="flex items-center gap-1">
           <MapPin className="w-3.5 h-3.5 text-muted-foreground/80" />
-          <span>{location || "Remote"}</span>
+          <span>{location || "Location not specified"}</span>
         </span>
         <span className="flex items-center gap-1">
           <Briefcase className="w-3.5 h-3.5 text-muted-foreground/80" />
-          <span>{experienceLevel || "Mid Level"}</span>
+          <span>{experienceLevel || "Level not specified"}</span>
         </span>
         {salaryRange && (
-          <span className="flex items-center gap-1 text-emerald-500/90 font-medium">
+          <span className="flex items-center gap-1 text-slush-mint font-medium">
             <DollarSign className="w-3.5 h-3.5" />
             <span>{salaryRange}</span>
           </span>
         )}
       </div>
 
-      {/* Score Breakdown Indicator (if available) */}
-      {scoreBreakdown && (
-        <div className="flex flex-wrap items-center gap-2 pt-1 pb-1">
-          <div className="flex items-center gap-1.5 text-[11px] bg-secondary/50 border border-border/70 px-2 py-0.5 rounded-md text-muted-foreground">
-            <span>Role:</span>
-            <span className="font-semibold text-foreground">
-              {scoreBreakdown.role_score} / 100
-            </span>
+      {/* Fit Rationale Snippet */}
+      {reason && (
+        <div className="p-3 bg-secondary/40 border border-border/60 rounded-sm space-y-1 text-xs">
+          <div className="flex items-center gap-1.5 text-primary font-semibold text-[11px] uppercase tracking-wider">
+            <Brain className="w-3.5 h-3.5" />
+            <span>Why this matches you</span>
           </div>
-          <div className="flex items-center gap-1.5 text-[11px] bg-secondary/50 border border-border/70 px-2 py-0.5 rounded-md text-muted-foreground">
-            <span>Skills:</span>
-            <span className="font-semibold text-foreground">
-              {scoreBreakdown.capability_score} / 100
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5 text-[11px] bg-secondary/50 border border-border/70 px-2 py-0.5 rounded-md text-muted-foreground">
-            <span>Preferences:</span>
-            <span className="font-semibold text-foreground">
-              {scoreBreakdown.preference_score} / 100
-            </span>
-          </div>
-          {scoreBreakdown.negative_penalty > 0 && (
-            <div className="flex items-center gap-1 text-[11px] bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-md text-rose-500 font-medium">
-              <span>Penalty:</span>
-              <span>-{scoreBreakdown.negative_penalty} pts</span>
-            </div>
-          )}
+          <p className="line-clamp-2 leading-relaxed text-muted-foreground font-sans">
+            {reason}
+          </p>
         </div>
       )}
-
-      {/* Fit Rationale Box */}
-      <div className="p-3 bg-secondary/30 border border-border/60 rounded-lg space-y-1.5 text-xs">
-        <div className="flex items-center gap-1.5 text-primary font-semibold">
-          <Brain className="w-3.5 h-3.5" />
-          <span>Why this job fits</span>
-        </div>
-        <p className="leading-relaxed text-muted-foreground font-sans">
-          {reason || "Strong alignment with your profile and career direction."}
-        </p>
-
-        {missingSkills && missingSkills.length > 0 && (
-          <div className="pt-2 border-t border-border/40 mt-1.5 flex items-start gap-1.5 text-[11px] text-amber-500/90 leading-relaxed">
-            <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-            <div>
-              <span className="font-semibold text-amber-500">
-                Skills not yet found in profile:
-              </span>{" "}
-              Consider highlighting or developing{" "}
-              <span className="font-semibold text-foreground">
-                {missingSkills.join(", ")}
-              </span>
-              .
-            </div>
-          </div>
-        )}
-      </div>
 
       {/* Bottom Footer Action */}
       <div className="flex items-center justify-between pt-1">
@@ -219,7 +174,7 @@ export default function JobCard({
           type="button"
           onClick={() => onSelect(match)}
           aria-label={`View details for ${title} at ${companyName}`}
-          className="w-full sm:w-auto min-h-[36px] flex items-center justify-center gap-1.5 px-4 py-2 border border-border/80 bg-secondary/60 hover:bg-primary hover:border-primary hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-lg text-xs font-semibold transition-all cursor-pointer shadow-2xs ml-auto"
+          className="w-full sm:w-auto min-h-[44px] sm:min-h-[38px] flex items-center justify-center gap-1.5 px-4 py-2 border border-border/80 bg-secondary/60 hover:bg-primary hover:border-primary hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm text-xs font-semibold transition-all cursor-pointer shadow-2xs ml-auto"
         >
           <span>View Details & Breakdown</span>
           <ChevronRight className="w-3.5 h-3.5 ml-0.5" />

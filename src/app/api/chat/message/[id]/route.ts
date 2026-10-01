@@ -29,14 +29,41 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     }
 
     const body = await req.json();
-    const { action_proposal_status } = body;
+    const { action_proposal_status, feedback } = body;
+
+    const hasProposal = action_proposal_status !== undefined;
+    const hasFeedback = feedback !== undefined;
+
+    if (!hasProposal && !hasFeedback) {
+      return NextResponse.json(
+        {
+          error:
+            "At least one of action_proposal_status or feedback must be provided.",
+        },
+        { status: 400 },
+      );
+    }
 
     if (
-      !action_proposal_status ||
+      hasProposal &&
       !["proposed", "applied", "rejected"].includes(action_proposal_status)
     ) {
       return NextResponse.json(
         { error: "Invalid action_proposal_status value." },
+        { status: 400 },
+      );
+    }
+
+    if (
+      hasFeedback &&
+      feedback !== null &&
+      !["helpful", "unhelpful"].includes(feedback)
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Invalid feedback value. Must be 'helpful', 'unhelpful', or null.",
+        },
         { status: 400 },
       );
     }
@@ -62,17 +89,25 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 
     if (!session || session.user_id !== user.id) {
       return NextResponse.json(
-        { error: "Forbidden! You do not have permission to modify this message." },
+        {
+          error:
+            "Forbidden! You do not have permission to modify this message.",
+        },
         { status: 403 },
       );
     }
 
     const updatedMetadata = {
       ...(msg.metadata || {}),
-      action_proposal: {
-        ...(msg.metadata?.action_proposal || {}),
-        status: action_proposal_status,
-      },
+      ...(hasProposal
+        ? {
+            action_proposal: {
+              ...(msg.metadata?.action_proposal || {}),
+              status: action_proposal_status,
+            },
+          }
+        : {}),
+      ...(hasFeedback ? { feedback } : {}),
     };
 
     const { error: updateError } = await supabaseAdmin
@@ -86,9 +121,12 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true, metadata: updatedMetadata });
   } catch (error) {
-    console.error("[API:ChatMessage:PATCH] Error updating message metadata:", error);
+    console.error(
+      "[API:ChatMessage:PATCH] Error updating message metadata:",
+      error,
+    );
     return NextResponse.json(
-      { error: "An error occurred while updating the proposal status." },
+      { error: "An error occurred while updating the message metadata." },
       { status: 500 },
     );
   }
