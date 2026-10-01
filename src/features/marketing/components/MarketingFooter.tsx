@@ -1,7 +1,8 @@
 import React from "react";
 import Link from "next/link";
-import { Sparkles, ExternalLink } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { GithubIcon } from "@/components/common/GithubIcon";
+import Logo from "@/components/common/Logo";
 
 export default function MarketingFooter() {
   return (
@@ -11,9 +12,7 @@ export default function MarketingFooter() {
           {/* Brand Info */}
           <div className="space-y-4 md:col-span-1">
             <Link href="/" className="flex items-center gap-2.5 group">
-              <div className="w-7 h-7 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shadow-xs">
-                <Sparkles className="w-3.5 h-3.5 text-primary-foreground" />
-              </div>
+              <Logo size={28} alt="" />
               <span className="text-base font-heading font-bold text-foreground tracking-tight">
                 Finder
               </span>

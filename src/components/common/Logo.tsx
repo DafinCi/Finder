@@ -1,11 +1,23 @@
-export default function Logo() {
-  return (
-    <div className="border-b border-sidebar-border pb-6">
-      <h1 className="text-2xl font-bold text-sidebar-foreground">
-        JobMatch AI
-      </h1>
+import Image from "next/image";
 
-      <p className="mt-1 text-sm text-muted-foreground">Find Your Dream Job</p>
-    </div>
+interface LogoProps {
+  size?: number;
+  alt?: string;
+  className?: string;
+}
+
+export default function Logo({
+  size = 32,
+  alt = "Finder logo",
+  className = "",
+}: LogoProps) {
+  return (
+    <Image
+      src="/brand/finder-logo.png"
+      alt={alt}
+      width={size}
+      height={size}
+      className={`shrink-0 object-contain ${className}`}
+    />
   );
 }
