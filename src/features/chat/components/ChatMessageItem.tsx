@@ -56,7 +56,7 @@ export default function ChatMessageItem({
         <div className="flex flex-col items-end max-w-xl space-y-2">
           {/* Attachment Preview Badge */}
           {attachment && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-secondary/80 border border-border text-xs text-foreground font-medium shadow-2xs">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-sm bg-secondary/80 border border-border text-xs text-foreground font-medium shadow-2xs">
               <FileText className="w-3.5 h-3.5 text-primary" />
               <span className="truncate max-w-xs">{attachment.name}</span>
             </div>
@@ -64,7 +64,7 @@ export default function ChatMessageItem({
 
           {/* User message text bubble: Slush-violet identity surface */}
           {message.content && (
-            <div className="px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-sans leading-relaxed shadow-2xs">
+            <div className="px-4 py-2.5 rounded-sm bg-primary text-primary-foreground text-sm font-sans leading-relaxed shadow-2xs">
               {message.content}
             </div>
           )}
@@ -122,7 +122,7 @@ export default function ChatMessageItem({
               onClick={handleCopy}
               aria-label="Copy response to clipboard"
               title="Copy response"
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/70 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/70 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40 transition-colors cursor-pointer"
             >
               {copied ? (
                 <>
@@ -144,7 +144,7 @@ export default function ChatMessageItem({
               onClick={() => handleFeedback("helpful")}
               aria-label="Mark response as helpful"
               title="Helpful response"
-              className={`p-1.5 rounded-xl text-xs transition-colors cursor-pointer ${
+              className={`p-1.5 rounded-sm text-xs transition-colors cursor-pointer ${
                 feedback === "helpful"
                   ? "text-slush-mint bg-slush-mint/10 border border-slush-mint/25"
                   : "text-muted-foreground hover:text-foreground hover:bg-secondary/70"
@@ -158,7 +158,7 @@ export default function ChatMessageItem({
               onClick={() => handleFeedback("unhelpful")}
               aria-label="Mark response as unhelpful"
               title="Unhelpful response"
-              className={`p-1.5 rounded-xl text-xs transition-colors cursor-pointer ${
+              className={`p-1.5 rounded-sm text-xs transition-colors cursor-pointer ${
                 feedback === "unhelpful"
                   ? "text-slush-ember bg-slush-ember/10 border border-slush-ember/25"
                   : "text-muted-foreground hover:text-foreground hover:bg-secondary/70"

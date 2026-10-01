@@ -34,7 +34,7 @@ export default function SidebarFooter({ collapsed }: { collapsed: boolean }) {
             <button
               onClick={handleLogout}
               aria-label="Logout"
-              className="p-1.5 rounded-xl border border-border bg-card/50 hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors duration-150 cursor-pointer"
+              className="p-1.5 rounded-sm border border-border bg-card/50 hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors duration-150 cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
             </button>
@@ -43,7 +43,7 @@ export default function SidebarFooter({ collapsed }: { collapsed: boolean }) {
           <button
             onClick={handleLogout}
             aria-label="Logout"
-            className="p-2 rounded-xl border border-border bg-card/50 hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors duration-150 cursor-pointer"
+            className="p-2 rounded-sm border border-border bg-card/50 hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors duration-150 cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
           </button>

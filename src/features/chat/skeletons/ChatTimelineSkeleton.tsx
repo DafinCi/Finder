@@ -4,11 +4,11 @@ import React from "react";
 
 export default function ChatTimelineSkeleton() {
   return (
-    <div className="w-full max-w-3xl mx-auto px-4 py-8 space-y-8 animate-pulse">
+    <div className="w-full max-w-4xl lg:max-w-5xl mx-auto px-4 py-8 space-y-8 animate-pulse">
       {/* 1. Assistant Message Skeleton */}
       <div className="flex gap-3 sm:gap-4 items-start">
         {/* Avatar Placeholder */}
-        <div className="w-8 h-8 rounded-lg bg-secondary/80 shrink-0" />
+        <div className="w-8 h-8 rounded-sm bg-secondary/80 shrink-0" />
 
         <div className="space-y-3 flex-1 max-w-[85%]">
           <div className="h-3.5 w-24 bg-secondary/80 rounded" />
@@ -23,7 +23,7 @@ export default function ChatTimelineSkeleton() {
       {/* 2. User Message Skeleton (Right Aligned) */}
       <div className="flex justify-end">
         <div className="max-w-[75%] space-y-2">
-          <div className="p-4 rounded-xl bg-secondary/50 space-y-2">
+          <div className="p-4 rounded-sm bg-secondary/50 space-y-2">
             <div className="h-3.5 w-48 bg-secondary/70 rounded" />
             <div className="h-3.5 w-32 bg-secondary/60 rounded" />
           </div>
@@ -32,7 +32,7 @@ export default function ChatTimelineSkeleton() {
 
       {/* 3. Follow-up Assistant Skeleton */}
       <div className="flex gap-3 sm:gap-4 items-start">
-        <div className="w-8 h-8 rounded-lg bg-secondary/80 shrink-0" />
+        <div className="w-8 h-8 rounded-sm bg-secondary/80 shrink-0" />
 
         <div className="space-y-3 flex-1 max-w-[85%]">
           <div className="h-3.5 w-20 bg-secondary/80 rounded" />

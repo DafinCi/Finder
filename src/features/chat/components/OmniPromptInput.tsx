@@ -124,13 +124,13 @@ export default function OmniPromptInput({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       className={`w-full transition-all duration-200 ${
-        isSticky ? "max-w-3xl mx-auto px-4" : "max-w-2xl mx-auto"
+        isSticky ? "max-w-4xl lg:max-w-5xl mx-auto px-4" : "max-w-3xl lg:max-w-4xl mx-auto px-4"
       }`}
     >
       <form
         onSubmit={handleSubmit}
         aria-label="Message and CV upload"
-        className={`relative rounded-2xl border bg-card/95 shadow-md backdrop-blur-md p-2 sm:p-2.5 transition-all ${
+        className={`relative rounded-sm border bg-card/95 shadow-md backdrop-blur-md p-2 sm:p-2.5 transition-all ${
           isDragging
             ? "border-primary ring-2 ring-primary/20 bg-primary/5"
             : "border-border/80"
@@ -138,7 +138,7 @@ export default function OmniPromptInput({
       >
         {/* Drag Overlay Hint */}
         {isDragging && (
-          <div className="absolute inset-0 rounded-2xl bg-card/95 flex items-center justify-center gap-2 z-10 text-primary font-medium text-sm animate-in fade-in">
+          <div className="absolute inset-0 rounded-sm bg-card/95 flex items-center justify-center gap-2 z-10 text-primary font-medium text-sm animate-in fade-in">
             <UploadCloud className="w-5 h-5 animate-bounce" />
             <span>Drop your CV (PDF) here</span>
           </div>
@@ -146,7 +146,7 @@ export default function OmniPromptInput({
 
         {/* Attached File Preview Badge */}
         {attachedFile && (
-          <div className="flex items-center gap-2 mb-2 p-1 px-2.5 rounded-xl bg-secondary/80 border border-border/80 w-fit text-xs text-foreground animate-in fade-in">
+          <div className="flex items-center gap-2 mb-2 p-1 px-2.5 rounded-sm bg-secondary/80 border border-border/80 w-fit text-xs text-foreground animate-in fade-in">
             <FileText className="w-3.5 h-3.5 text-primary shrink-0" />
             <span className="font-medium truncate max-w-xs">
               {attachedFile.name}
@@ -158,7 +158,7 @@ export default function OmniPromptInput({
               type="button"
               onClick={handleRemoveFile}
               aria-label="Remove attached CV"
-              className="p-1 hover:bg-destructive/10 rounded-lg text-muted-foreground hover:text-destructive cursor-pointer transition-colors"
+              className="p-1 hover:bg-destructive/10 rounded-sm text-muted-foreground hover:text-destructive cursor-pointer transition-colors"
             >
               <X className="w-3 h-3" />
             </button>
@@ -182,7 +182,7 @@ export default function OmniPromptInput({
             disabled={isLoading}
             aria-label="Attach CV (PDF up to 5MB)"
             title="Attach CV (PDF)"
-            className="w-9 h-9 shrink-0 flex items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors cursor-pointer disabled:opacity-50"
+            className="w-9 h-9 shrink-0 flex items-center justify-center rounded-sm text-muted-foreground hover:text-foreground hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors cursor-pointer disabled:opacity-50"
           >
             <Paperclip className="w-4 h-4" />
           </button>
@@ -220,7 +220,7 @@ export default function OmniPromptInput({
             disabled={!canSubmit}
             aria-label="Send message"
             title="Send message"
-            className={`w-9 h-9 shrink-0 rounded-xl transition-all duration-150 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+            className={`w-9 h-9 shrink-0 rounded-sm transition-all duration-150 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
               canSubmit
                 ? "bg-primary text-primary-foreground hover:opacity-95 shadow-2xs cursor-pointer active:scale-95"
                 : "bg-secondary text-muted-foreground cursor-not-allowed opacity-40"

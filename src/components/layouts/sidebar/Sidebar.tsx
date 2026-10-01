@@ -106,7 +106,7 @@ export default function Sidebar() {
 
   const desktopStyle = isDesktop
     ? {
-        width: collapsed ? 0 : `${sidebarWidth}px`,
+        width: `${sidebarWidth}px`,
       }
     : undefined;
 
@@ -127,22 +127,22 @@ export default function Sidebar() {
         className={`
           h-[100dvh] flex flex-col bg-sidebar border-r border-border/80 shrink-0 no-scrollbar
           fixed md:relative inset-y-0 left-0 z-50 md:z-40
-          ${isDragging ? "transition-none" : "transition-[width,transform,opacity] duration-200 ease-in-out"}
+          ${isDragging ? "transition-none" : "transition-[width,transform] duration-200 ease-in-out"}
           ${
             collapsed
-              ? "-translate-x-full md:translate-x-0 md:border-r-0 md:opacity-0 md:overflow-hidden md:pointer-events-none"
-              : "translate-x-0 w-[280px] max-w-[85vw] md:w-auto shadow-2xl md:shadow-none opacity-100"
+              ? "-translate-x-full md:translate-x-0"
+              : "translate-x-0 w-[280px] max-w-[85vw] md:w-auto shadow-2xl md:shadow-none"
           }
         `}
       >
         <div className="w-full h-full flex flex-col overflow-hidden no-scrollbar">
-          <SidebarHeader collapsed={collapsed} />
-          <SidebarNavigation collapsed={collapsed} />
-          <SidebarFooter collapsed={collapsed} />
+          <SidebarHeader collapsed={isDesktop ? false : collapsed} />
+          <SidebarNavigation collapsed={isDesktop ? false : collapsed} />
+          <SidebarFooter collapsed={isDesktop ? false : collapsed} />
         </div>
 
         {/* Resizer Splitter Handle (Desktop Only) */}
-        {!collapsed && isDesktop && (
+        {isDesktop && (
           <div
             role="separator"
             tabIndex={0}

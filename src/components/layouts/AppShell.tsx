@@ -14,14 +14,14 @@ export default function AppShell({ children }: { children: ReactNode }) {
       <Sidebar />
 
       <main className="flex-1 min-h-0 h-[100dvh] flex flex-col overflow-hidden p-0 w-full relative pb-14 md:pb-0">
-        {/* Floating Open Sidebar Button when collapsed */}
+        {/* Floating Open Sidebar Button when collapsed (mobile only) */}
         {collapsed && (
-          <div className="absolute top-2.5 left-3 z-50 animate-in fade-in duration-200">
+          <div className="absolute top-2.5 left-3 z-50 animate-in fade-in duration-200 md:hidden">
             <button
               type="button"
               onClick={toggleSidebar}
               title="Open sidebar"
-              className="p-2 rounded-xl bg-card/90 border border-border/80 text-muted-foreground hover:text-foreground hover:bg-secondary shadow-xs backdrop-blur-sm transition-colors cursor-pointer"
+              className="p-2 rounded-sm bg-card border border-border/80 text-muted-foreground hover:text-foreground hover:bg-secondary shadow-xs transition-colors cursor-pointer"
             >
               <PanelLeftOpen className="w-4 h-4" />
             </button>

@@ -6,6 +6,7 @@ export type BotAvatarSize = "xs" | "sm" | "md" | "lg" | "xl" | number;
 
 interface BotAvatarProps {
   name?: string;
+  seed?: string;
   size?: BotAvatarSize;
   className?: string;
   showStatusIndicator?: boolean;
@@ -128,13 +129,15 @@ function getSizeDimensions(size: BotAvatarSize): {
 
 export default function BotAvatar({
   name = "Finder",
+  seed,
   size = "md",
   className = "",
   showStatusIndicator = false,
   indicatorStatus = "online",
   "aria-label": ariaLabel,
 }: BotAvatarProps) {
-  const paletteIndex = getHash(name) % PALETTES.length;
+  const colorSeed = seed || name;
+  const paletteIndex = getHash(colorSeed) % PALETTES.length;
   const palette = PALETTES[paletteIndex];
   const { containerClass, pixelSize, indicatorSizeClass } =
     getSizeDimensions(size);

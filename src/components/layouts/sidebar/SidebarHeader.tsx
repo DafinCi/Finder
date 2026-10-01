@@ -13,9 +13,9 @@ export default function SidebarHeader({ collapsed }: { collapsed: boolean }) {
   }
 
   return (
-    <div className="h-14 flex items-center justify-between border-b border-border/60 px-4 shrink-0">
+    <div className="h-16 flex items-center justify-between border-b border-border/60 px-4 shrink-0">
       <Link href="/" className="flex items-center gap-2.5 group">
-        <div className="w-5 h-5 bg-primary rounded-xl shadow-xs transition-transform group-hover:scale-105" />
+        <div className="w-5 h-5 bg-primary rounded-sm shadow-xs transition-transform group-hover:scale-105" />
         <div className="flex flex-col leading-none">
           <span className="text-[15px] font-heading font-bold tracking-tight text-foreground">
             Finder
@@ -31,7 +31,7 @@ export default function SidebarHeader({ collapsed }: { collapsed: boolean }) {
         onClick={toggleSidebar}
         title="Close sidebar"
         aria-label="Close sidebar"
-        className="p-1.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-colors cursor-pointer"
+        className="p-1.5 rounded-sm text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-colors cursor-pointer md:hidden"
       >
         <PanelLeftClose className="w-4 h-4" />
       </button>

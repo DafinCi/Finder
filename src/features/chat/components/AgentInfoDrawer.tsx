@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Cpu, Check, Pencil, Sparkles, Activity } from "lucide-react";
+import { X, Cpu, Check, Pencil, Info, Activity } from "lucide-react";
 import { toast } from "sonner";
 import BotAvatar from "@/components/ui/BotAvatar";
 import { useAgent } from "@/contexts/AgentContext";
@@ -86,7 +86,7 @@ export default function AgentInfoDrawer({
         {/* Drawer Header */}
         <div className="h-14 border-b border-border px-4 flex items-center justify-between shrink-0 bg-card">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-primary" />
+            <Info className="w-4 h-4 text-primary" />
             <h3 className="text-sm font-bold font-heading text-foreground">
               Agent Info
             </h3>
@@ -95,7 +95,7 @@ export default function AgentInfoDrawer({
             type="button"
             onClick={onClose}
             aria-label="Close agent info"
-            className="min-h-[44px] min-w-[44px] p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary flex items-center justify-center transition-colors cursor-pointer"
+            className="min-h-[44px] min-w-[44px] p-2 rounded-sm text-muted-foreground hover:text-foreground hover:bg-secondary flex items-center justify-center transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -104,9 +104,10 @@ export default function AgentInfoDrawer({
         {/* Drawer Content */}
         <div className="flex-1 overflow-y-auto p-5 space-y-6 custom-scrollbar">
           {/* Section 1: Hero Avatar & Name Personalisasi */}
-          <div className="flex flex-col items-center text-center p-5 rounded-2xl bg-secondary border border-border space-y-3.5">
+          <div className="flex flex-col items-center text-center p-5 rounded-sm bg-secondary border border-border space-y-3.5">
             <BotAvatar
               name={currentAgentName}
+              seed={sessionId}
               size="xl"
               showStatusIndicator
               indicatorStatus="online"
@@ -126,14 +127,14 @@ export default function AgentInfoDrawer({
                   autoFocus
                   maxLength={30}
                   aria-label="Agent nickname"
-                  className="w-full text-center text-sm font-semibold bg-background text-foreground border border-primary/50 rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  className="w-full text-center text-sm font-semibold bg-background text-foreground border border-primary/50 rounded-sm px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/40"
                   placeholder="Enter agent nickname"
                 />
                 <div className="flex items-center justify-center gap-2">
                   <button
                     type="button"
                     onClick={handleSaveName}
-                    className="min-h-[36px] px-3.5 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:opacity-95 transition-opacity inline-flex items-center gap-1 cursor-pointer"
+                    className="min-h-[36px] px-3.5 py-1.5 rounded-sm bg-primary text-primary-foreground text-xs font-semibold hover:opacity-95 transition-opacity inline-flex items-center gap-1 cursor-pointer"
                   >
                     <Check className="w-3.5 h-3.5" />
                     <span>Save</span>
@@ -141,7 +142,7 @@ export default function AgentInfoDrawer({
                   <button
                     type="button"
                     onClick={handleCancelEdit}
-                    className="min-h-[36px] px-3.5 py-1.5 rounded-xl bg-card hover:bg-card/80 text-muted-foreground hover:text-foreground text-xs font-medium transition-colors cursor-pointer"
+                    className="min-h-[36px] px-3.5 py-1.5 rounded-sm bg-card hover:bg-card/80 text-muted-foreground hover:text-foreground text-xs font-medium transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -158,7 +159,7 @@ export default function AgentInfoDrawer({
                     onClick={() => setIsEditing(true)}
                     aria-label="Edit agent nickname"
                     title="Edit agent nickname"
-                    className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-card transition-colors cursor-pointer"
+                    className="p-1.5 rounded-sm text-muted-foreground hover:text-foreground hover:bg-card transition-colors cursor-pointer"
                   >
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
@@ -177,13 +178,13 @@ export default function AgentInfoDrawer({
               <span>Intelligence Architecture</span>
             </h5>
 
-            <div className="rounded-2xl border border-border bg-secondary p-4 space-y-3.5 text-xs">
+            <div className="rounded-sm border border-border bg-secondary p-4 space-y-3.5 text-xs">
               {/* Active Model */}
               <div className="flex items-center justify-between gap-2">
                 <span className="text-muted-foreground font-medium">
                   Active Model
                 </span>
-                <span className="font-mono text-[11px] font-semibold text-foreground px-2 py-0.5 rounded-md bg-background border border-border">
+                <span className="font-mono text-[11px] font-semibold text-foreground px-2 py-0.5 rounded-sm bg-background border border-border">
                   openai/gpt-oss-120b
                 </span>
               </div>

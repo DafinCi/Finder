@@ -114,11 +114,11 @@ export default function ActionProposalCard({
     <div
       role="region"
       aria-label="Career preference update proposal"
-      className="my-3 p-4 rounded-xl bg-card border border-border/80 shadow-xs space-y-3 animate-in fade-in duration-200"
+      className="my-3 p-4 rounded-sm bg-card border border-border/80 shadow-xs space-y-3 animate-in fade-in duration-200"
     >
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+          <div className="w-8 h-8 rounded-sm bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
             <SlidersHorizontal className="w-3.5 h-3.5" />
           </div>
           <div>
@@ -178,7 +178,7 @@ export default function ActionProposalCard({
             type="button"
             onClick={handleApply}
             disabled={isApplying}
-            className="inline-flex items-center justify-center gap-1.5 px-4 min-h-[44px] rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50 transition-colors cursor-pointer"
+            className="inline-flex items-center justify-center gap-1.5 px-4 min-h-[44px] rounded-sm bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50 transition-colors cursor-pointer"
           >
             {isApplying ? (
               <>
@@ -197,7 +197,7 @@ export default function ActionProposalCard({
             type="button"
             onClick={() => setDismissed(true)}
             disabled={isApplying}
-            className="inline-flex items-center justify-center gap-1.5 px-3.5 min-h-[44px] rounded-xl bg-secondary/50 text-muted-foreground hover:text-foreground hover:bg-secondary text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors cursor-pointer"
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 min-h-[44px] rounded-sm bg-secondary/50 text-muted-foreground hover:text-foreground hover:bg-secondary text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
             <span>Dismiss</span>

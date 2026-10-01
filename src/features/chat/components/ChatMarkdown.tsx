@@ -46,7 +46,7 @@ function CodeBlock({
   };
 
   return (
-    <div className="relative my-4 rounded-xl border border-border/80 bg-zinc-950 text-zinc-100 overflow-hidden shadow-sm">
+    <div className="relative my-4 rounded-sm border border-border/80 bg-zinc-950 text-zinc-100 overflow-hidden shadow-sm">
       {/* Code Header Bar */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-800 bg-zinc-900/90 text-xs text-zinc-400">
         <span className="font-mono text-[11px] uppercase tracking-wider font-semibold">
@@ -159,7 +159,7 @@ export default function ChatMarkdown({ content }: ChatMarkdownProps) {
 
           // Tables (GFM Tables with sleek border & responsive scroll container)
           table: ({ children }) => (
-            <div className="my-4 overflow-x-auto rounded-xl border border-border/80 bg-card/40 shadow-2xs custom-scrollbar">
+            <div className="my-4 overflow-x-auto rounded-sm border border-border/80 bg-card/40 shadow-2xs custom-scrollbar">
               <table className="w-full border-collapse text-left text-xs">
                 {children}
               </table>

@@ -75,8 +75,8 @@ export default function AppChatHomePage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center h-full px-4 py-8 animate-in fade-in duration-300 relative overflow-y-auto custom-scrollbar">
-      <div className="w-full max-w-2xl text-center space-y-7 my-auto">
+    <div className="flex-1 flex flex-col items-center justify-center h-full px-4 py-8 animate-in fade-in duration-300 relative overflow-y-auto custom-scrollbar chat-wallpaper">
+      <div className="w-full max-w-4xl text-center space-y-7 my-auto">
         {/* Friendly Agent Greeting */}
         <div className="flex flex-col items-center gap-3">
           <BotAvatar

@@ -53,7 +53,7 @@ export default function ChatSessionPage({
   };
 
   return (
-    <div className="flex-1 relative h-full w-full overflow-hidden bg-background">
+    <div className="flex-1 relative h-full w-full overflow-hidden bg-background chat-wallpaper">
       {/* Full-Height Scrollable Stream */}
       <div className="h-full w-full overflow-y-auto custom-scrollbar">
         {/* Session Topbar: Solid background header, full-bar click opens agent info drawer */}
@@ -67,7 +67,7 @@ export default function ChatSessionPage({
               openDrawer();
             }
           }}
-          className={`sticky top-0 z-20 h-16 border-b border-border bg-card flex items-center justify-between shrink-0 transition-all duration-200 cursor-pointer select-none group  focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary ${
+          className={`sticky top-0 z-20 h-16 border-b border-border bg-card flex items-center justify-between shrink-0 select-none group focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary cursor-pointer ${
             collapsed ? "pl-14 pr-4 md:pr-6" : "px-4 md:px-6"
           }`}
           title="Click anywhere for agent details"
@@ -77,22 +77,23 @@ export default function ChatSessionPage({
           <div className="flex items-center gap-3 min-w-0">
             <BotAvatar
               name={currentAgentName}
+              seed={id}
               size="md"
               showStatusIndicator
               indicatorStatus={isLoading ? "typing" : "online"}
             />
             <div className="flex flex-col min-w-0">
-              <span className="text-sm sm:text-base font-semibold text-foreground truncate group-hover:text-primary transition-colors leading-tight">
+              <span className="text-sm sm:text-base font-semibold text-foreground truncate leading-tight">
                 {currentAgentName}
               </span>
-              <span className="text-xs sm:text-sm truncate leading-tight transition-colors mt-0.5">
+              <span className="text-xs sm:text-sm truncate leading-tight mt-0.5">
                 {isLoading ? (
                   <span className="text-primary font-medium inline-flex items-center gap-1.5">
                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
                     <span>{thinkingStatus || "Thinking..."}</span>
                   </span>
                 ) : (
-                  <span className="text-muted-foreground group-hover:text-foreground/80">
+                  <span className="text-muted-foreground">
                     Click here for agent info
                   </span>
                 )}
@@ -101,13 +102,13 @@ export default function ChatSessionPage({
           </div>
 
           {/* Right: Subtle Chevron Indicator */}
-          <div className="text-muted-foreground/60 group-hover:text-foreground transition-colors pr-1">
+          <div className="text-muted-foreground/60 pr-1">
             <ChevronRight className="w-5 h-5 opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
           </div>
         </header>
 
         {/* Chat Content Body */}
-        <div className="min-h-[calc(100%-3.5rem)] flex flex-col justify-between">
+        <div className="min-h-[calc(100%-4rem)] flex flex-col justify-between">
           {/* Initial Loading Skeleton */}
           {isInitialLoading ? (
             <ChatTimelineSkeleton />
