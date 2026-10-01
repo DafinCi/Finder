@@ -25,7 +25,6 @@ import {
   RotateCcw,
   Bookmark,
   ThumbsDown,
-  Sparkles,
   ArrowRight,
   ArrowLeft,
   Laptop,
@@ -308,7 +307,7 @@ export default function JobsView() {
     }
     if (mode === "hybrid") {
       return (
-        <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-primary/15 text-slush-lavender border border-primary/30 font-medium">
+        <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-secondary text-muted-foreground border border-border/80 font-medium">
           Hybrid
         </span>
       );
@@ -351,7 +350,7 @@ export default function JobsView() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search jobs or company..."
                 aria-label="Search jobs"
-                className="w-full pl-9 pr-8 py-1.5 bg-secondary/80 border border-border/80 rounded-sm text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary"
+                className="w-full pl-9 pr-8 py-1.5 bg-secondary/80 border border-border/80 rounded-sm text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-muted-foreground/40 focus:border-border-strong"
               />
               {searchQuery && (
                 <button
@@ -383,7 +382,7 @@ export default function JobsView() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search jobs..."
                   aria-label="Search jobs"
-                  className="w-full pl-8 pr-7 py-1.5 bg-secondary/60 border border-border/80 rounded-sm text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary transition-all"
+                  className="w-full pl-8 pr-7 py-1.5 bg-secondary/60 border border-border/80 rounded-sm text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-muted-foreground/40 focus:border-border-strong transition-all"
                 />
                 {searchQuery && (
                   <button
@@ -414,14 +413,14 @@ export default function JobsView() {
                 aria-label="Filter jobs"
                 className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-sm text-xs font-medium transition-colors cursor-pointer border ${
                   hasActiveFilters
-                    ? "bg-primary/10 text-primary border-primary/30 font-semibold"
+                    ? "bg-secondary text-foreground border-border-strong font-semibold"
                     : "bg-secondary/60 text-muted-foreground border-border/80 hover:text-foreground hover:bg-secondary"
                 }`}
               >
                 <SlidersHorizontal className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Filters</span>
                 {activeFilterCount > 0 && (
-                  <span className="w-4 h-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+                  <span className="w-4 h-4 rounded-full bg-foreground text-background text-[10px] font-bold flex items-center justify-center">
                     {activeFilterCount}
                   </span>
                 )}
@@ -453,10 +452,9 @@ export default function JobsView() {
         <div className="p-4 sm:p-6 md:p-8 max-w-6xl mx-auto space-y-6 animate-in fade-in duration-200">
           {/* Onboarding Call-to-Action Banner */}
           {requiresOnboarding && (
-            <div className="border border-primary/30 bg-primary/5 rounded-sm p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm">
+            <div className="border border-border bg-secondary/30 rounded-sm p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm">
               <div className="space-y-2 max-w-xl">
-                <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-sm bg-primary/10 border border-primary/20 text-primary text-xs font-semibold">
-                  <Sparkles className="w-3.5 h-3.5" />
+                <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-sm bg-secondary border border-border text-muted-foreground text-xs font-semibold">
                   <span>Profile Setup Required</span>
                 </div>
                 <h3 className="text-lg md:text-xl font-bold font-heading text-foreground">
@@ -523,7 +521,7 @@ export default function JobsView() {
               <button
                 type="button"
                 onClick={resetFilters}
-                className="text-xs text-primary hover:underline font-medium ml-1 cursor-pointer"
+                className="text-xs text-muted-foreground hover:text-foreground underline font-medium ml-1 cursor-pointer"
               >
                 Reset all
               </button>
@@ -555,7 +553,7 @@ export default function JobsView() {
                   type="button"
                   onClick={resetFilters}
                   aria-label="Reset all filters"
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-sm bg-secondary text-foreground border border-border text-xs font-medium hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors cursor-pointer mx-auto"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-sm bg-secondary text-foreground border border-border text-xs font-medium hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground transition-colors cursor-pointer mx-auto"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>Reset all filters</span>
@@ -642,7 +640,7 @@ export default function JobsView() {
             >
               {/* Drawer Header */}
               <div className="flex items-center justify-between border-b border-border/80 pb-4">
-                <div className="flex items-center gap-2 text-primary font-semibold text-xs tracking-tight">
+                <div className="flex items-center gap-2 text-muted-foreground font-semibold text-xs tracking-tight">
                   <span>Recommendation Details</span>
                 </div>
                 <div className="flex items-center gap-1">
@@ -653,7 +651,7 @@ export default function JobsView() {
                     aria-label={selectedJob.isSaved ? "Saved" : "Save job"}
                     className={`p-2 rounded-sm border transition-colors cursor-pointer ${
                       selectedJob.isSaved
-                        ? "bg-primary/10 border-primary text-primary"
+                        ? "bg-secondary border-border-strong text-foreground"
                         : "border-border/80 text-muted-foreground hover:text-foreground hover:bg-secondary"
                     }`}
                   >
@@ -676,7 +674,7 @@ export default function JobsView() {
                     type="button"
                     onClick={handleCloseDrawer}
                     aria-label="Close job details"
-                    className="w-10 h-10 flex items-center justify-center rounded-sm hover:bg-secondary text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors cursor-pointer ml-1"
+                    className="w-10 h-10 flex items-center justify-center rounded-sm hover:bg-secondary text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground transition-colors cursor-pointer ml-1"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -695,7 +693,7 @@ export default function JobsView() {
                     <div className="flex-1 space-y-1 min-w-0">
                       <div className="flex flex-col gap-1.5">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs font-bold text-primary bg-primary/10 border border-primary/25 px-2.5 py-0.5 rounded-sm shrink-0">
+                          <span className="text-xs font-bold text-foreground bg-secondary border border-border-strong px-2.5 py-0.5 rounded-sm shrink-0">
                             {selectedJob.matchScore} / 100 Match Score
                           </span>
                           {renderWorkModeBadge(selectedJob.workMode)}
@@ -810,7 +808,7 @@ export default function JobsView() {
                 {/* Fit Rationale Box */}
                 <div className="border border-border/80 bg-secondary/30 rounded-sm p-4 space-y-2">
                   <h4 className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                    <Brain className="w-3.5 h-3.5 text-primary" />
+                    <Brain className="w-3.5 h-3.5 text-muted-foreground" />
                     <span>Why this job fits</span>
                   </h4>
                   <p className="text-xs leading-relaxed text-muted-foreground font-sans">
@@ -853,7 +851,7 @@ export default function JobsView() {
                     href={`/?job=${selectedJob.jobId}`}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-card border border-border hover:bg-secondary text-foreground font-medium text-xs whitespace-nowrap shadow-2xs"
                   >
-                    <MessageSquare className="w-3.5 h-3.5 text-primary" />
+                    <MessageSquare className="w-3.5 h-3.5 text-muted-foreground" />
                     <span>Ask Finder</span>
                   </Link>
                 </div>
@@ -881,7 +879,7 @@ export default function JobsView() {
                             key={idx}
                             className="flex gap-2 text-xs text-muted-foreground leading-relaxed"
                           >
-                            <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground mt-1.5 shrink-0" />
                             <span>{req}</span>
                           </li>
                         ))}
@@ -910,7 +908,7 @@ export default function JobsView() {
                       type="button"
                       disabled={!hasUrl}
                       onClick={() => handleApply(selectedJob)}
-                      className={`flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-sm text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-opacity shadow-xs ${
+                      className={`flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-sm text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-opacity shadow-xs ${
                         hasUrl
                           ? "bg-primary text-primary-foreground hover:opacity-90 cursor-pointer"
                           : "bg-secondary text-muted-foreground border border-border/60 cursor-not-allowed opacity-75"
@@ -930,7 +928,7 @@ export default function JobsView() {
                 <button
                   type="button"
                   onClick={handleCloseDrawer}
-                  className="px-4 py-2.5 border border-border/80 bg-secondary/60 rounded-sm text-xs font-medium text-foreground hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors cursor-pointer"
+                  className="px-4 py-2.5 border border-border/80 bg-secondary/60 rounded-sm text-xs font-medium text-foreground hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground transition-colors cursor-pointer"
                 >
                   Close
                 </button>
@@ -955,7 +953,7 @@ export default function JobsView() {
             <div className="relative w-full max-w-lg bg-card border border-border/80 rounded-sm shadow-2xl p-5 space-y-4 z-50 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto custom-scrollbar">
               <div className="flex items-center justify-between pb-3 border-b border-border/80">
                 <div className="flex items-center gap-2">
-                  <SlidersHorizontal className="w-4 h-4 text-primary" />
+                  <SlidersHorizontal className="w-4 h-4 text-muted-foreground" />
                   <h3
                     id="filter-dialog-title"
                     className="text-sm font-bold font-heading text-foreground"
@@ -963,7 +961,7 @@ export default function JobsView() {
                     Filter Jobs
                   </h3>
                   {activeFilterCount > 0 && (
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground">
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-foreground text-background">
                       {activeFilterCount}
                     </span>
                   )}
@@ -990,7 +988,7 @@ export default function JobsView() {
                     onClick={() => setShowSavedOnly((prev) => !prev)}
                     className={`h-8 px-3 rounded-sm text-xs font-medium border flex items-center gap-1.5 transition-colors cursor-pointer ${
                       showSavedOnly
-                        ? "bg-primary text-primary-foreground border-primary font-semibold"
+                        ? "bg-secondary text-foreground border-border-strong font-semibold"
                         : "bg-secondary/60 text-muted-foreground border-border/80 hover:text-foreground hover:bg-secondary"
                     }`}
                   >
@@ -1010,7 +1008,7 @@ export default function JobsView() {
                     }
                     className={`h-8 px-3 rounded-sm text-xs font-medium border flex items-center gap-1.5 transition-colors cursor-pointer ${
                       selectedWorkMode === "remote"
-                        ? "bg-primary text-primary-foreground border-primary font-semibold"
+                        ? "bg-secondary text-foreground border-border-strong font-semibold"
                         : "bg-secondary/60 text-muted-foreground border-border/80 hover:text-foreground hover:bg-secondary"
                     }`}
                   >
@@ -1034,11 +1032,10 @@ export default function JobsView() {
                     className={`h-8 px-3 rounded-sm text-xs font-medium border flex items-center gap-1.5 transition-colors cursor-pointer ${
                       selectedMatchLevel === "strong" ||
                       selectedMatchLevel === "excellent"
-                        ? "bg-primary text-primary-foreground border-primary font-semibold"
+                        ? "bg-secondary text-foreground border-border-strong font-semibold"
                         : "bg-secondary/60 text-muted-foreground border-border/80 hover:text-foreground hover:bg-secondary"
                     }`}
                   >
-                    <Sparkles className="w-3.5 h-3.5 text-slush-mint" />
                     <span>Top Match (75%+)</span>
                   </button>
                 </div>
@@ -1055,7 +1052,7 @@ export default function JobsView() {
                     value={selectedMatchLevel}
                     onChange={(e) => setSelectedMatchLevel(e.target.value)}
                     aria-label="Filter by match level"
-                    className="w-full bg-secondary/50 border border-border/80 rounded-sm px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                    className="w-full bg-secondary/50 border border-border/80 rounded-sm px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-muted-foreground cursor-pointer"
                   >
                     <option value="all">All Match Levels</option>
                     <option value="excellent">Excellent (90-100)</option>
@@ -1074,7 +1071,7 @@ export default function JobsView() {
                     value={selectedWorkMode}
                     onChange={(e) => setSelectedWorkMode(e.target.value)}
                     aria-label="Filter by work mode"
-                    className="w-full bg-secondary/50 border border-border/80 rounded-sm px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                    className="w-full bg-secondary/50 border border-border/80 rounded-sm px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-muted-foreground cursor-pointer"
                   >
                     <option value="all">All Work Modes</option>
                     <option value="remote">Remote Only</option>
@@ -1092,7 +1089,7 @@ export default function JobsView() {
                     value={selectedExperience}
                     onChange={(e) => setSelectedExperience(e.target.value)}
                     aria-label="Filter by experience level"
-                    className="w-full bg-secondary/50 border border-border/80 rounded-sm px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                    className="w-full bg-secondary/50 border border-border/80 rounded-sm px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-muted-foreground cursor-pointer"
                   >
                     <option value="all">All Experience Levels</option>
                     <option value="junior">Junior / Entry Level</option>
@@ -1111,7 +1108,7 @@ export default function JobsView() {
                     value={selectedLocation}
                     onChange={(e) => setSelectedLocation(e.target.value)}
                     aria-label="Filter by location"
-                    className="w-full bg-secondary/50 border border-border/80 rounded-sm px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer truncate"
+                    className="w-full bg-secondary/50 border border-border/80 rounded-sm px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-muted-foreground cursor-pointer truncate"
                   >
                     <option value="all">All Locations</option>
                     {uniqueLocations
@@ -1131,7 +1128,7 @@ export default function JobsView() {
                   <button
                     type="button"
                     onClick={resetFilters}
-                    className="text-xs text-primary hover:underline font-medium cursor-pointer"
+                    className="text-xs text-muted-foreground hover:text-foreground underline font-medium cursor-pointer"
                   >
                     Reset all filters
                   </button>

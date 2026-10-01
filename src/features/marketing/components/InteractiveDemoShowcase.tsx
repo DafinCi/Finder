@@ -5,7 +5,6 @@ import {
   FileText,
   Briefcase,
   Bot,
-  Sparkles,
   CheckCircle2,
   AlertCircle,
   MapPin,

@@ -212,7 +212,7 @@ export function ProfileResumeCard({
       <div className="space-y-1.5 pb-3 border-b border-border/80">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-sm bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+            <div className="w-8 h-8 rounded-sm bg-secondary border border-border flex items-center justify-center text-muted-foreground shrink-0">
               <FileText className="w-4 h-4" />
             </div>
             <h2 className="text-sm font-semibold font-heading text-foreground">
@@ -240,7 +240,7 @@ export function ProfileResumeCard({
       <div className="space-y-3 flex-1">
         {loadingMeta ? (
           <div className="p-4 rounded-sm bg-secondary/30 border border-border/60 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-            <Loader2 className="w-4 h-4 animate-spin text-primary" />
+            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
             <span>Loading document details...</span>
           </div>
         ) : metaError ? (
@@ -263,7 +263,7 @@ export function ProfileResumeCard({
         ) : metadata ? (
           <div className="p-3.5 rounded-sm bg-secondary/40 border border-border/80 space-y-3">
             <div className="flex items-start gap-3">
-              <div className="w-9 h-9 rounded-sm bg-primary/15 border border-primary/30 flex items-center justify-center text-primary shrink-0 mt-0.5">
+              <div className="w-9 h-9 rounded-sm bg-secondary border border-border flex items-center justify-center text-muted-foreground shrink-0 mt-0.5">
                 <FileCheck className="w-4 h-4" />
               </div>
               <div className="flex-1 min-w-0">
@@ -285,7 +285,7 @@ export function ProfileResumeCard({
             <div className="pt-2.5 border-t border-border/70 space-y-2 text-xs">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-primary" />
+                  <ShieldCheck className="w-3.5 h-3.5 text-muted-foreground" />
                   Walrus Decentralized Storage:
                 </span>
 
@@ -304,7 +304,7 @@ export function ProfileResumeCard({
                     type="button"
                     onClick={handleSyncToWalrus}
                     disabled={isSyncingWalrus}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-[10px] font-semibold bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 cursor-pointer transition-colors"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-[10px] font-semibold bg-secondary text-foreground hover:bg-secondary/80 border border-border cursor-pointer transition-colors"
                   >
                     <RefreshCw className="w-3 h-3" />
                     Sync to Walrus
@@ -379,9 +379,9 @@ export function ProfileResumeCard({
           <div
             role="status"
             aria-live="polite"
-            className="p-3 rounded-sm bg-primary/10 border border-primary/20 text-xs text-primary flex items-center gap-2.5 animate-in fade-in"
+            className="p-3 rounded-sm bg-secondary border border-border text-xs text-foreground flex items-center gap-2.5 animate-in fade-in"
           >
-            <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+            <Loader2 className="w-4 h-4 animate-spin shrink-0 text-muted-foreground" />
             <span className="font-medium text-[11px]">{processingStatus}</span>
           </div>
         )}
@@ -422,9 +422,9 @@ export function ProfileResumeCard({
               <Button
                 type="button"
                 variant="outline"
-                className="w-full min-h-[44px] h-11 text-xs font-semibold gap-2 border-border hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-primary transition-all rounded-sm"
+                className="w-full min-h-[44px] h-11 text-xs font-semibold gap-2 border-border hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-muted-foreground transition-all rounded-sm"
               >
-                <Eye className="w-4 h-4 text-primary" />
+                <Eye className="w-4 h-4 text-muted-foreground" />
                 <span>View Resume</span>
               </Button>
             </a>
@@ -437,11 +437,11 @@ export function ProfileResumeCard({
             onClick={() => fileInputRef.current?.click()}
             className={`${
               metadata ? "flex-1" : "w-full"
-            } min-h-[44px] h-11 text-xs font-semibold gap-2 border-border hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-primary transition-all rounded-sm`}
+            } min-h-[44px] h-11 text-xs font-semibold gap-2 border-border hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-muted-foreground transition-all rounded-sm`}
           >
             {isProcessing ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
                 <span>Processing Resume...</span>
               </>
             ) : (

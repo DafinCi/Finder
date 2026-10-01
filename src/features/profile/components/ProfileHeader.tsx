@@ -91,8 +91,8 @@ export function ProfileHeader({
 
           {/* Primary Target Role Title */}
           {primaryRoleTitle && (
-            <div className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-primary">
-              <Briefcase className="w-3.5 h-3.5 shrink-0" />
+            <div className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-foreground">
+              <Briefcase className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
               <span>{primaryRoleTitle}</span>
             </div>
           )}
@@ -116,7 +116,7 @@ export function ProfileHeader({
             size="sm"
             onClick={onRefresh}
             disabled={isRefreshing || isMutating}
-            className="text-xs min-h-[44px] sm:min-h-[36px] h-10 sm:h-9 gap-1.5 border-border hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-primary rounded-sm cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+            className="text-xs min-h-[44px] sm:min-h-[36px] h-10 sm:h-9 gap-1.5 border-border hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-muted-foreground rounded-sm cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             title="Reload latest profile data"
           >
             <RotateCcw
@@ -128,7 +128,7 @@ export function ProfileHeader({
           <Link href="/jobs">
             <Button
               size="sm"
-              className="text-xs min-h-[44px] sm:min-h-[36px] h-10 sm:h-9 gap-1.5 focus-visible:ring-2 focus-visible:ring-primary rounded-sm cursor-pointer"
+              className="text-xs min-h-[44px] sm:min-h-[36px] h-10 sm:h-9 gap-1.5 focus-visible:ring-2 focus-visible:ring-muted-foreground rounded-sm cursor-pointer"
             >
               <BriefcaseBusiness className="w-3.5 h-3.5" />
               <span>Explore Jobs</span>
@@ -143,7 +143,7 @@ export function ProfileHeader({
               <span className="font-semibold text-foreground">
                 Profile Completeness
               </span>
-              <span className="font-mono font-bold text-primary">
+              <span className="font-mono font-bold text-foreground">
                 {completenessScore}%
               </span>
             </div>
@@ -154,7 +154,7 @@ export function ProfileHeader({
                   isOptimal
                     ? "bg-emerald-500"
                     : completenessScore >= 50
-                      ? "bg-primary"
+                      ? "bg-muted-foreground"
                       : "bg-amber-500"
                 }`}
                 style={{ width: `${completenessScore}%` }}

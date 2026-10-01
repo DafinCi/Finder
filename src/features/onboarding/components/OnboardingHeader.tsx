@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Check, Sparkles, Compass } from "lucide-react";
+import { Check, Compass } from "lucide-react";
 import {
   OnboardingStepNumber,
   OnboardingFlowMode,
@@ -39,11 +39,7 @@ export function OnboardingHeader({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
-            {flowMode === "choice" ? (
-              <Compass className="w-4 h-4" />
-            ) : (
-              <Sparkles className="w-4 h-4" />
-            )}
+            <Compass className="w-4 h-4" />
           </div>
           <div>
             <h1 className="text-sm font-semibold text-foreground tracking-tight flex items-center gap-2">

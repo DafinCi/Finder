@@ -162,8 +162,8 @@ export default function Sidebar() {
                 w-[2px] h-full transition-colors duration-150
                 ${
                   isDragging
-                    ? "bg-primary"
-                    : "bg-transparent group-hover:bg-primary/50 group-focus-visible:bg-primary"
+                    ? "bg-foreground"
+                    : "bg-transparent group-hover:bg-muted-foreground/40 group-focus-visible:bg-foreground"
                 }
               `}
             />

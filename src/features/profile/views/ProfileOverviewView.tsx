@@ -98,7 +98,7 @@ export default function ProfileOverviewView() {
     return (
       <div className="flex-1 min-h-0 w-full h-full overflow-y-auto custom-scrollbar flex items-center justify-center p-6">
         <div className="max-w-md w-full rounded-sm border border-border bg-card p-8 text-center space-y-5 shadow-xs">
-          <div className="w-14 h-14 rounded-sm bg-primary/10 border border-primary/20 text-primary flex items-center justify-center mx-auto">
+          <div className="w-14 h-14 rounded-sm bg-secondary border border-border text-muted-foreground flex items-center justify-center mx-auto">
             <Briefcase className="w-7 h-7" />
           </div>
 
@@ -171,28 +171,28 @@ export default function ProfileOverviewView() {
                 href="#section-preferences"
                 className="min-h-[44px] h-11 px-3.5 rounded-sm border border-border/70 bg-secondary/50 hover:bg-secondary text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-2 whitespace-nowrap transition-colors"
               >
-                <Target className="w-3.5 h-3.5 text-primary" />
+                <Target className="w-3.5 h-3.5 text-muted-foreground" />
                 <span>Target & Preferences</span>
               </a>
               <a
                 href="#section-resume"
                 className="min-h-[44px] h-11 px-3.5 rounded-sm border border-border/70 bg-secondary/50 hover:bg-secondary text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-2 whitespace-nowrap transition-colors"
               >
-                <FileText className="w-3.5 h-3.5 text-primary" />
+                <FileText className="w-3.5 h-3.5 text-muted-foreground" />
                 <span>Resume & Walrus</span>
               </a>
               <a
                 href="#section-skills"
                 className="min-h-[44px] h-11 px-3.5 rounded-sm border border-border/70 bg-secondary/50 hover:bg-secondary text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-2 whitespace-nowrap transition-colors"
               >
-                <Code className="w-3.5 h-3.5 text-primary" />
+                <Code className="w-3.5 h-3.5 text-muted-foreground" />
                 <span>Skills Inventory</span>
               </a>
               <a
                 href="#section-background"
                 className="min-h-[44px] h-11 px-3.5 rounded-sm border border-border/70 bg-secondary/50 hover:bg-secondary text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-2 whitespace-nowrap transition-colors"
               >
-                <GraduationCap className="w-3.5 h-3.5 text-primary" />
+                <GraduationCap className="w-3.5 h-3.5 text-muted-foreground" />
                 <span>Work & Background</span>
               </a>
             </nav>

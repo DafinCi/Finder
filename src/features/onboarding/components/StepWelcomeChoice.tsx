@@ -8,7 +8,6 @@ import {
   AlertCircle,
   Loader2,
   ArrowRight,
-  Sparkles,
   RotateCcw,
   X,
 } from "lucide-react";
@@ -107,7 +106,6 @@ export function StepWelcomeChoice({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
-                <Sparkles className="w-3.5 h-3.5" />
                 Fastest (30 seconds)
               </span>
             </div>

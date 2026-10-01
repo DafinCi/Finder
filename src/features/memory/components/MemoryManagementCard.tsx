@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect } from "react";
 import {
@@ -78,7 +78,7 @@ export function MemoryManagementCard() {
     <div className="rounded-xl border border-border bg-card p-5 space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/80">
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+          <div className="w-9 h-9 rounded-lg bg-secondary border border-border flex items-center justify-center text-muted-foreground shrink-0">
             <Brain className="w-4 h-4" />
           </div>
           <div>
@@ -176,7 +176,7 @@ export function MemoryManagementCard() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-1 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-primary/10 border border-primary/20 text-primary">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-secondary border border-border text-muted-foreground">
                         {CATEGORY_LABELS[mem.category] || mem.category}
                       </span>
 

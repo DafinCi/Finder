@@ -41,7 +41,7 @@ export function ProfilePreferencesCard({
       {/* Header */}
       <div className="flex items-center justify-between gap-3 pb-3 border-b border-border/80">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-secondary border border-border flex items-center justify-center text-muted-foreground shrink-0">
             <SlidersHorizontal className="w-4 h-4" />
           </div>
           <div>
@@ -106,7 +106,7 @@ export function ProfilePreferencesCard({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-border/60 text-xs">
         <div className="space-y-1">
           <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-            <MapPin className="w-3 h-3 text-primary" />
+            <MapPin className="w-3 h-3 text-muted-foreground" />
             Preferred Locations
           </span>
           <div className="flex flex-wrap gap-1">
@@ -146,7 +146,7 @@ export function ProfilePreferencesCard({
       {/* Salary Expectation */}
       <div className="pt-2 border-t border-border/60 space-y-1">
         <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-          <Banknote className="w-3 h-3 text-primary" />
+          <Banknote className="w-3 h-3 text-muted-foreground" />
           Salary Expectation
         </span>
         <div className="p-2.5 rounded-lg bg-secondary/30 border border-border/80 text-xs flex items-center justify-between">
@@ -171,7 +171,7 @@ export function ProfilePreferencesCard({
             {preferences.priorities.map((p) => (
               <span
                 key={p}
-                className="px-2.5 py-1 rounded-md bg-primary/10 border border-primary/20 text-xs text-primary font-medium capitalize"
+                className="px-2.5 py-1 rounded-md bg-secondary border border-border text-xs text-foreground font-medium capitalize"
               >
                 {p}
               </span>

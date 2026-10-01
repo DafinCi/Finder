@@ -77,7 +77,7 @@ export function ProfileSkillsCard({
             type="button"
             onClick={() => onConfirmSkill(item.skill)}
             disabled={isMutating}
-            className="text-[10px] text-primary hover:underline flex items-center gap-1 bg-primary/10 px-1.5 py-0.5 rounded-sm cursor-pointer transition-colors"
+            className="text-[10px] text-muted-foreground hover:text-foreground flex items-center gap-1 bg-secondary border border-border px-1.5 py-0.5 rounded-sm cursor-pointer transition-colors"
             title="Extracted from resume. Click to confirm"
           >
             <FileText className="w-2.5 h-2.5" />
@@ -105,7 +105,7 @@ export function ProfileSkillsCard({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/80">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-sm bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+          <div className="w-8 h-8 rounded-sm bg-secondary border border-border flex items-center justify-center text-muted-foreground shrink-0">
             <Code className="w-4 h-4" />
           </div>
           <div>
@@ -123,9 +123,9 @@ export function ProfileSkillsCard({
           variant="outline"
           size="sm"
           onClick={onManage}
-          className="text-xs h-9 min-h-[36px] sm:h-8 gap-1.5 border-border hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-primary self-start sm:self-auto rounded-sm"
+          className="text-xs h-9 min-h-[36px] sm:h-8 gap-1.5 border-border hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-muted-foreground self-start sm:self-auto rounded-sm"
         >
-          <Edit3 className="w-3.5 h-3.5 text-primary" />
+          <Edit3 className="w-3.5 h-3.5 text-muted-foreground" />
           <span>Manage All Skills</span>
         </Button>
       </div>
@@ -158,7 +158,7 @@ export function ProfileSkillsCard({
             type="submit"
             size="sm"
             disabled={!newSkill.trim() || isMutating}
-            className="text-xs h-9 min-h-[36px] sm:h-8 px-3 gap-1 focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
+            className="text-xs h-9 min-h-[36px] sm:h-8 px-3 gap-1 focus-visible:ring-2 focus-visible:ring-muted-foreground rounded-sm"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Add</span>
@@ -172,7 +172,7 @@ export function ProfileSkillsCard({
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-primary" />
+              <span className="w-2 h-2 rounded-full bg-muted-foreground" />
               Core Skills ({coreSkills.length})
             </span>
             <span className="text-[10px] text-muted-foreground">
@@ -261,7 +261,7 @@ export function ProfileSkillsCard({
                         type="button"
                         onClick={() => onRestoreSkill(item.skill)}
                         disabled={isMutating}
-                        className="text-[10px] text-primary hover:underline flex items-center gap-0.5 cursor-pointer"
+                        className="text-[10px] text-foreground hover:underline flex items-center gap-0.5 cursor-pointer"
                         title="Restore skill"
                       >
                         <RotateCcw className="w-2.5 h-2.5" />

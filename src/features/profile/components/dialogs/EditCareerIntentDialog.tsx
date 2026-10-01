@@ -244,7 +244,7 @@ export function EditCareerIntentDialog({
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-border/80 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-sm bg-primary/10 text-primary border border-primary/20">
+            <div className="p-2 rounded-sm bg-secondary text-muted-foreground border border-border">
               <Target className="w-4 h-4" />
             </div>
             <div>
@@ -265,7 +265,7 @@ export function EditCareerIntentDialog({
             onClick={onClose}
             disabled={isSaving}
             aria-label="Close career intent dialog"
-            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-sm text-muted-foreground hover:text-foreground hover:bg-secondary focus-visible:ring-2 focus-visible:ring-primary transition-colors cursor-pointer"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-sm text-muted-foreground hover:text-foreground hover:bg-secondary focus-visible:ring-2 focus-visible:ring-muted-foreground transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -281,7 +281,7 @@ export function EditCareerIntentDialog({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                <Briefcase className="w-3.5 h-3.5 text-primary" />
+                <Briefcase className="w-3.5 h-3.5 text-muted-foreground" />
                 Primary Role (Select 1)
               </label>
               {primaryRole && (
@@ -297,11 +297,11 @@ export function EditCareerIntentDialog({
             </p>
 
             {primaryRole && (
-              <div className="p-2.5 rounded-sm bg-primary/10 border border-primary/20 flex items-center justify-between">
-                <span className="text-xs font-bold text-primary">
+              <div className="p-2.5 rounded-sm bg-secondary border border-border flex items-center justify-between">
+                <span className="text-xs font-bold text-foreground">
                   {primaryRole}
                 </span>
-                <span className="text-[10px] bg-primary text-primary-foreground font-semibold px-2 py-0.5 rounded-sm">
+                <span className="text-[10px] bg-secondary text-foreground font-semibold px-2 py-0.5 rounded-sm border border-border">
                   Primary
                 </span>
               </div>
@@ -318,7 +318,7 @@ export function EditCareerIntentDialog({
                     onClick={() => handleSelectPrimary(role)}
                     className={`px-2.5 py-1.5 rounded-sm text-xs font-medium border transition-colors cursor-pointer min-h-[36px] ${
                       isSelected
-                        ? "bg-primary text-primary-foreground border-primary"
+                        ? "bg-secondary text-foreground border-border-strong font-semibold"
                         : "bg-secondary/60 text-muted-foreground hover:text-foreground border-border hover:bg-secondary"
                     }`}
                   >
@@ -361,7 +361,7 @@ export function EditCareerIntentDialog({
                     onClick={() => handleToggleSecondary(role)}
                     className={`px-2.5 py-1.5 rounded-sm text-xs font-medium border transition-colors cursor-pointer min-h-[36px] ${
                       isSecondary
-                        ? "bg-secondary text-foreground font-bold border-primary/50"
+                        ? "bg-secondary text-foreground font-bold border-border-strong"
                         : "bg-secondary/40 text-muted-foreground hover:text-foreground border-border"
                     }`}
                   >
@@ -378,7 +378,7 @@ export function EditCareerIntentDialog({
                 value={customRoleInput}
                 onChange={(e) => setCustomRoleInput(e.target.value)}
                 placeholder="+ Add custom role..."
-                className="flex-1 bg-secondary/30 border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="flex-1 bg-secondary/30 border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground"
               />
               <Button
                 type="button"
@@ -409,7 +409,7 @@ export function EditCareerIntentDialog({
                     onClick={() => setTargetLevel(opt.value)}
                     className={`p-2.5 rounded-sm border text-left transition-colors cursor-pointer min-h-[44px] ${
                       isSelected
-                        ? "bg-primary/10 border-primary text-foreground"
+                        ? "bg-secondary border-border-strong text-foreground font-semibold"
                         : "bg-secondary/40 border-border text-muted-foreground hover:text-foreground hover:bg-secondary"
                     }`}
                   >
@@ -438,7 +438,7 @@ export function EditCareerIntentDialog({
                     onClick={() => handleToggleEmployment(emp.value)}
                     className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-sm border text-xs font-medium transition-colors cursor-pointer min-h-[40px] ${
                       isSelected
-                        ? "bg-primary text-primary-foreground border-primary"
+                        ? "bg-secondary text-foreground border-border-strong font-semibold"
                         : "bg-secondary/40 text-muted-foreground border-border hover:bg-secondary"
                     }`}
                   >

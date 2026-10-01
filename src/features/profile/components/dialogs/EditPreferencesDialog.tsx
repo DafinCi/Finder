@@ -263,7 +263,7 @@ export function EditPreferencesDialog({
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-border/80 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-sm bg-primary/10 text-primary border border-primary/20">
+            <div className="p-2 rounded-sm bg-secondary text-muted-foreground border border-border">
               <SlidersHorizontal className="w-4 h-4" />
             </div>
             <div>
@@ -283,7 +283,7 @@ export function EditPreferencesDialog({
             onClick={onClose}
             disabled={isSaving}
             aria-label="Close preferences dialog"
-            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-sm text-muted-foreground hover:text-foreground hover:bg-secondary focus-visible:ring-2 focus-visible:ring-primary transition-colors cursor-pointer"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-sm text-muted-foreground hover:text-foreground hover:bg-secondary focus-visible:ring-2 focus-visible:ring-muted-foreground transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -309,9 +309,9 @@ export function EditPreferencesDialog({
                     key={opt.value}
                     type="button"
                     onClick={() => handleToggleWorkMode(opt.value)}
-                    className={`min-h-[44px] p-2.5 rounded-sm border text-center transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ${
+                    className={`min-h-[44px] p-2.5 rounded-sm border text-center transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-muted-foreground ${
                       isSelected
-                        ? "bg-primary text-primary-foreground border-primary font-bold"
+                        ? "bg-secondary text-foreground border-border-strong font-bold"
                         : "bg-secondary/40 text-muted-foreground border-border hover:bg-secondary"
                     }`}
                   >
@@ -337,7 +337,7 @@ export function EditPreferencesDialog({
                 type="checkbox"
                 checked={workModeStrict}
                 onChange={(e) => setWorkModeStrict(e.target.checked)}
-                className="w-5 h-5 accent-primary cursor-pointer shrink-0"
+                className="w-5 h-5 accent-muted-foreground cursor-pointer shrink-0"
               />
             </label>
           </div>
@@ -345,7 +345,7 @@ export function EditPreferencesDialog({
           {/* Section 2: Locations & Relocation */}
           <div className="space-y-3 pt-2 border-t border-border/60">
             <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5 text-primary" />
+              <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
               Preferred Locations
             </label>
 
@@ -361,9 +361,9 @@ export function EditPreferencesDialog({
                         ? handleRemoveLocation(loc)
                         : handleAddLocation(loc)
                     }
-                    className={`min-h-[36px] px-3 py-1.5 rounded-sm text-xs font-medium border transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ${
+                    className={`min-h-[36px] px-3 py-1.5 rounded-sm text-xs font-medium border transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-muted-foreground ${
                       isSelected
-                        ? "bg-primary text-primary-foreground border-primary"
+                        ? "bg-secondary text-foreground border-border-strong font-semibold"
                         : "bg-secondary/40 text-muted-foreground border-border hover:bg-secondary"
                     }`}
                   >
@@ -419,7 +419,7 @@ export function EditPreferencesDialog({
           {/* Section 3: Salary Expectation */}
           <div className="space-y-3 pt-2 border-t border-border/60">
             <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
-              <Banknote className="w-3.5 h-3.5 text-primary" />
+              <Banknote className="w-3.5 h-3.5 text-muted-foreground" />
               Salary Expectation
             </label>
 
@@ -429,7 +429,7 @@ export function EditPreferencesDialog({
                 id="salary-not-specified"
                 checked={salaryNotSpecified}
                 onChange={(e) => setSalaryNotSpecified(e.target.checked)}
-                className="w-5 h-5 accent-primary cursor-pointer"
+                className="w-5 h-5 accent-muted-foreground cursor-pointer"
               />
               <span className="text-xs text-foreground font-medium">
                 No minimum constraint (keep recommendations open)
@@ -441,7 +441,7 @@ export function EditPreferencesDialog({
                 <select
                   value={salaryCurrency}
                   onChange={(e) => setSalaryCurrency(e.target.value)}
-                  className="w-28 bg-card border border-border rounded-sm px-2 py-2 text-xs text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  className="w-28 bg-card border border-border rounded-sm px-2 py-2 text-xs text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground"
                 >
                   <option value="USD">USD ($)</option>
                   <option value="EUR">EUR (€)</option>
@@ -459,7 +459,7 @@ export function EditPreferencesDialog({
                     setSalaryMin(e.target.value ? Number(e.target.value) : null)
                   }
                   placeholder="Minimum monthly amount..."
-                  className="flex-1 bg-secondary/30 border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  className="flex-1 bg-secondary/30 border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground"
                 />
               </div>
             )}
@@ -478,16 +478,16 @@ export function EditPreferencesDialog({
                     key={p.id}
                     type="button"
                     onClick={() => handleTogglePriority(p.id)}
-                    className={`min-h-[44px] p-2.5 rounded-sm border text-left transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ${
+                    className={`min-h-[44px] p-2.5 rounded-sm border text-left transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-muted-foreground ${
                       isSelected
-                        ? "bg-primary/10 border-primary text-foreground"
+                        ? "bg-secondary border-border-strong text-foreground font-semibold"
                         : "bg-secondary/40 border-border text-muted-foreground hover:bg-secondary"
                     }`}
                   >
                     <span className="text-xs font-bold flex items-center justify-between">
                       <span>{p.label}</span>
                       {isSelected && (
-                        <Check className="w-3.5 h-3.5 text-primary" />
+                        <Check className="w-3.5 h-3.5 text-foreground" />
                       )}
                     </span>
                     <span className="text-[10px] text-muted-foreground line-clamp-1">
@@ -520,7 +520,7 @@ export function EditPreferencesDialog({
                     key={`neg-${neg.token}`}
                     type="button"
                     onClick={() => handleToggleNegativePreset(neg)}
-                    className={`min-h-[36px] px-3 py-1.5 rounded-sm text-xs font-medium border transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ${
+                    className={`min-h-[36px] px-3 py-1.5 rounded-sm text-xs font-medium border transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-muted-foreground ${
                       isSelected
                         ? "bg-destructive/15 text-destructive border-destructive/30 font-bold"
                         : "bg-secondary/40 text-muted-foreground border-border hover:bg-secondary"
@@ -539,7 +539,7 @@ export function EditPreferencesDialog({
                 value={customNegativeToken}
                 onChange={(e) => setCustomNegativeToken(e.target.value)}
                 placeholder="+ Add custom anti-match (e.g. legacy-tech, overtime)..."
-                className="flex-1 bg-secondary/30 border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="flex-1 bg-secondary/30 border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground"
               />
               <Button
                 type="button"

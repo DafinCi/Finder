@@ -1,6 +1,6 @@
 import React, { ReactNode } from "react";
 import Link from "next/link";
-import { Sparkles } from "lucide-react";
+import Logo from "@/components/common/Logo";
 
 export const metadata = {
   title: "Career Setup | Finder V2",
@@ -22,9 +22,7 @@ export default function OnboardingLayout({
             href="/"
             className="flex items-center gap-2 font-heading font-bold text-foreground tracking-tight hover:opacity-90 transition-opacity"
           >
-            <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/25 flex items-center justify-center text-primary">
-              <Sparkles className="w-3.5 h-3.5" />
-            </div>
+            <Logo size={24} />
             <span className="text-sm">Finder</span>
           </Link>
 

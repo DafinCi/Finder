@@ -8,7 +8,6 @@ import {
   ArrowRight,
   ArrowLeft,
   Loader2,
-  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -143,7 +142,6 @@ export function StepManualSkills({
       {/* Suggested Skills based on role */}
       <div className="space-y-2">
         <div className="flex items-center gap-1.5">
-          <Sparkles className="w-3.5 h-3.5 text-primary" />
           <span className="text-xs font-semibold text-foreground">
             Suggested for your role
           </span>

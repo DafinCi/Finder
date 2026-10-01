@@ -133,7 +133,7 @@ export function SuiWalletLinkCard() {
       {/* Header */}
       <div className="flex items-center justify-between pb-3 border-b border-border/80">
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+          <div className="w-9 h-9 rounded-lg bg-secondary border border-border flex items-center justify-center text-muted-foreground shrink-0">
             <Wallet className="w-4 h-4" />
           </div>
           <div>
@@ -182,7 +182,7 @@ export function SuiWalletLinkCard() {
       {/* Loading state for profile */}
       {loadingProfile ? (
         <div className="py-6 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-          <Loader2 className="w-4 h-4 animate-spin text-primary" />
+          <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
           <span>Checking wallet association...</span>
         </div>
       ) : linkedAddress ? (
@@ -304,7 +304,7 @@ export function SuiWalletLinkCard() {
                 disabled={isBusy}
                 className="h-9 text-xs font-semibold"
               >
-                <Wallet className="w-3.5 h-3.5 mr-1.5 text-primary" />
+                <Wallet className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
                 <span>Connect Wallet</span>
               </Button>
             ) : (

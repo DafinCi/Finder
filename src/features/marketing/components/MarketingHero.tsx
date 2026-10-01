@@ -3,7 +3,6 @@
 import React from "react";
 import Link from "next/link";
 import {
-  Sparkles,
   ArrowRight,
   ShieldCheck,
   CheckCircle2,
@@ -34,7 +33,6 @@ export default function MarketingHero({
         <div className="text-center max-w-3xl mx-auto space-y-6">
           {/* Eyebrow Pill */}
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/25 bg-primary/10 text-primary text-xs font-semibold tracking-wide">
-            <Sparkles className="w-3.5 h-3.5 text-primary animate-pulse" />
             <span>Open Source AI Career Intelligence Platform</span>
           </div>
 

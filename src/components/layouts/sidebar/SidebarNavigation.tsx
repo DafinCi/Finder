@@ -30,7 +30,7 @@ export default function SidebarNavigation({
           href="/c"
           className={`p-2.5 rounded-sm border transition-all ${
             pathname === "/c"
-              ? "bg-primary text-primary-foreground border-primary"
+              ? "bg-secondary text-foreground border-border-strong"
               : "bg-secondary/60 text-muted-foreground hover:text-foreground border-border"
           }`}
           title="New Chat"
@@ -41,7 +41,7 @@ export default function SidebarNavigation({
           href="/jobs"
           className={`p-2.5 rounded-sm border transition-all ${
             pathname === "/jobs"
-              ? "bg-primary text-primary-foreground border-primary"
+              ? "bg-secondary text-foreground border-border-strong"
               : "bg-secondary/60 text-muted-foreground hover:text-foreground border-border"
           }`}
           title="Jobs"
@@ -52,7 +52,7 @@ export default function SidebarNavigation({
           href="/profile"
           className={`p-2.5 rounded-sm border transition-all ${
             pathname === "/profile"
-              ? "bg-primary text-primary-foreground border-primary"
+              ? "bg-secondary text-foreground border-border-strong"
               : "bg-secondary/60 text-muted-foreground hover:text-foreground border-border"
           }`}
           title="Career Profile"
@@ -63,7 +63,7 @@ export default function SidebarNavigation({
           href="/settings"
           className={`p-2.5 rounded-sm border transition-all ${
             pathname === "/settings"
-              ? "bg-primary text-primary-foreground border-primary"
+              ? "bg-secondary text-foreground border-border-strong"
               : "bg-secondary/60 text-muted-foreground hover:text-foreground border-border"
           }`}
           title="Settings"
@@ -95,7 +95,7 @@ export default function SidebarNavigation({
               : "text-muted-foreground hover:bg-secondary/70 hover:text-foreground"
           }`}
         >
-          <BriefcaseBusiness className="w-[18px] h-[18px] text-primary shrink-0" />
+          <BriefcaseBusiness className="w-[18px] h-[18px] shrink-0" />
           <span>Jobs</span>
         </Link>
         <Link
@@ -106,7 +106,7 @@ export default function SidebarNavigation({
               : "text-muted-foreground hover:bg-secondary/70 hover:text-foreground"
           }`}
         >
-          <User className="w-[18px] h-[18px] text-primary shrink-0" />
+          <User className="w-[18px] h-[18px] shrink-0" />
           <span>Profile</span>
         </Link>
         <Link
@@ -117,7 +117,7 @@ export default function SidebarNavigation({
               : "text-muted-foreground hover:bg-secondary/70 hover:text-foreground"
           }`}
         >
-          <Settings className="w-[18px] h-[18px] text-primary shrink-0" />
+          <Settings className="w-[18px] h-[18px] shrink-0" />
           <span>Settings</span>
         </Link>
       </div>

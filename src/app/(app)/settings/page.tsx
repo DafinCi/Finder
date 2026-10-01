@@ -22,7 +22,7 @@ export default function SettingsPage() {
         {/* Account Profile Overview */}
         <div className="rounded-xl border border-border bg-card p-5 space-y-4">
           <div className="flex items-center gap-2.5 pb-3 border-b border-border/80">
-            <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+            <div className="w-9 h-9 rounded-lg bg-secondary border border-border flex items-center justify-center text-muted-foreground shrink-0">
               <User className="w-4 h-4" />
             </div>
             <div>
@@ -43,7 +43,7 @@ export default function SettingsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
               <div className="p-3 rounded-lg bg-secondary/30 border border-border/60 space-y-1">
                 <span className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider flex items-center gap-1.5">
-                  <Mail className="w-3 h-3 text-primary" />
+                  <Mail className="w-3 h-3 text-muted-foreground" />
                   Email / Identifier
                 </span>
                 <p className="font-mono text-foreground font-medium truncate">
@@ -60,7 +60,7 @@ export default function SettingsPage() {
 
               <div className="p-3 rounded-lg bg-secondary/30 border border-border/60 space-y-1">
                 <span className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider flex items-center gap-1.5">
-                  <Shield className="w-3 h-3 text-primary" />
+                  <Shield className="w-3 h-3 text-muted-foreground" />
                   Account ID
                 </span>
                 <p className="font-mono text-foreground font-medium truncate">
@@ -77,7 +77,7 @@ export default function SettingsPage() {
         {/* Sui Wallet Section */}
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <Wallet className="w-4 h-4 text-primary" />
+            <Wallet className="w-4 h-4 text-muted-foreground" />
             <h2 className="text-sm font-semibold font-heading text-foreground">
               Web3 Authentication & Wallet
             </h2>

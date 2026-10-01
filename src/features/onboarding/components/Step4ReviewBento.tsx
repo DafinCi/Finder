@@ -13,7 +13,6 @@ import {
   Plus,
   X,
   RotateCcw,
-  Sparkles,
   ArrowLeft,
   CheckCircle2,
   Loader2,
@@ -254,8 +253,7 @@ export function Step4ReviewBento({
         <div className="rounded-xl border border-border/80 bg-card p-4 space-y-3 shadow-2xs md:col-span-2">
           <div className="flex items-center justify-between pb-2 border-b border-border/60">
             <div>
-              <h3 className="text-xs font-semibold font-heading text-foreground flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-primary" />
+              <h3 className="text-xs font-semibold font-heading text-foreground">
                 Verified Capabilities & Skills
               </h3>
               <p className="text-[11px] text-muted-foreground">
