@@ -1,7 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { MemWalClient } from "@/lib/walrus/memwal-client";
-import { CareerMemoryService } from "@/features/memory/services/career-memory.service";
+import {
+  CareerMemoryService,
+  normalizeMemoryContent,
+  isRecalledMemoryZombie,
+} from "@/features/memory/services/career-memory.service";
 import { CareerMemoryRepository } from "@/features/memory/repositories/career-memory.repository";
+import { CareerMemory } from "@/features/memory/types/memory.types";
 
 describe("MemWalClient & CareerMemoryService Semantic Integration", () => {
   let memwal: MemWalClient;
@@ -16,14 +21,20 @@ describe("MemWalClient & CareerMemoryService Semantic Integration", () => {
     const mockClient = {
       from: vi.fn(() => ({
         select: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            eq: vi.fn(() => ({
+          eq: vi.fn((col1: string, val1: any) => ({
+            eq: vi.fn((col2: string, val2: any) => ({
               order: vi.fn(() => ({
                 limit: vi.fn(() => ({
-                  data: mockDbRows,
+                  data: mockDbRows.filter(
+                    (r) => (r as any)[col1] === val1 && (r as any)[col2] === val2,
+                  ),
                   error: null,
                 })),
               })),
+            })),
+            order: vi.fn(() => ({
+              data: mockDbRows.filter((r) => (r as any)[col1] === val1),
+              error: null,
             })),
           })),
         })),
@@ -104,5 +115,182 @@ describe("MemWalClient & CareerMemoryService Semantic Integration", () => {
     expect(summary).toContain("<untrusted_career_memory>");
     expect(summary).toContain("RECALLED FROM WALRUS MEMORY");
     expect(summary).toContain("150k");
+  });
+
+  describe("Zombie Memory Elimination & Lifecycle Authority", () => {
+    it("should normalize memory content by stripping candidate prefixes and punctuation", () => {
+      const norm1 = normalizeMemoryContent("Candidate [WORK_PREFERENCE]: 100% Remote Only!");
+      expect(norm1).toBe("100 remote only");
+
+      const norm2 = normalizeMemoryContent("Candidate [CONSTRAINT]: Strictly requires salary above $150k USD");
+      expect(norm2).toBe("strictly requires salary above 150k usd");
+    });
+
+    it("should correctly identify a recalled memory as a zombie when matching an inactive record", () => {
+      const inactive: CareerMemory[] = [
+        {
+          id: "mem-forgotten-1",
+          profileId: TEST_PROFILE_ID,
+          category: "work_preference",
+          content: "Prefers relocation to Berlin",
+          source: "explicit_user",
+          confidence: "high",
+          status: "forgotten",
+          walrusStatus: "stored",
+          walrusBlobId: "blob-berlin-123",
+          walrusObjectId: null,
+          metadata: {},
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ];
+
+      // Match via blob ID
+      const recalledByBlob = {
+        blob_id: "blob-berlin-123",
+        text: "Candidate [WORK_PREFERENCE]: Prefers relocation to Berlin",
+        distance: 0.05,
+      };
+      expect(isRecalledMemoryZombie(recalledByBlob, inactive)).toBe(true);
+
+      // Match via fuzzy text
+      const recalledByText = {
+        blob_id: "blob-other-456",
+        text: "Candidate [WORK_PREFERENCE]: Prefers relocation to Berlin, Germany",
+        distance: 0.08,
+      };
+      expect(isRecalledMemoryZombie(recalledByText, inactive)).toBe(true);
+
+      // Unrelated active fact is NOT a zombie
+      const activeFact = {
+        blob_id: "blob-remote-789",
+        text: "Candidate [WORK_PREFERENCE]: 100% Remote Only",
+        distance: 0.1,
+      };
+      expect(isRecalledMemoryZombie(activeFact, inactive)).toBe(false);
+    });
+
+    it("should filter out forgotten memories from recallActiveFromWalrus", async () => {
+      const namespace = memwal.getUserNamespace(TEST_PROFILE_ID);
+
+      // Store two facts into MemWal
+      await memwal.rememberAndWait(
+        "Candidate [WORK_PREFERENCE]: Prefers relocation to Singapore",
+        namespace
+      );
+      await memwal.rememberAndWait(
+        "Candidate [TECH_FOCUS]: Deep expertise in Rust and Sui Move",
+        namespace
+      );
+
+      // In canonical database, mark Singapore as 'forgotten', Rust as 'active'
+      mockDbRows.push(
+        {
+          id: "db-mem-1",
+          profile_id: TEST_PROFILE_ID,
+          category: "work_preference",
+          content: "Prefers relocation to Singapore",
+          status: "forgotten",
+          walrus_status: "stored",
+          walrus_blob_id: "blob-sg",
+        },
+        {
+          id: "db-mem-2",
+          profile_id: TEST_PROFILE_ID,
+          category: "tech_focus",
+          content: "Deep expertise in Rust and Sui Move",
+          status: "active",
+          walrus_status: "stored",
+          walrus_blob_id: "blob-rust",
+        }
+      );
+
+      const activeRecalled = await service.recallActiveFromWalrus(
+        TEST_PROFILE_ID,
+        "Where does the candidate want to work and what stack?",
+        5
+      );
+
+      // The forgotten Singapore fact must be silenced
+      const textJoined = activeRecalled.map((r) => r.text).join(" ");
+      expect(textJoined).not.toContain("Singapore");
+      expect(textJoined).toContain("Rust");
+    });
+
+    it("should filter out superseded memories from recallActiveFromWalrus", async () => {
+      const namespace = memwal.getUserNamespace(TEST_PROFILE_ID);
+
+      // User changed salary requirement over time
+      await memwal.rememberAndWait(
+        "Candidate [CONSTRAINT]: Minimum salary $100k USD",
+        namespace
+      );
+      await memwal.rememberAndWait(
+        "Candidate [CONSTRAINT]: Minimum salary $160k USD",
+        namespace
+      );
+
+      // In canonical database, old $100k is superseded, new $160k is active
+      mockDbRows.push(
+        {
+          id: "db-sal-old",
+          profile_id: TEST_PROFILE_ID,
+          category: "constraint_avoid",
+          content: "Minimum salary $100k USD",
+          status: "superseded",
+          walrus_status: "stored",
+          walrus_blob_id: "blob-old-sal",
+        },
+        {
+          id: "db-sal-new",
+          profile_id: TEST_PROFILE_ID,
+          category: "constraint_avoid",
+          content: "Minimum salary $160k USD",
+          status: "active",
+          walrus_status: "stored",
+          walrus_blob_id: "blob-new-sal",
+        }
+      );
+
+      const activeRecalled = await service.recallActiveFromWalrus(
+        TEST_PROFILE_ID,
+        "What is the salary floor requirement?",
+        5
+      );
+
+      const textJoined = activeRecalled.map((r) => r.text).join(" ");
+      expect(textJoined).not.toContain("100k");
+      expect(textJoined).toContain("160k");
+    });
+
+    it("should not inject forgotten memories into LLM prompt via getDurableContextSummary", async () => {
+      const namespace = memwal.getUserNamespace(TEST_PROFILE_ID);
+
+      // User told bot they want Tokyo, then forgot it
+      await memwal.rememberAndWait(
+        "Candidate [WORK_PREFERENCE]: Only accepts roles in Tokyo",
+        namespace
+      );
+
+      mockDbRows.push({
+        id: "db-tokyo-1",
+        profile_id: TEST_PROFILE_ID,
+        category: "work_preference",
+        content: "Only accepts roles in Tokyo",
+        status: "forgotten",
+        walrus_status: "stored",
+        walrus_blob_id: "blob-tokyo",
+      });
+
+      const summary = await service.getDurableContextSummary(
+        TEST_PROFILE_ID,
+        3,
+        "Show me jobs in Tokyo"
+      );
+
+      // Because the Tokyo memory is forgotten and no other active memory exists, summary is empty
+      expect(summary).not.toContain("Tokyo");
+      expect(summary).toBe("");
+    });
   });
 });

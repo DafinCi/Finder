@@ -14,7 +14,8 @@ export const WALRUS_MAINNET_CONFIG: WalrusNetworkConfig = {
   publisherUrl:
     process.env.WALRUS_PUBLISHER_URL || "https://publisher.walrus.space",
   aggregatorUrl:
-    process.env.NEXT_PUBLIC_WALRUS_AGGREGATOR_URL || "https://aggregator.walrus.space",
+    process.env.NEXT_PUBLIC_WALRUS_AGGREGATOR_URL ||
+    "https://aggregator.walrus-mainnet.walrus.space",
   explorerUrl: "https://walruscan.com/mainnet/blob",
   relayerUrl:
     process.env.MEMWAL_SERVER_URL || "https://relayer.memory.walrus.xyz",

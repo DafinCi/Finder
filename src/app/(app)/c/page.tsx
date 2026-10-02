@@ -74,16 +74,6 @@ export default function AppChatHomePage() {
   return (
     <div className="flex-1 flex flex-col items-center justify-center h-full px-4 py-8 animate-in fade-in duration-300 relative overflow-y-auto custom-scrollbar chat-wallpaper">
       <div className="w-full max-w-4xl text-center space-y-7 my-auto">
-        {/* Walrus Memory Mainnet Badge */}
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/80 border border-border text-xs text-foreground/80 shadow-xs mb-1">
-          <Database className="w-3.5 h-3.5 text-primary" />
-          <span>Decentralized Memory Active</span>
-          <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            Walrus Mainnet
-          </span>
-        </div>
-
         {/* Clean Action-Focused Greeting */}
         <div className="space-y-2">
           <h1 className="text-2xl sm:text-3xl font-bold font-heading text-foreground tracking-tight">

@@ -59,7 +59,7 @@ export default function ChatSessionPage({
       <header
         role="button"
         tabIndex={0}
-        onClick={openDrawer}
+        onClick={() => openDrawer()}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();

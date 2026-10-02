@@ -10,7 +10,7 @@ describe("Phase 1: Sovereign Career Memory Repository & Service", () => {
   let mockDbRows: CareerMemoryDbRow[] = [];
   let mockClient: any;
   let repository: CareerMemoryRepository;
-  let mockWalrusClient: any;
+  let mockMemWalClient: any;
   let service: CareerMemoryService;
 
   const TEST_PROFILE_ID = "profile-uuid-123";
@@ -100,15 +100,17 @@ describe("Phase 1: Sovereign Career Memory Repository & Service", () => {
 
     repository = new CareerMemoryRepository(mockClient);
 
-    mockWalrusClient = {
-      storeBlob: vi.fn().mockResolvedValue({
+    mockMemWalClient = {
+      getUserNamespace: vi.fn((pid: string) => `finder:user:${pid}`),
+      rememberAndWait: vi.fn().mockResolvedValue({
         blobId: "walrus-blob-mock-123",
-        suiObjectId: "0xmockobject123",
-        isAlreadyCertified: false,
+        jobId: "job-123",
+        namespace: `finder:user:${TEST_PROFILE_ID}`,
+        isMock: true,
       }),
     };
 
-    service = new CareerMemoryService(repository, mockWalrusClient);
+    service = new CareerMemoryService(repository, mockMemWalClient);
   });
 
   describe("1. Repository: Entity Mapping & Database Operations", () => {
@@ -245,7 +247,7 @@ describe("Phase 1: Sovereign Career Memory Repository & Service", () => {
       });
 
       expect(mem.id).toBeDefined();
-      expect(mockWalrusClient.storeBlob).toHaveBeenCalled();
+      expect(mockMemWalClient.rememberAndWait).toHaveBeenCalled();
     });
 
     it("should generate a compact context summary for prompt injection", async () => {

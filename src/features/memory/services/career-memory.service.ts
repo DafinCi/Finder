@@ -13,16 +13,73 @@ import {
   CreateMemorySchema,
   MemoryCategory,
 } from "../types/memory.types";
-import { walrusClient, WalrusClient } from "@/lib/walrus/walrus-client";
 import { memwalClient, MemWalClient } from "@/lib/walrus/memwal-client";
 import type { RecallMemory } from "@mysten-incubation/memwal";
 
+/**
+ * Normalizes memory text for comparison by removing category prefixes, punctuation, and extra whitespace.
+ */
+export function normalizeMemoryContent(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/^candidate\s*\[.*?\]:\s*/i, "")
+    .replace(/[^a-z0-9\s]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Checks if a recalled MemWal item matches an inactive (forgotten or superseded) memory record.
+ * Uses exact Walrus blob ID matching when available, with normalized content fuzzy matching fallback.
+ */
+export function isRecalledMemoryZombie(
+  recalled: RecallMemory,
+  inactiveMemories: CareerMemory[],
+): boolean {
+  if (inactiveMemories.length === 0) return false;
+
+  const recalledNorm = normalizeMemoryContent(recalled.text);
+  if (!recalledNorm) return false;
+
+  return inactiveMemories.some((inact) => {
+    // 1. Exact Walrus blob ID match
+    if (
+      inact.walrusBlobId &&
+      recalled.blob_id &&
+      inact.walrusBlobId === recalled.blob_id
+    ) {
+      return true;
+    }
+
+    // 2. Normalized content match
+    const inactNorm = normalizeMemoryContent(inact.content);
+    if (!inactNorm) return false;
+
+    return (
+      recalledNorm.includes(inactNorm) ||
+      inactNorm.includes(recalledNorm)
+    );
+  });
+}
+
 export class CareerMemoryService {
+  private readonly repository: CareerMemoryRepository;
+  private readonly memwal: MemWalClient;
+
   constructor(
-    private readonly repository: CareerMemoryRepository = careerMemoryRepository,
-    private readonly walrus: WalrusClient = walrusClient,
-    private readonly memwal: MemWalClient = memwalClient,
-  ) {}
+    repository: CareerMemoryRepository = careerMemoryRepository,
+    memwalOrWalrus?: any,
+    memwalArg?: MemWalClient,
+  ) {
+    this.repository = repository;
+    if (memwalArg) {
+      this.memwal = memwalArg;
+    } else if (memwalOrWalrus && typeof memwalOrWalrus.rememberAndWait === "function") {
+      this.memwal = memwalOrWalrus;
+    } else {
+      this.memwal = memwalClient;
+    }
+  }
 
   /**
    * Remembers a new career fact:
@@ -121,8 +178,41 @@ export class CareerMemoryService {
   }
 
   /**
+   * Recalls active semantically relevant memories from Walrus Memory (MemWal),
+   * strictly filtering out any memories marked as 'forgotten' or 'superseded' in the canonical database.
+   * This guarantees that PostgreSQL remains the strict lifecycle authority over MemWal vector indices.
+   */
+  async recallActiveFromWalrus(
+    profileId: string,
+    query: string,
+    limit: number = 5,
+  ): Promise<RecallMemory[]> {
+    const rawRecalled = await this.recallFromWalrus(profileId, query, limit);
+    if (rawRecalled.length === 0) return [];
+
+    try {
+      const allMemories = await this.repository.getAllMemoriesForUser(profileId);
+      const inactiveMemories = allMemories.filter((m) => m.status !== "active");
+
+      if (inactiveMemories.length === 0) {
+        return rawRecalled;
+      }
+
+      return rawRecalled.filter(
+        (item) => !isRecalledMemoryZombie(item, inactiveMemories),
+      );
+    } catch (err) {
+      console.warn(
+        `[CareerMemoryService] Failed to cross-reference memories for ${profileId}, using raw recall:`,
+        (err as Error).message,
+      );
+      return rawRecalled;
+    }
+  }
+
+  /**
    * Generates a compressed, token-efficient context block of memories.
-   * If a natural language query is provided, it prioritizes semantic recall from Walrus Memory.
+   * If a natural language query is provided, it prioritizes verified active semantic recall from Walrus Memory.
    * Otherwise, it loads active memories from the repository cache.
    */
   async getDurableContextSummary(
@@ -130,10 +220,10 @@ export class CareerMemoryService {
     limit: number = 5,
     query?: string,
   ): Promise<string> {
-    // 1. If query is provided, attempt semantic recall from Walrus Memory (MemWal)
+    // 1. If query is provided, attempt active semantic recall from Walrus Memory (MemWal)
     if (query && query.trim().length > 0) {
       try {
-        const recalled = await this.recallFromWalrus(profileId, query, limit);
+        const recalled = await this.recallActiveFromWalrus(profileId, query, limit);
         if (recalled.length > 0) {
           const lines = recalled.map((m) => `- ${m.text}`);
           return `\n\n<untrusted_career_memory>\n[RECALLED FROM WALRUS MEMORY (Mainnet)]:
@@ -172,10 +262,10 @@ ${lines.join("\n")}
   }
 
   /**
-   * Asynchronously publishes a memory snapshot to Walrus Mainnet and MemWal:
-   * 1. Stores encrypted vector memory via MemWal SDK into user namespace.
-   * 2. Also writes verifiable JSON backup snapshot to Walrus storage client.
-   * 3. Updates database with the resulting certified blob ID.
+   * Asynchronously publishes a memory fact to Walrus Mainnet via official MemWal SDK:
+   * 1. Stores encrypted vector memory via MemWal SDK into user namespace (finder:user:<profileId>).
+   * 2. Obtains certified blob ID anchored on Walrus Mainnet.
+   * 3. Updates database row with walrus_blob_id and walrus_status = 'stored'.
    */
   async syncMemoryToWalrus(
     memoryId: string,
@@ -190,52 +280,20 @@ ${lines.join("\n")}
         return;
       }
 
-      // 1. Raw JSON snapshot via Walrus storage client
-      const payload = {
-        version: "1.0",
-        schema: "finder.career_memory",
-        memoryId: memory.id,
-        category: memory.category,
-        content: memory.content,
-        source: memory.source,
-        confidence: memory.confidence,
-        timestamp: memory.createdAt,
-        verifiedAt: new Date().toISOString(),
-      };
+      // Store via official MemWal SDK (semantic memory space with Seal TEE encryption)
+      const namespace = this.memwal.getUserNamespace(profileId);
+      const atomicFactText = `Candidate [${memory.category.toUpperCase()}]: ${memory.content}`;
+      const memwalResult = await this.memwal.rememberAndWait(
+        atomicFactText,
+        namespace,
+      );
 
-      const buffer = Buffer.from(JSON.stringify(payload, null, 2), "utf8");
-      const storeResult = await this.walrus.storeBlob(buffer, {
-        epochs: 50,
-        deletable: true,
-      });
-
-      let blobId = storeResult.blobId;
-      let suiObjectId = storeResult.suiObjectId;
-
-      // 2. Store via MemWal SDK (semantic memory space with Seal encryption)
-      try {
-        const namespace = this.memwal.getUserNamespace(profileId);
-        const atomicFactText = `Candidate [${memory.category.toUpperCase()}]: ${memory.content}`;
-        const memwalResult = await this.memwal.rememberAndWait(
-          atomicFactText,
-          namespace,
-        );
-        if (memwalResult.blobId) {
-          blobId = memwalResult.blobId;
-        }
-      } catch (memwalErr) {
-        console.warn(
-          `[WalrusSync] MemWal SDK rememberAndWait failed for ${memoryId}:`,
-          (memwalErr as Error).message,
-        );
-      }
-
-      // 3. Update repository with Walrus metadata
-      if (blobId) {
+      // Update repository with certified Walrus metadata
+      if (memwalResult.blobId) {
         await this.repository.updateWalrusMetadata(
           memory.id,
-          blobId,
-          suiObjectId,
+          memwalResult.blobId,
+          undefined,
           "stored",
         );
       }
