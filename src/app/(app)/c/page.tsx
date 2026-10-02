@@ -80,7 +80,8 @@ export default function AppChatHomePage() {
             What can I help you explore today?
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground">
-            Ask about roles, analyze your resume, or practice interview questions.
+            Ask about roles, analyze your resume, or practice interview
+            questions.
           </p>
         </div>
 

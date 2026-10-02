@@ -61,9 +61,6 @@ export default function MarketingNavbar({
               <span className="text-base font-heading font-bold tracking-tight text-foreground">
                 Finder
               </span>
-              <span className="text-[10px] text-muted-foreground tracking-wider uppercase font-medium mt-0.5">
-                Career Intelligence
-              </span>
             </div>
           </Link>
 
