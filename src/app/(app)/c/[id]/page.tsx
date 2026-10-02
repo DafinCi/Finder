@@ -25,6 +25,7 @@ export default function ChatSessionPage({
     openDrawer,
     openDrawerWithTab,
     closeDrawer,
+    isAmnesiaMode,
   } = useAgent();
 
   // Set active session in agent context
@@ -108,15 +109,26 @@ export default function ChatSessionPage({
               e.stopPropagation();
               openDrawerWithTab("memory");
             }}
-            title="Inspect Walrus Mainnet Memories"
+            title={
+              isAmnesiaMode
+                ? "Amnesia Mode Active (Click to inspect or toggle Walrus Memory)"
+                : "Inspect Walrus Mainnet Memories"
+            }
             className="min-h-[36px] px-2.5 py-1 rounded-sm bg-secondary hover:bg-secondary/80 text-foreground border border-border inline-flex items-center gap-1.5 transition-colors cursor-pointer text-xs font-medium"
           >
             <Database className="w-3.5 h-3.5 text-primary" />
             <span className="hidden sm:inline">Walrus Memory</span>
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-xs text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Mainnet
-            </span>
+            {isAmnesiaMode ? (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-xs text-[10px] font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                Amnesia Active
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-xs text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Mainnet
+              </span>
+            )}
           </button>
 
           <div className="text-muted-foreground/60">

@@ -78,7 +78,12 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { session_id, content } = body;
+    const { session_id, content, simulate_stateless } = body;
+    const isStatelessSimulation =
+      simulate_stateless === true ||
+      req.headers.get("x-simulate-stateless") === "true" ||
+      req.nextUrl.searchParams.get("demo") === "stateless" ||
+      req.nextUrl.searchParams.get("mode") === "amnesia";
 
     if (!session_id || !content?.trim()) {
       return NextResponse.json(
@@ -423,17 +428,23 @@ export async function POST(req: NextRequest) {
 
     // Load durable sovereign career memories for personalized agent reasoning
     let memoryContext = "";
-    try {
-      memoryContext = await careerMemoryService.getDurableContextSummary(
-        user.id,
-        5,
-        cleanContent,
+    if (isStatelessSimulation) {
+      console.info(
+        `[ReviewerBenchmark:Stateless] Amnesia mode active for session ${session_id}. Walrus memory recall bypassed.`,
       );
-    } catch (memErr) {
-      console.warn(
-        `[CareerMemory] Failed to load durable context for user ${user.id}:`,
-        (memErr as Error).message,
-      );
+    } else {
+      try {
+        memoryContext = await careerMemoryService.getDurableContextSummary(
+          user.id,
+          5,
+          cleanContent,
+        );
+      } catch (memErr) {
+        console.warn(
+          `[CareerMemory] Failed to load durable context for user ${user.id}:`,
+          (memErr as Error).message,
+        );
+      }
     }
 
     const systemPromptContent = buildCareerCopilotSystemPrompt({
@@ -544,6 +555,18 @@ export async function POST(req: NextRequest) {
 
     const readableStream = new ReadableStream({
       async start(controller) {
+        if (isStatelessSimulation) {
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({
+                type: "simulation_mode",
+                mode: "stateless",
+                label: "Amnesia Mode (Memory Bypassed)",
+              })}\n\n`,
+            ),
+          );
+        }
+
         let fullAssistantContent = "";
         let tokenUsage: TokenUsageStats | null = null;
         const toolCallsMap = new Map<
@@ -755,6 +778,7 @@ export async function POST(req: NextRequest) {
                 prompt_version: CAREER_COPILOT_PROMPT_VERSION,
                 total_chars: finalContent.length,
                 token_usage: tokenUsage,
+                stateless_simulation: isStatelessSimulation || undefined,
                 tool_calls:
                   executedToolCallsSummary.length > 0
                     ? executedToolCallsSummary

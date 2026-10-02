@@ -70,4 +70,6 @@ export interface SendMessagePayload {
   session_id: string;
   content: string;
   resume_id?: string;
+  simulate_stateless?: boolean;
 }
+

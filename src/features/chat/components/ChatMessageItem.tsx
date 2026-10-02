@@ -1,7 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
-import { FileText, Copy, Check, Brain, ThumbsUp, ThumbsDown } from "lucide-react";
+import {
+  FileText,
+  Copy,
+  Check,
+  Brain,
+  ThumbsUp,
+  ThumbsDown,
+} from "lucide-react";
 import { toast } from "sonner";
 import { ChatMessage } from "@/types/chat";
 import CandidateSummaryCard from "@/features/ai-analysis/components/CandidateSummaryCard";
@@ -46,7 +53,11 @@ export default function ChatMessageItem({
   };
 
   const handleFeedback = async (type: "helpful" | "unhelpful") => {
-    if (isStreaming || message.id.startsWith("stream-") || isSubmittingFeedback) {
+    if (
+      isStreaming ||
+      message.id.startsWith("stream-") ||
+      isSubmittingFeedback
+    ) {
       return;
     }
 

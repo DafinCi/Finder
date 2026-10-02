@@ -3,9 +3,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { ChatSession, ChatMessage } from "@/types/chat";
+import { useAgent } from "@/contexts/AgentContext";
 import { chatService } from "../services/chat.service";
 
 export function useChat(sessionId?: string) {
+  const { isAmnesiaMode } = useAgent();
   const [session, setSession] = useState<ChatSession | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -131,8 +133,14 @@ export function useChat(sessionId?: string) {
     }
   };
 
-  const sendMessage = async (prompt: string, file?: File | null) => {
+  const sendMessage = async (
+    prompt: string,
+    file?: File | null,
+    options?: { simulateStateless?: boolean },
+  ) => {
     if (!sessionId) return;
+    const shouldSimulateStateless =
+      options?.simulateStateless ?? isAmnesiaMode;
 
     try {
       setIsLoading(true);
@@ -201,6 +209,7 @@ export function useChat(sessionId?: string) {
           {
             session_id: sessionId,
             content: prompt,
+            simulate_stateless: shouldSimulateStateless,
           },
           {
             onToken: (token: string) => {
@@ -284,6 +293,7 @@ export function useChat(sessionId?: string) {
     error,
     failedPrompt: failedSubmission?.prompt ?? null,
     canRetry: failedSubmission !== null,
+    isAmnesiaMode,
     sendMessage,
     retryLastMessage,
     updateTitle,

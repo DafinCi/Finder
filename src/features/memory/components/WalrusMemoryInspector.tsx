@@ -9,9 +9,13 @@ import {
   Check,
   Database,
   Lock,
+  FlaskConical,
+  MessageSquarePlus,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { CareerMemory } from "@/features/memory/types/memory.types";
+import { useAgent } from "@/contexts/AgentContext";
 
 interface WalrusMetadata {
   network: string;
@@ -22,6 +26,13 @@ interface WalrusMetadata {
 }
 
 export default function WalrusMemoryInspector() {
+  const router = useRouter();
+  const {
+    isAmnesiaMode,
+    toggleAmnesiaMode,
+    setIsAmnesiaMode,
+    closeDrawer,
+  } = useAgent();
   const [memories, setMemories] = useState<CareerMemory[]>([]);
   const [walrusMeta, setWalrusMeta] = useState<WalrusMetadata | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -75,6 +86,21 @@ export default function WalrusMemoryInspector() {
         return "Correction";
       default:
         return category;
+    }
+  };
+
+  const handleStartCleanBenchmark = () => {
+    closeDrawer();
+    if (isAmnesiaMode) {
+      toast.success("Opening clean benchmark session with Amnesia active", {
+        description: "Zero conversation history. Walrus Memory recall bypassed.",
+      });
+      router.push("/c?demo=stateless");
+    } else {
+      toast.success("Opening clean session with Walrus Memory active", {
+        description: "Zero conversation history. Verifies cross-session recall.",
+      });
+      router.push("/c");
     }
   };
 
@@ -139,6 +165,143 @@ export default function WalrusMemoryInspector() {
             <span className="font-medium text-foreground font-mono truncate block mt-0.5" title={walrusMeta?.namespace}>
               {walrusMeta?.namespace ? walrusMeta.namespace.replace("finder:user:", "user:") : "Active Space"}
             </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Reviewer Benchmark: Before vs After Simulation */}
+      <div className="rounded-sm border border-border bg-secondary/60 p-4 space-y-3.5 shadow-xs">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 font-semibold text-foreground">
+            <FlaskConical className="w-3.5 h-3.5 text-primary" />
+            <span>Reviewer Benchmark: Before vs After</span>
+          </div>
+          <span
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-[10px] font-semibold border ${
+              isAmnesiaMode
+                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+            }`}
+          >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                isAmnesiaMode ? "bg-amber-500" : "bg-emerald-500 animate-pulse"
+              }`}
+            />
+            {isAmnesiaMode ? "Amnesia Active" : "Walrus Active"}
+          </span>
+        </div>
+
+        <p className="text-muted-foreground text-[11px] leading-relaxed">
+          Simulate how Finder behaves without decentralized memory context vs with persistent Walrus Mainnet grounding.
+        </p>
+
+        {/* Toggle Switch */}
+        <div className="flex items-center justify-between p-2.5 rounded-sm bg-background border border-border">
+          <div className="space-y-0.5 pr-2">
+            <span className="font-semibold text-foreground block text-xs">
+              Simulate Amnesia (Memory OFF)
+            </span>
+            <span className="text-muted-foreground text-[11px] block">
+              Bypasses memory recall on the next chat turn.
+            </span>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={isAmnesiaMode}
+            aria-label="Toggle Amnesia Mode for Reviewer Benchmark"
+            onClick={toggleAmnesiaMode}
+            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+              isAmnesiaMode ? "bg-amber-500" : "bg-muted"
+            }`}
+          >
+            <span
+              aria-hidden="true"
+              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-background shadow-lg ring-0 transition duration-200 ease-in-out ${
+                isAmnesiaMode ? "translate-x-5" : "translate-x-0"
+              }`}
+            />
+          </button>
+        </div>
+
+        {/* Clean Benchmark Session Launcher */}
+        <div className="space-y-1.5 pt-0.5">
+          <button
+            type="button"
+            onClick={handleStartCleanBenchmark}
+            className={`w-full min-h-[44px] px-3.5 py-2.5 rounded-sm text-xs font-semibold inline-flex items-center justify-center gap-2 transition-colors cursor-pointer border shadow-2xs ${
+              isAmnesiaMode
+                ? "bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30"
+                : "bg-primary/10 hover:bg-primary/20 text-primary border-primary/30"
+            }`}
+          >
+            <MessageSquarePlus className="w-4 h-4 shrink-0" />
+            <span>
+              {isAmnesiaMode
+                ? "Start Clean Amnesia Session (Memory OFF)"
+                : "Test Memory in Clean Session (Memory ON)"}
+            </span>
+          </button>
+          <p className="text-[10px] text-muted-foreground leading-normal px-0.5">
+            Tip: A fresh session isolates long-term Walrus memory from active in-session chat context.
+          </p>
+        </div>
+
+        {/* Quick Benchmark Prompts */}
+        <div className="space-y-2 pt-1">
+          <span className="text-[11px] font-semibold text-foreground block">
+            Suggested Verification Prompts:
+          </span>
+          <div className="space-y-1.5">
+            {[
+              "What are my salary expectations and remote work preferences?",
+              "Which blockchain ecosystem and tech stack do I specialize in?",
+              "What company types or roles did I ask to avoid?",
+            ].map((promptText, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(promptText);
+                  toast.success("Benchmark prompt copied to clipboard");
+                }}
+                className="w-full text-left p-2 rounded-sm bg-card hover:bg-card/80 border border-border/80 text-[11px] text-foreground flex items-center justify-between gap-2 transition-colors cursor-pointer group min-h-[36px]"
+                title="Click to copy benchmark prompt"
+              >
+                <span className="truncate">"{promptText}"</span>
+                <Copy className="w-3 h-3 text-muted-foreground group-hover:text-primary shrink-0" />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Architectural Contrast */}
+        <div className="pt-2 border-t border-border space-y-2">
+          <span className="text-[11px] font-semibold text-foreground block">
+            Architectural Contrast:
+          </span>
+          <div className="grid grid-cols-2 gap-2 text-[10px]">
+            <div className="p-2 rounded-sm bg-background/80 border border-border space-y-1">
+              <span className="font-semibold text-amber-600 dark:text-amber-400 block">
+                Without Memory (Amnesia)
+              </span>
+              <ul className="text-muted-foreground space-y-1 list-disc pl-3">
+                <li>Cold start every session</li>
+                <li>Repetitive qualification questions</li>
+                <li>Forgets user constraints</li>
+              </ul>
+            </div>
+            <div className="p-2 rounded-sm bg-background/80 border border-border space-y-1">
+              <span className="font-semibold text-emerald-600 dark:text-emerald-400 block">
+                With Walrus Memory
+              </span>
+              <ul className="text-muted-foreground space-y-1 list-disc pl-3">
+                <li>Instant cross-session recall</li>
+                <li>Seal TEE onchain encryption</li>
+                <li>Sovereign forget lifecycle</li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>

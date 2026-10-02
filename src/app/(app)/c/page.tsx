@@ -8,9 +8,11 @@ import OmniPromptInput from "@/features/chat/components/OmniPromptInput";
 import ChatActionPills from "@/features/chat/components/ChatActionPills";
 import { chatService } from "@/features/chat/services/chat.service";
 import { generateSmartSessionTitle } from "@/features/chat/utils/title-generator";
+import { useAgent } from "@/contexts/AgentContext";
 
 export default function AppChatHomePage() {
   const router = useRouter();
+  const { isAmnesiaMode } = useAgent();
   const [isLoading, setIsLoading] = useState(false);
   const [statusText, setStatusText] = useState("");
 
@@ -54,9 +56,14 @@ export default function AppChatHomePage() {
         await chatService.sendMessage({
           session_id: session.id,
           content: prompt,
+          simulate_stateless: isAmnesiaMode,
         });
 
-        router.push(`/c/${session.id}`);
+        const searchSuffix =
+          typeof window !== "undefined" && window.location.search
+            ? window.location.search
+            : "";
+        router.push(`/c/${session.id}${searchSuffix}`);
       }
     } catch (error) {
       console.error("Session initialization failed:", error);

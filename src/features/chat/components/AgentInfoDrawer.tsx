@@ -130,7 +130,13 @@ export default function AgentInfoDrawer({
             >
               <Database className="w-3.5 h-3.5 text-primary" />
               <span>Walrus Memory</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  agentCtx.isAmnesiaMode
+                    ? "bg-amber-500"
+                    : "bg-emerald-500 animate-pulse"
+                }`}
+              />
             </button>
           </div>
 
