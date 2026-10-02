@@ -142,7 +142,7 @@ export const AGENT_TOOL_DEFINITIONS: ChatToolDefinition[] = [
     function: {
       name: "remember_fact",
       description:
-        "Persists a long-term, durable career fact about the candidate (e.g. career transitions, deep tech preferences, long-term constraints) into sovereign memory and synchronizes it with Walrus Testnet.",
+        "Persists a long-term, durable career fact about the candidate (e.g. career goals, salary expectations, remote requirements, tech preferences, constraints/exclusions) into sovereign memory and synchronizes it with Walrus Mainnet and MemWal.",
       parameters: {
         type: "object",
         properties: {

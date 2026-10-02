@@ -427,6 +427,7 @@ export async function POST(req: NextRequest) {
       memoryContext = await careerMemoryService.getDurableContextSummary(
         user.id,
         5,
+        cleanContent,
       );
     } catch (memErr) {
       console.warn(
