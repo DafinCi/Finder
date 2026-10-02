@@ -132,7 +132,7 @@ export default function ProfileOverviewView() {
       <AppHeader title="Profile" />
 
       <div className="flex-1 min-h-0 w-full overflow-y-auto custom-scrollbar scroll-smooth">
-        <div className="px-4 sm:px-6 py-6 sm:py-8 max-w-6xl mx-auto w-full space-y-6">
+        <div className="">
           {/* Error banner when refreshing existing profile */}
           {error && profile && (
             <div className="p-4 rounded-sm border border-destructive/20 bg-destructive/10 text-destructive text-sm flex items-center justify-between">
@@ -151,7 +151,7 @@ export default function ProfileOverviewView() {
           )}
 
           {/* Unified Career Profile Document Sheet */}
-          <div className="rounded-sm border border-border bg-card shadow-xs overflow-hidden">
+          <div className="overflow-hidden">
             {/* Profile Hero Header with Centered Avatar and Chat-Wallpaper Cover */}
             <ProfileHeader
               user={user}

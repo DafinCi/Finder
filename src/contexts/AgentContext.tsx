@@ -13,7 +13,9 @@ const GLOBAL_AGENT_NICKNAME_KEY = "finder_agent_nickname";
 const SESSION_AGENT_NICKNAMES_KEY = "finder_session_agent_nicknames";
 export const DEFAULT_AGENT_NAME = "Finder";
 
-interface AgentContextType {
+export type DrawerTabType = "info" | "memory";
+
+export interface AgentContextType {
   agentName: string;
   activeSessionId?: string | null;
   setActiveSessionId: (id: string | null) => void;
@@ -21,7 +23,10 @@ interface AgentContextType {
   setAgentName: (name: string, sessionId?: string) => void;
   resetAgentName: (sessionId?: string) => void;
   isDrawerOpen: boolean;
-  openDrawer: () => void;
+  drawerTab: DrawerTabType;
+  setDrawerTab: (tab: DrawerTabType) => void;
+  openDrawer: (tab?: DrawerTabType) => void;
+  openDrawerWithTab: (tab: DrawerTabType) => void;
   closeDrawer: () => void;
   toggleDrawer: () => void;
 }
@@ -33,6 +38,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
   const [sessionNicknames, setSessionNicknames] = useState<Record<string, string>>({});
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [drawerTab, setDrawerTab] = useState<DrawerTabType>("info");
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -117,9 +123,20 @@ export function AgentProvider({ children }: { children: ReactNode }) {
     []
   );
 
-  const openDrawer = () => setIsDrawerOpen(true);
-  const closeDrawer = () => setIsDrawerOpen(false);
-  const toggleDrawer = () => setIsDrawerOpen((prev) => !prev);
+  const openDrawer = useCallback((tab?: DrawerTabType) => {
+    if (tab) {
+      setDrawerTab(tab);
+    }
+    setIsDrawerOpen(true);
+  }, []);
+
+  const openDrawerWithTab = useCallback((tab: DrawerTabType) => {
+    setDrawerTab(tab);
+    setIsDrawerOpen(true);
+  }, []);
+
+  const closeDrawer = useCallback(() => setIsDrawerOpen(false), []);
+  const toggleDrawer = useCallback(() => setIsDrawerOpen((prev) => !prev), []);
 
   // Active agent name: prioritized by activeSessionId, falling back to global
   const currentAgentName = activeSessionId
@@ -136,7 +153,10 @@ export function AgentProvider({ children }: { children: ReactNode }) {
         setAgentName,
         resetAgentName,
         isDrawerOpen,
+        drawerTab,
+        setDrawerTab,
         openDrawer,
+        openDrawerWithTab,
         closeDrawer,
         toggleDrawer,
       }}
@@ -146,11 +166,10 @@ export function AgentProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useAgent() {
+export function useAgent(): AgentContextType {
   const context = useContext(AgentContext);
   if (!context) {
     throw new Error("useAgent must be used within an AgentProvider");
   }
   return context;
 }
-

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { use, useEffect } from "react";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Database } from "lucide-react";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { useAgent } from "@/contexts/AgentContext";
 import { useChat } from "@/features/chat/hooks/useChat";
@@ -23,6 +23,7 @@ export default function ChatSessionPage({
     setActiveSessionId,
     isDrawerOpen,
     openDrawer,
+    openDrawerWithTab,
     closeDrawer,
   } = useAgent();
 
@@ -99,9 +100,28 @@ export default function ChatSessionPage({
           </div>
         </div>
 
-        {/* Right: Subtle Chevron Indicator */}
-        <div className="text-muted-foreground/60 pr-1">
-          <ChevronRight className="w-5 h-5 opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+        {/* Right Actions: Walrus Memory Badge Button + Chevron */}
+        <div className="flex items-center gap-2.5 pr-1">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              openDrawerWithTab("memory");
+            }}
+            title="Inspect Walrus Mainnet Memories"
+            className="min-h-[36px] px-2.5 py-1 rounded-sm bg-secondary hover:bg-secondary/80 text-foreground border border-border inline-flex items-center gap-1.5 transition-colors cursor-pointer text-xs font-medium"
+          >
+            <Database className="w-3.5 h-3.5 text-primary" />
+            <span className="hidden sm:inline">Walrus Memory</span>
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-xs text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Mainnet
+            </span>
+          </button>
+
+          <div className="text-muted-foreground/60">
+            <ChevronRight className="w-5 h-5 opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+          </div>
         </div>
       </header>
 
