@@ -1,20 +1,58 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Bot, ShieldCheck, Database } from "lucide-react";
+import React, { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Bot, ShieldCheck, Briefcase, X } from "lucide-react";
 import { toast } from "sonner";
 import OmniPromptInput from "@/features/chat/components/OmniPromptInput";
 import ChatActionPills from "@/features/chat/components/ChatActionPills";
 import { chatService } from "@/features/chat/services/chat.service";
 import { generateSmartSessionTitle } from "@/features/chat/utils/title-generator";
 import { useAgent } from "@/contexts/AgentContext";
+import { jobsApi } from "@/features/jobs/services/jobs.api";
 
-export default function AppChatHomePage() {
+function AppChatHomeContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const paramJobId = searchParams
+    ? searchParams.get("job") || searchParams.get("jobId")
+    : null;
+
   const { isAmnesiaMode } = useAgent();
   const [isLoading, setIsLoading] = useState(false);
   const [statusText, setStatusText] = useState("");
+  const [activeJobContext, setActiveJobContext] = useState<{
+    id: string;
+    title: string;
+    companyName: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!paramJobId) {
+      setActiveJobContext(null);
+      return;
+    }
+
+    let cancelled = false;
+    jobsApi
+      .getJobDetail(paramJobId)
+      .then((detail) => {
+        if (!cancelled && detail) {
+          setActiveJobContext({
+            id: detail.id,
+            title: detail.title,
+            companyName: detail.company_name,
+          });
+        }
+      })
+      .catch((err) => {
+        console.warn("Failed to load job context for chat:", err);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [paramJobId]);
 
   const handleSubmit = async (prompt: string, file?: File | null) => {
     try {
@@ -46,8 +84,16 @@ export default function AppChatHomePage() {
         router.push(`/c/${session.id}`);
       } else {
         setStatusText("Starting conversation...");
+
+        const effectivePrompt = activeJobContext
+          ? `[Job Context: ${activeJobContext.title} at ${activeJobContext.companyName} (ID: ${activeJobContext.id})] ${prompt || `Can you analyze the ${activeJobContext.title} role at ${activeJobContext.companyName} against my profile?`}`
+          : prompt;
+
         // Create session with clean AI-smart generated title
-        const smartTitle = generateSmartSessionTitle(prompt);
+        const smartTitle = activeJobContext
+          ? `Role: ${activeJobContext.title}`
+          : generateSmartSessionTitle(prompt);
+
         const session = await chatService.createSession({
           title: smartTitle,
         });
@@ -55,7 +101,7 @@ export default function AppChatHomePage() {
         // Trigger first AI response (this inserts the single user message and creates the assistant response)
         await chatService.sendMessage({
           session_id: session.id,
-          content: prompt,
+          content: effectivePrompt,
           simulate_stateless: isAmnesiaMode,
         });
 
@@ -92,17 +138,43 @@ export default function AppChatHomePage() {
           </p>
         </div>
 
+        {/* Active Job Context Pill */}
+        {activeJobContext && (
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-sm bg-secondary/80 border border-border text-xs text-foreground font-medium animate-in fade-in slide-in-from-top-1">
+            <Briefcase className="w-3.5 h-3.5 text-slush-mint" />
+            <span>
+              Discussing: <strong>{activeJobContext.title}</strong> at{" "}
+              {activeJobContext.companyName}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveJobContext(null);
+                router.replace("/c");
+              }}
+              className="text-muted-foreground hover:text-foreground ml-1 cursor-pointer"
+              title="Clear job context"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
         {/* Omni-Prompt Input */}
         <div>
           <OmniPromptInput
             onSubmit={handleSubmit}
             isLoading={isLoading}
-            placeholder="Type a message"
+            placeholder={
+              activeJobContext
+                ? `Ask about ${activeJobContext.title} at ${activeJobContext.companyName}...`
+                : "Type a message"
+            }
           />
         </div>
 
         {/* Quick Action Suggestions */}
-        {!isLoading && (
+        {!isLoading && !activeJobContext && (
           <ChatActionPills
             onSelectPrompt={(promptText) => handleSubmit(promptText)}
           />
@@ -123,5 +195,13 @@ export default function AppChatHomePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AppChatHomePage() {
+  return (
+    <Suspense fallback={null}>
+      <AppChatHomeContent />
+    </Suspense>
   );
 }

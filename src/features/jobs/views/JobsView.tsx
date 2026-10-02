@@ -34,7 +34,7 @@ import {
   Check,
 } from "lucide-react";
 import { toast } from "sonner";
-import { FormattedJobMatch } from "../services/jobs.api";
+import { jobsApi, FormattedJobMatch } from "../services/jobs.api";
 import CompanyLogo from "@/components/common/CompanyLogo";
 import { useSidebar } from "@/contexts/SidebarContext";
 
@@ -75,6 +75,7 @@ export default function JobsView() {
     : null;
 
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [directJob, setDirectJob] = useState<FormattedJobMatch | null>(null);
 
   useEffect(() => {
     if (paramJobId && !selectedJobId) {
@@ -82,13 +83,65 @@ export default function JobsView() {
     }
   }, [paramJobId, selectedJobId]);
 
-  const selectedJob = useMemo(
-    () =>
-      selectedJobId
-        ? (allMatches.find((j) => j.jobId === selectedJobId) ?? null)
-        : null,
-    [allMatches, selectedJobId],
-  );
+  useEffect(() => {
+    if (!selectedJobId) {
+      setDirectJob(null);
+      return;
+    }
+    const foundInPool = allMatches.find((j) => j.jobId === selectedJobId);
+    if (foundInPool) {
+      return;
+    }
+
+    let cancelled = false;
+    jobsApi
+      .getJobDetail(selectedJobId)
+      .then((detail) => {
+        if (cancelled || !detail) return;
+        const formatted: FormattedJobMatch = {
+          matchId: detail.id,
+          jobId: detail.id,
+          matchScore: 0,
+          reason: "Directly viewed job opportunity.",
+          missingSkills: [],
+          title: detail.title,
+          description: detail.description || "",
+          requirements: Array.isArray(detail.requirements)
+            ? detail.requirements
+            : [],
+          location: detail.location || "Location not specified",
+          workMode: detail.location?.toLowerCase().includes("remote")
+            ? "remote"
+            : "unknown",
+          experienceLevel: detail.experience_level || "Not specified",
+          salaryRange: (detail as any).salary_range || null,
+          companyName: detail.company_name,
+          companyLogo: detail.company_logo,
+          companyWebsite: (detail as any).company_website || null,
+          applyUrl: detail.apply_url || null,
+          sourceUrl: detail.source_url || null,
+          source: detail.source || "manual",
+          isSaved: false,
+          postedAt: (detail as any).posted_at || null,
+        };
+        setDirectJob(formatted);
+      })
+      .catch((err) => {
+        console.warn("Direct job fetch failed for ID:", selectedJobId, err);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedJobId, allMatches]);
+
+  const selectedJob = useMemo(() => {
+    if (!selectedJobId) return null;
+    const found = allMatches.find((j) => j.jobId === selectedJobId);
+    if (found) return found;
+    if (directJob && directJob.jobId === selectedJobId) return directJob;
+    return null;
+  }, [allMatches, selectedJobId, directJob]);
   const [rejectingJob, setRejectingJob] = useState<FormattedJobMatch | null>(
     null,
   );
@@ -602,7 +655,7 @@ export default function JobsView() {
                   receiving matched opportunities.
                 </p>
                 <Link
-                  href="/"
+                  href="/c"
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-sm bg-primary text-primary-foreground text-xs font-semibold shadow-xs hover:opacity-90 transition-opacity"
                 >
                   <MessageSquare className="w-3.5 h-3.5" />
@@ -861,7 +914,7 @@ export default function JobsView() {
                     </p>
                   </div>
                   <Link
-                    href={`/?job=${selectedJob.jobId}`}
+                    href={`/c?job=${selectedJob.jobId}`}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-card border border-border hover:bg-secondary text-foreground font-medium text-xs whitespace-nowrap shadow-2xs"
                   >
                     <MessageSquare className="w-3.5 h-3.5 text-muted-foreground" />

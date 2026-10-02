@@ -220,37 +220,53 @@ export class MatchingOrchestratorService {
 
     let effectiveProfile = profile;
 
-    // Apply Walrus Memory constraints if not explicitly overridden by query
+    // Apply Walrus Memory constraints only if not explicitly configured in CareerProfile
+    // Rule F-08: Current confirmed CareerProfile preference takes precedence over historical memory.
     const memoryWorkModes = isRemoteOnlyFromMemories(activeMemories)
       ? (["remote"] as ("remote" | "hybrid" | "onsite")[])
       : undefined;
 
     const memoryMinSalary = extractMinSalaryFromMemories(activeMemories);
 
-    if (memoryWorkModes || memoryMinSalary) {
-      effectiveProfile = {
-        ...effectiveProfile,
-        preferences: {
-          ...effectiveProfile.preferences,
-          work_modes: memoryWorkModes || effectiveProfile.preferences.work_modes,
-          salary:
-            memoryMinSalary &&
-            (!effectiveProfile.preferences.salary?.min_amount ||
-              memoryMinSalary > effectiveProfile.preferences.salary.min_amount)
-              ? {
-                  min_amount: memoryMinSalary,
-                  currency: effectiveProfile.preferences.salary?.currency || "USD",
-                }
-              : effectiveProfile.preferences.salary,
-        },
-        constraints: {
-          ...effectiveProfile.constraints,
-          work_mode_strict: memoryWorkModes
-            ? true
-            : effectiveProfile.constraints.work_mode_strict,
-        },
-      };
-    }
+    const hasExplicitProfileWorkModes =
+      Array.isArray(profile.preferences.work_modes) &&
+      profile.preferences.work_modes.length > 0;
+
+    const effectiveWorkModes = hasExplicitProfileWorkModes
+      ? profile.preferences.work_modes
+      : memoryWorkModes || profile.preferences.work_modes;
+
+    const effectiveWorkModeStrict = hasExplicitProfileWorkModes
+      ? profile.constraints.work_mode_strict
+      : memoryWorkModes
+        ? true
+        : profile.constraints.work_mode_strict;
+
+    const hasExplicitProfileSalary = Boolean(
+      profile.preferences.salary?.min_amount,
+    );
+
+    const effectiveSalary = hasExplicitProfileSalary
+      ? profile.preferences.salary
+      : memoryMinSalary
+        ? {
+            min_amount: memoryMinSalary,
+            currency: profile.preferences.salary?.currency || "USD",
+          }
+        : profile.preferences.salary;
+
+    effectiveProfile = {
+      ...effectiveProfile,
+      preferences: {
+        ...effectiveProfile.preferences,
+        work_modes: effectiveWorkModes,
+        salary: effectiveSalary,
+      },
+      constraints: {
+        ...effectiveProfile.constraints,
+        work_mode_strict: effectiveWorkModeStrict,
+      },
+    };
 
     // Apply explicit ad-hoc parameter overrides if provided
     if (options?.overrideFilters) {

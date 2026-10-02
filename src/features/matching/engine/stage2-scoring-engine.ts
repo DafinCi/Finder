@@ -17,6 +17,10 @@ import {
   JobMatchCandidate,
   resolveJobWorkMode,
 } from "./stage1-constraint-filter";
+import {
+  getPriorityMatchTerms,
+  getNegativePreferenceMatchTerms,
+} from "../constants/preference-vocabularies";
 
 export interface DeterministicScoreResult {
   score: number; // Final deterministic compatibility score [0, 100]
@@ -216,10 +220,15 @@ export function computePreferenceScore(
     preferences.priorities && preferences.priorities.length > 0;
   let prioScore = 70; // default neutral
   if (hasPriorities) {
-    const desc = (job.description || "").toLowerCase();
-    const matchedCount = preferences.priorities.filter((p) =>
-      desc.includes(p.toLowerCase().trim()),
-    ).length;
+    const textToMatch = `${job.title || ""} ${job.description || ""}`.toLowerCase();
+    const cleanReqs = (job.requirements || []).map((r) => r.toLowerCase());
+    const matchedCount = preferences.priorities.filter((p) => {
+      const terms = getPriorityMatchTerms(p);
+      return terms.some(
+        (term) =>
+          textToMatch.includes(term) || cleanReqs.some((r) => r.includes(term)),
+      );
+    }).length;
 
     prioScore = Math.round(
       30 + 70 * (matchedCount / preferences.priorities.length),
@@ -308,18 +317,21 @@ export function computeNegativePreferencePenalty(
   let totalPenalty = 0;
 
   for (const neg of negativePreferences) {
-    const token = neg.token.toLowerCase().trim();
-    if (!token) continue;
+    const rawToken = neg.token ? neg.token.toLowerCase().trim() : "";
+    if (!rawToken) continue;
 
+    const terms = getNegativePreferenceMatchTerms(rawToken);
     const penaltyWeight = neg.penalty_weight ?? 1.0;
     let severity = 0;
 
-    if (cleanTitle.includes(token)) {
-      severity = MATCHING_WEIGHTS.SEVERITY_PRIMARY_REQUIRED; // 1.0
-    } else if (cleanReqs.some((r) => r.includes(token))) {
-      severity = MATCHING_WEIGHTS.SEVERITY_SECONDARY_REQUIRED; // 0.5
-    } else if (cleanDesc.includes(token)) {
-      severity = MATCHING_WEIGHTS.SEVERITY_OPTIONAL_MENTION; // 0.2
+    for (const term of terms) {
+      if (cleanTitle.includes(term)) {
+        severity = Math.max(severity, MATCHING_WEIGHTS.SEVERITY_PRIMARY_REQUIRED); // 1.0
+      } else if (cleanReqs.some((r) => r.includes(term))) {
+        severity = Math.max(severity, MATCHING_WEIGHTS.SEVERITY_SECONDARY_REQUIRED); // 0.5
+      } else if (cleanDesc.includes(term)) {
+        severity = Math.max(severity, MATCHING_WEIGHTS.SEVERITY_OPTIONAL_MENTION); // 0.2
+      }
     }
 
     if (severity > 0) {

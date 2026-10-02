@@ -11,6 +11,7 @@ import { toast } from "sonner";
 
 export const useJobs = (analysisId: string | null = null) => {
   const [matches, setMatches] = useState<FormattedJobMatch[]>([]);
+  const [savedJobs, setSavedJobs] = useState<FormattedJobMatch[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,6 +29,12 @@ export const useJobs = (analysisId: string | null = null) => {
     try {
       setIsRefreshing(true);
       setError(null);
+
+      // Refresh saved jobs collection in parallel (F-05)
+      jobsApi
+        .getSavedJobs()
+        .then((saved) => setSavedJobs(saved))
+        .catch((err) => console.warn("Could not refresh saved jobs:", err));
 
       let v2Failed = false;
       const v2Result = await jobsApi.getV2Recommendations(25).catch((err) => {
@@ -83,6 +90,14 @@ export const useJobs = (analysisId: string | null = null) => {
 
     async function loadInitial() {
       try {
+        // Load saved jobs collection in parallel (F-05)
+        jobsApi
+          .getSavedJobs()
+          .then((saved) => {
+            if (!cancelled) setSavedJobs(saved);
+          })
+          .catch((err) => console.warn("Could not load saved jobs:", err));
+
         let v2Failed = false;
         const v2Result = await jobsApi.getV2Recommendations(25).catch((err) => {
           console.warn(
@@ -152,12 +167,26 @@ export const useJobs = (analysisId: string | null = null) => {
     const previousState = match.isSaved;
     const nextState = !previousState;
 
-    // Optimistic update
+    // Optimistic update in recommendations
     setMatches((current) =>
       current.map((item) =>
         item.jobId === match.jobId ? { ...item, isSaved: nextState } : item,
       ),
     );
+
+    // Optimistic update in independent savedJobs collection
+    setSavedJobs((current) => {
+      if (nextState) {
+        if (!current.some((j) => j.jobId === match.jobId)) {
+          return [{ ...match, isSaved: true }, ...current];
+        }
+        return current.map((j) =>
+          j.jobId === match.jobId ? { ...j, isSaved: true } : j,
+        );
+      } else {
+        return current.filter((j) => j.jobId !== match.jobId);
+      }
+    });
 
     try {
       if (nextState) {
@@ -169,7 +198,7 @@ export const useJobs = (analysisId: string | null = null) => {
       }
     } catch (err) {
       console.error("Error toggling save:", err);
-      // Rollback
+      // Rollback matches
       setMatches((current) =>
         current.map((item) =>
           item.jobId === match.jobId
@@ -177,6 +206,8 @@ export const useJobs = (analysisId: string | null = null) => {
             : item,
         ),
       );
+      // Re-fetch authoritative saved jobs from server on error
+      jobsApi.getSavedJobs().then(setSavedJobs).catch(() => {});
       toast.error("Failed to update bookmark status");
     }
   }, []);
@@ -278,10 +309,44 @@ export const useJobs = (analysisId: string | null = null) => {
     return norm.includes(filterLevel.toLowerCase());
   }
 
+  const sourcePool = useMemo(() => {
+    if (showSavedOnly) {
+      // Independent saved jobs collection augmented with recommendation scores if available
+      return savedJobs.map((saved) => {
+        const matchingRec = matches.find((m) => m.jobId === saved.jobId);
+        if (matchingRec) {
+          return {
+            ...saved,
+            matchScore: matchingRec.matchScore,
+            reason: matchingRec.reason,
+            missingSkills: matchingRec.missingSkills,
+            scoreBreakdown: matchingRec.scoreBreakdown,
+            qualitative: matchingRec.qualitative,
+          };
+        }
+        return saved;
+      });
+    }
+    return matches;
+  }, [showSavedOnly, savedJobs, matches]);
+
+  const allPool = useMemo(() => {
+    const map = new Map<string, FormattedJobMatch>();
+    for (const m of matches) {
+      map.set(m.jobId, m);
+    }
+    for (const s of savedJobs) {
+      if (!map.has(s.jobId)) {
+        map.set(s.jobId, s);
+      }
+    }
+    return Array.from(map.values());
+  }, [matches, savedJobs]);
+
   const filteredMatches = useMemo(() => {
     const trimmedQuery = searchQuery.trim().toLowerCase();
 
-    return matches.filter((match) => {
+    return sourcePool.filter((match) => {
       if (showSavedOnly && !match.isSaved) return false;
 
       const matchesSearch =
@@ -320,7 +385,7 @@ export const useJobs = (analysisId: string | null = null) => {
       return true;
     });
   }, [
-    matches,
+    sourcePool,
     showSavedOnly,
     searchQuery,
     selectedMatchLevel,
@@ -347,31 +412,35 @@ export const useJobs = (analysisId: string | null = null) => {
   }, []);
 
   const stats = useMemo(() => {
-    if (matches.length === 0 || filteredMatches.length === 0) {
+    const currentBase = showSavedOnly ? savedJobs : matches;
+    if (currentBase.length === 0 || filteredMatches.length === 0) {
       return {
         count: filteredMatches.length,
-        totalCount: matches.length,
+        totalCount: currentBase.length,
         highest: null,
         average: null,
       };
     }
 
-    const scores = filteredMatches.map((m) => m.matchScore);
-    const highest = Math.max(...scores);
-    const average = Math.round(
-      scores.reduce((a, b) => a + b, 0) / filteredMatches.length,
-    );
+    const scoredMatches = filteredMatches.filter((m) => (m.matchScore ?? 0) > 0);
+    const scores = scoredMatches.map((m) => m.matchScore);
+    const highest = scores.length > 0 ? Math.max(...scores) : null;
+    const average =
+      scores.length > 0
+        ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
+        : null;
     return {
       count: filteredMatches.length,
-      totalCount: matches.length,
+      totalCount: currentBase.length,
       highest,
       average,
     };
-  }, [matches, filteredMatches]);
+  }, [showSavedOnly, savedJobs, matches, filteredMatches]);
 
   return {
     matches: filteredMatches,
-    allMatches: matches,
+    allMatches: allPool,
+    savedJobs,
     isLoading,
     isRefreshing,
     error,

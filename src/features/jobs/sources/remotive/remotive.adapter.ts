@@ -127,7 +127,7 @@ export function remotiveJobToCanonicalJob(raw: RemotiveRawJob): CanonicalJob {
     location: raw.candidate_required_location?.trim() || "Remote",
     isRemote: true,
     jobType: normalizeRemotiveJobType(raw.job_type),
-    experienceLevel: "Mid-Level",
+    experienceLevel: null,
     salaryMin,
     salaryMax,
     salaryCurrency: salaryCurrency || (raw.salary ? "USD" : null),

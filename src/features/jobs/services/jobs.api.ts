@@ -117,6 +117,19 @@ export const jobsApi = {
   },
 
   /**
+   * Retrieves full saved jobs collection for current candidate independent of recommendations
+   */
+  getSavedJobs: async (): Promise<FormattedJobMatch[]> => {
+    const res = await fetch("/api/jobs/saved", {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
+    if (!res.ok) return [];
+    const data = await res.json().catch(() => ({}));
+    return Array.isArray(data?.savedJobs) ? data.savedJobs : [];
+  },
+
+  /**
    * Saves / bookmarks a job
    */
   saveJob: async (jobId: string, notes?: string): Promise<boolean> => {
@@ -309,11 +322,14 @@ export const jobsApi = {
         source,
         company_name,
         company_logo,
+        salary_range,
+        posted_at,
         companies (
           id,
           name,
           logo_url,
-          description
+          description,
+          website
         )
       `,
       )
@@ -334,6 +350,7 @@ export const jobsApi = {
       ...data,
       company_name: rawCompany?.name || data.company_name || "Company",
       company_logo: rawCompany?.logo_url || data.company_logo || null,
+      company_website: rawCompany?.website || null,
     };
   },
 };

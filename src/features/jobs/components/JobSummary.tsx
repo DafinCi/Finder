@@ -28,14 +28,14 @@ export default function JobSummary({ stats }: JobSummaryProps) {
           {highest !== null && (
             <span className="flex items-center gap-1">
               <Award className="w-3.5 h-3.5 text-slush-mint" />
-              <span className="font-medium text-foreground">{highest}%</span>
+              <span className="font-medium text-foreground">{highest} / 100</span>
               <span className="text-[10px] text-muted-foreground uppercase">Top</span>
             </span>
           )}
           {average !== null && (
             <span className="flex items-center gap-1">
               <TrendingUp className="w-3.5 h-3.5 text-muted-foreground" />
-              <span className="font-medium text-foreground">{average}%</span>
+              <span className="font-medium text-foreground">{average} / 100</span>
               <span className="text-[10px] text-muted-foreground uppercase">Avg</span>
             </span>
           )}
