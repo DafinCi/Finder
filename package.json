@@ -17,6 +17,7 @@
   "dependencies": {
     "@base-ui/react": "^1.6.0",
     "@hookform/resolvers": "^5.4.0",
+    "@mysten-incubation/memwal": "^0.1.8",
     "@mysten/dapp-kit-react": "^2.1.35",
     "@mysten/sui": "^2.33.1",
     "@supabase/ssr": "^0.12.1",

@@ -14,11 +14,14 @@ import {
   MemoryCategory,
 } from "../types/memory.types";
 import { walrusClient, WalrusClient } from "@/lib/walrus/walrus-client";
+import { memwalClient, MemWalClient } from "@/lib/walrus/memwal-client";
+import type { RecallMemory } from "@mysten-incubation/memwal";
 
 export class CareerMemoryService {
   constructor(
     private readonly repository: CareerMemoryRepository = careerMemoryRepository,
     private readonly walrus: WalrusClient = walrusClient,
+    private readonly memwal: MemWalClient = memwalClient,
   ) {}
 
   /**
@@ -26,7 +29,7 @@ export class CareerMemoryService {
    * 1. Validates schema and sanitizes text.
    * 2. Runs deduplication / superseding check against existing active memories.
    * 3. Persists immediately into Supabase database (<15ms).
-   * 4. Triggers asynchronous background sync to Walrus Testnet (epochs=50) non-blockingly.
+   * 4. Triggers asynchronous background sync to Walrus Mainnet / MemWal non-blockingly.
    */
   async rememberFact(
     profileId: string,
@@ -62,7 +65,7 @@ export class CareerMemoryService {
       profileId,
     });
 
-    // 3. Fire-and-forget background sync to Walrus Testnet
+    // 3. Fire-and-forget background sync to Walrus Mainnet and MemWal
     this.syncMemoryToWalrus(memory.id, profileId, memory).catch((err) => {
       console.warn(
         `[WalrusSync] Non-blocking upload for memory ${memory.id} failed:`,
@@ -101,13 +104,51 @@ export class CareerMemoryService {
   }
 
   /**
-   * Generates a compressed, token-efficient context block of active memories
-   * for injection into Career Copilot system prompt (Pre-fetch pattern).
+   * Recalls semantically relevant memories from Walrus Memory (MemWal) using natural language query.
+   */
+  async recallFromWalrus(
+    profileId: string,
+    query: string,
+    limit: number = 5,
+  ): Promise<RecallMemory[]> {
+    const namespace = this.memwal.getUserNamespace(profileId);
+    const recallResult = await this.memwal.recall({
+      query,
+      limit,
+      namespace,
+    });
+    return recallResult.results;
+  }
+
+  /**
+   * Generates a compressed, token-efficient context block of memories.
+   * If a natural language query is provided, it prioritizes semantic recall from Walrus Memory.
+   * Otherwise, it loads active memories from the repository cache.
    */
   async getDurableContextSummary(
     profileId: string,
     limit: number = 5,
+    query?: string,
   ): Promise<string> {
+    // 1. If query is provided, attempt semantic recall from Walrus Memory (MemWal)
+    if (query && query.trim().length > 0) {
+      try {
+        const recalled = await this.recallFromWalrus(profileId, query, limit);
+        if (recalled.length > 0) {
+          const lines = recalled.map((m) => `- ${m.text}`);
+          return `\n\n<untrusted_career_memory>\n[RECALLED FROM WALRUS MEMORY (Mainnet)]:
+${lines.join("\n")}
+</untrusted_career_memory>\n(Use the verified decentralized memories above to tailor recommendations and advice).`;
+        }
+      } catch (err) {
+        console.warn(
+          "[CareerMemoryService] Walrus semantic recall failed, falling back to local memory cache:",
+          (err as Error).message,
+        );
+      }
+    }
+
+    // 2. Fallback to active memories from database cache
     const memories = await this.repository.getActiveMemories(profileId, limit);
     if (memories.length === 0) return "";
 
@@ -131,10 +172,10 @@ ${lines.join("\n")}
   }
 
   /**
-   * Asynchronously publishes a memory snapshot to Walrus Testnet:
-   * - Serializes memory object to JSON.
-   * - Uses 50 epochs (~50 days) storage duration.
-   * - Conditionally updates database with walrus_blob_id.
+   * Asynchronously publishes a memory snapshot to Walrus Mainnet and MemWal:
+   * 1. Stores encrypted vector memory via MemWal SDK into user namespace.
+   * 2. Also writes verifiable JSON backup snapshot to Walrus storage client.
+   * 3. Updates database with the resulting certified blob ID.
    */
   async syncMemoryToWalrus(
     memoryId: string,
@@ -149,6 +190,7 @@ ${lines.join("\n")}
         return;
       }
 
+      // 1. Raw JSON snapshot via Walrus storage client
       const payload = {
         version: "1.0",
         schema: "finder.career_memory",
@@ -162,18 +204,41 @@ ${lines.join("\n")}
       };
 
       const buffer = Buffer.from(JSON.stringify(payload, null, 2), "utf8");
-
       const storeResult = await this.walrus.storeBlob(buffer, {
         epochs: 50,
         deletable: true,
       });
 
-      await this.repository.updateWalrusMetadata(
-        memory.id,
-        storeResult.blobId,
-        storeResult.suiObjectId,
-        "stored",
-      );
+      let blobId = storeResult.blobId;
+      let suiObjectId = storeResult.suiObjectId;
+
+      // 2. Store via MemWal SDK (semantic memory space with Seal encryption)
+      try {
+        const namespace = this.memwal.getUserNamespace(profileId);
+        const atomicFactText = `Candidate [${memory.category.toUpperCase()}]: ${memory.content}`;
+        const memwalResult = await this.memwal.rememberAndWait(
+          atomicFactText,
+          namespace,
+        );
+        if (memwalResult.blobId) {
+          blobId = memwalResult.blobId;
+        }
+      } catch (memwalErr) {
+        console.warn(
+          `[WalrusSync] MemWal SDK rememberAndWait failed for ${memoryId}:`,
+          (memwalErr as Error).message,
+        );
+      }
+
+      // 3. Update repository with Walrus metadata
+      if (blobId) {
+        await this.repository.updateWalrusMetadata(
+          memory.id,
+          blobId,
+          suiObjectId,
+          "stored",
+        );
+      }
     } catch (error) {
       console.warn(
         `[WalrusSyncError] Failed to store memory ${memoryId} on Walrus:`,
