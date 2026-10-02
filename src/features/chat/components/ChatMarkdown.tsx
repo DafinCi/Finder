@@ -84,13 +84,13 @@ function CodeBlock({
 
 export default function ChatMarkdown({ content }: ChatMarkdownProps) {
   return (
-    <div className="chat-markdown text-sm leading-relaxed text-foreground">
+    <div className="chat-markdown text-sm sm:text-[15px] leading-relaxed text-foreground max-w-4xl">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
           // Headings
           h1: ({ children }) => (
-            <h1 className="text-xl font-bold font-heading text-foreground mt-6 mb-3 tracking-tight first:mt-0">
+            <h1 className="text-xl sm:text-2xl font-bold font-heading text-foreground mt-6 mb-3 tracking-tight first:mt-0">
               {children}
             </h1>
           ),
@@ -107,7 +107,7 @@ export default function ChatMarkdown({ content }: ChatMarkdownProps) {
 
           // Paragraphs & Text
           p: ({ children }) => (
-            <p className="mb-3.5 leading-relaxed text-foreground/90 last:mb-0">
+            <p className="mb-3.5 leading-relaxed text-foreground/95 last:mb-0">
               {children}
             </p>
           ),

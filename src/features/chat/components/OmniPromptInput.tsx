@@ -16,7 +16,7 @@ const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 const MAX_PROMPT_CHARS = 2000;
 
 interface OmniPromptInputProps {
-  onSubmit: (prompt: string, file?: File | null) => void;
+  onSubmit: (prompt: string, file?: File | null) => Promise<void> | void;
   isLoading?: boolean;
   placeholder?: string;
   isSticky?: boolean;
@@ -30,6 +30,7 @@ export default function OmniPromptInput({
 }: OmniPromptInputProps) {
   const [prompt, setPrompt] = useState("");
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -96,15 +97,26 @@ export default function OmniPromptInput({
     }
   };
 
-  const handleSubmit = (e?: FormEvent) => {
+  const handleSubmit = async (e?: FormEvent) => {
     if (e) e.preventDefault();
-    if ((!prompt.trim() && !attachedFile) || isLoading) return;
-    onSubmit(prompt.trim(), attachedFile);
-    setPrompt("");
-    setAttachedFile(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
+    if ((!prompt.trim() && !attachedFile) || isLoading || isSubmitting) return;
+
+    const currentPrompt = prompt.trim();
+    const currentFile = attachedFile;
+
+    try {
+      setIsSubmitting(true);
+      await onSubmit(currentPrompt, currentFile);
+      setPrompt("");
+      setAttachedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      if (textareaRef.current) {
+        textareaRef.current.style.height = "auto";
+      }
+    } catch {
+      // Retain prompt and attachment if submit fails so user does not lose work
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -116,23 +128,25 @@ export default function OmniPromptInput({
   };
 
   const canSubmit =
-    (prompt.trim().length > 0 || attachedFile !== null) && !isLoading;
+    (prompt.trim().length > 0 || attachedFile !== null) &&
+    !isLoading &&
+    !isSubmitting;
 
   return (
     <div
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`w-full transition-all duration-200 ${
+      className={`w-full min-w-[320px] transition-all duration-200 ${
         isSticky
-          ? "max-w-4xl lg:max-w-5xl mx-auto px-4"
+          ? "px-4 sm:px-6 md:px-8 lg:px-12"
           : "max-w-3xl lg:max-w-4xl mx-auto px-4"
       }`}
     >
       <form
         onSubmit={handleSubmit}
         aria-label="Message and CV upload"
-        className={`relative rounded-full border bg-card/95 shadow-md backdrop-blur-md p-2 sm:p-2.5 transition-all ${
+        className={`relative rounded-full border bg-card/95 shadow-md backdrop-blur-md p-1.5 sm:p-2 transition-all ${
           isDragging
             ? "border-primary ring-2 ring-primary/20 bg-primary/5"
             : "border-border/80"
@@ -181,12 +195,12 @@ export default function OmniPromptInput({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            disabled={isLoading}
+            disabled={isLoading || isSubmitting}
             aria-label="Attach CV (PDF up to 5MB)"
             title="Attach CV (PDF)"
-            className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors cursor-pointer disabled:opacity-50"
+            className="w-10 h-10 sm:w-11 sm:h-11 min-w-[40px] min-h-[40px] sm:min-w-[44px] sm:min-h-[44px] shrink-0 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors cursor-pointer disabled:opacity-50"
           >
-            <Paperclip className="w-4 h-4" />
+            <Paperclip className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
           </button>
 
           {/* Dynamic Auto-Expanding Text Area */}
@@ -198,15 +212,15 @@ export default function OmniPromptInput({
             placeholder={placeholder}
             rows={1}
             maxLength={MAX_PROMPT_CHARS}
-            readOnly={isLoading}
+            readOnly={isLoading || isSubmitting}
             aria-label="Message"
-            className="flex-1 resize-none bg-transparent text-xs sm:text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none leading-relaxed py-2 px-1 min-h-[36px] max-h-[140px] overflow-y-auto custom-scrollbar"
+            className="flex-1 resize-none bg-transparent text-xs sm:text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none leading-relaxed py-2.5 px-2 min-h-[40px] max-h-[140px] overflow-y-auto custom-scrollbar"
           />
 
           {/* Character counter (only when approaching limit) */}
           {prompt.length > 1500 && (
             <span
-              className={`text-[10px] font-mono shrink-0 pb-2 transition-colors ${
+              className={`text-[10px] font-mono shrink-0 pb-2.5 transition-colors ${
                 prompt.length >= MAX_PROMPT_CHARS
                   ? "text-destructive font-semibold"
                   : "text-muted-foreground"
@@ -222,13 +236,13 @@ export default function OmniPromptInput({
             disabled={!canSubmit}
             aria-label="Send message"
             title="Send message"
-            className={`w-9 h-9 shrink-0 rounded-full transition-all duration-150 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+            className={`w-10 h-10 sm:w-11 sm:h-11 min-w-[40px] min-h-[40px] sm:min-w-[44px] sm:min-h-[44px] shrink-0 rounded-full transition-all duration-150 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
               canSubmit
                 ? "bg-primary text-primary-foreground hover:opacity-95 shadow-2xs cursor-pointer active:scale-95"
                 : "bg-secondary text-muted-foreground cursor-not-allowed opacity-40"
             }`}
           >
-            <ArrowUp className="w-4 h-4" />
+            <ArrowUp className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
           </button>
         </div>
       </form>

@@ -84,7 +84,7 @@ export default function ChatMessageItem({
           isFirstInGroup ? "mt-4 sm:mt-5" : "mt-1.5"
         }`}
       >
-        <div className="flex flex-col items-end max-w-xl space-y-1.5">
+        <div className="flex flex-col items-end max-w-[85%] sm:max-w-2xl space-y-1.5">
           {/* Attachment Preview Badge */}
           {attachment && (
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-sm bg-secondary/80 border border-border text-xs text-foreground font-medium shadow-2xs">
@@ -93,9 +93,9 @@ export default function ChatMessageItem({
             </div>
           )}
 
-          {/* User message text bubble: Slush-violet identity surface */}
+          {/* User message text bubble: Slush-violet primary surface with newline preservation */}
           {message.content && (
-            <div className="px-4 py-2.5 rounded-sm bg-primary text-primary-foreground text-sm font-sans leading-relaxed shadow-2xs">
+            <div className="px-4 py-2.5 rounded-sm bg-primary text-primary-foreground text-sm sm:text-[15px] font-sans leading-relaxed whitespace-pre-wrap break-words shadow-2xs">
               {message.content}
             </div>
           )}

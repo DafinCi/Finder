@@ -8,6 +8,7 @@ import React, {
   useMemo,
 } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useJobs } from "../hooks/useJobs";
 import JobSummary from "../components/JobSummary";
 import JobCard from "../components/JobCard";
@@ -68,7 +69,19 @@ export default function JobsView() {
     recordTelemetry,
   } = useJobs();
 
+  const searchParams = useSearchParams();
+  const paramJobId = searchParams
+    ? searchParams.get("jobId") || searchParams.get("job")
+    : null;
+
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (paramJobId && !selectedJobId) {
+      setSelectedJobId(paramJobId);
+    }
+  }, [paramJobId, selectedJobId]);
+
   const selectedJob = useMemo(
     () =>
       selectedJobId

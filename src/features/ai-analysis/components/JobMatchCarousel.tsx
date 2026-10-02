@@ -128,9 +128,9 @@ export default function JobMatchCarousel({
             )}
           </div>
 
-          {/* AI Match Reason: Full Natural Auto-Height */}
+          {/* AI Match Reason: Refined accent surface */}
           {topJob.reason && (
-            <div className="p-3 bg-secondary/35 border border-border/50 rounded-sm space-y-1">
+            <div className="border-l-2 border-primary/60 pl-3 py-1.5 space-y-1 bg-secondary/20 rounded-r-xs">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Match Assessment
               </span>
@@ -155,7 +155,7 @@ export default function JobMatchCarousel({
             </button>
 
             <Link
-              href="/jobs"
+              href={`/jobs?jobId=${topJob.job_id || topJob.id}`}
               className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
             >
               <span>View Details</span>
@@ -173,8 +173,9 @@ export default function JobMatchCarousel({
               <Layers className="w-3.5 h-3.5 text-muted-foreground" />
               <span>Other Relevant Positions ({otherJobs.length})</span>
             </span>
-            <span className="text-[10px] text-muted-foreground/70 hidden sm:inline">
-              Scroll horizontally to explore →
+            <span className="text-[10px] text-muted-foreground/70 inline-flex items-center gap-1">
+              <span>Swipe or scroll to explore</span>
+              <span aria-hidden="true">&rarr;</span>
             </span>
           </div>
 
@@ -247,7 +248,7 @@ export default function JobMatchCarousel({
                   </button>
 
                   <Link
-                    href="/jobs"
+                    href={`/jobs?jobId=${job.job_id || job.id}`}
                     className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
                   >
                     <span>View Details</span>
