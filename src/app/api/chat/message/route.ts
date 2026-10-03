@@ -824,6 +824,7 @@ export async function POST(req: NextRequest) {
                     : undefined,
                 action_proposal: lastActionProposal || undefined,
                 memory_updated: memoryUpdated || undefined,
+                memory_status: memoryWalrusStatus || undefined,
               },
             })
             .select()

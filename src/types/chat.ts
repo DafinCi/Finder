@@ -48,6 +48,7 @@ export interface ChatMessageMetadata {
   tool_calls?: Array<{ name: string; args: unknown; success: boolean }>;
   action_proposal?: ActionProposalData | null;
   memory_updated?: boolean;
+  memory_status?: "pending" | "stored" | "failed" | null;
   [key: string]: unknown;
 }
 

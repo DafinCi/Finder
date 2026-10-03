@@ -15,6 +15,7 @@ import CandidateSummaryCard from "@/features/ai-analysis/components/CandidateSum
 import JobMatchCarousel from "@/features/ai-analysis/components/JobMatchCarousel";
 import ChatMarkdown from "./ChatMarkdown";
 import ActionProposalCard from "./ActionProposalCard";
+import { getMemoryStatusPresentation } from "../utils/memory-status";
 
 interface ChatMessageItemProps {
   message: ChatMessage;
@@ -39,6 +40,12 @@ export default function ChatMessageItem({
     (message.metadata?.feedback as "helpful" | "unhelpful") || null,
   );
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+  const memoryPresentation = getMemoryStatusPresentation(
+    message.metadata?.memory_status,
+  );
+  const isMemoryFailed = memoryPresentation.tone === "failed";
+  const isMemoryVerified = memoryPresentation.tone === "verified";
+  const memoryLabel = memoryPresentation.label;
 
   const handleCopy = async () => {
     if (!message.content) return;
@@ -153,9 +160,25 @@ export default function ChatMessageItem({
         {/* Sovereign Memory Updated Badge */}
         {message.metadata?.memory_updated && (
           <div className="flex items-center gap-1.5 py-1 text-[11px]">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm bg-secondary border border-border text-secondary-foreground font-medium text-[11px]">
-              <Brain className="w-3.5 h-3.5 text-muted-foreground" />
-              Sovereign Career Memory Updated
+            <span
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm border font-medium text-[11px] ${
+                isMemoryFailed
+                  ? "bg-destructive/10 border-destructive/25 text-destructive"
+                  : isMemoryVerified
+                    ? "bg-secondary border-border text-secondary-foreground"
+                    : "bg-secondary border-border text-muted-foreground"
+              }`}
+            >
+              <Brain
+                className={`w-3.5 h-3.5 ${
+                  isMemoryFailed
+                    ? "text-destructive"
+                    : isMemoryVerified
+                      ? "text-muted-foreground"
+                      : "text-muted-foreground"
+                }`}
+              />
+              {memoryLabel}
             </span>
           </div>
         )}

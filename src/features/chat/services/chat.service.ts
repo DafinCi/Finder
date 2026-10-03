@@ -16,7 +16,7 @@ export interface SendMessageCallbacks {
   onToken?: (token: string) => void;
   onToolEvent?: (event: ToolStreamingEvent) => void;
   onActionProposal?: (proposal: ActionProposalData) => void;
-  onMemoryUpdated?: () => void;
+  onMemoryUpdated?: (status?: string) => void;
 }
 
 export const chatService = {
@@ -112,6 +112,7 @@ export const chatService = {
     assistantMessage: ChatMessage;
     actionProposal?: ActionProposalData | null;
     memoryUpdated?: boolean;
+    memoryStatus?: string | null;
   }> {
     const res = await fetch("/api/chat/message", {
       method: "POST",
@@ -143,6 +144,7 @@ export const chatService = {
     let assistantMessage: ChatMessage | null = null;
     let actionProposal: ActionProposalData | null = null;
     let memoryUpdated = false;
+    let memoryStatus: string | null = null;
     let buffer = "";
 
     while (true) {
@@ -181,7 +183,8 @@ export const chatService = {
           }
 
           if (parsed.type === "memory_updated" && cbOnMemoryUpdated) {
-            cbOnMemoryUpdated();
+            cbOnMemoryUpdated(parsed.status);
+            memoryStatus = parsed.status ?? "pending";
           }
 
           if (parsed.done) {
@@ -189,6 +192,7 @@ export const chatService = {
             assistantMessage = parsed.assistantMessage;
             actionProposal = parsed.actionProposal || null;
             memoryUpdated = Boolean(parsed.memoryUpdated);
+            memoryStatus = parsed.memoryStatus ?? null;
           }
 
           if (parsed.error) {
@@ -209,7 +213,13 @@ export const chatService = {
       throw new Error("Conversation stream finished unexpectedly.");
     }
 
-    return { userMessage, assistantMessage, actionProposal, memoryUpdated };
+    return {
+      userMessage,
+      assistantMessage,
+      actionProposal,
+      memoryUpdated,
+      memoryStatus,
+    };
   },
 
   async uploadAndAnalyzeResume(

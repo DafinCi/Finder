@@ -243,11 +243,23 @@ export function useChat(sessionId?: string) {
                 ),
               );
             },
-            onMemoryUpdated: () => {
-              toast.success("Sovereign memory updated", {
-                description:
-                  "Finder safely recorded your career fact to decentralized memory.",
-              });
+            onMemoryUpdated: (status) => {
+              if (status === "stored") {
+                toast.success("Verified on Walrus Mainnet", {
+                  description:
+                    "Your career fact is now certified on decentralized memory.",
+                });
+              } else if (status === "failed") {
+                toast.error("Memory saved, but Walrus sync failed", {
+                  description:
+                    "Your fact is stored locally; syncing to Walrus could not be completed.",
+                });
+              } else {
+                toast.success("Saved to career memory", {
+                  description:
+                    "Syncing your fact to Walrus Mainnet in the background.",
+                });
+              }
             },
           },
         );

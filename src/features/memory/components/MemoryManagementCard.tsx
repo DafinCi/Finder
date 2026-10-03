@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { CareerMemory, MemoryCategory } from "../types/memory.types";
+import { WALRUS_CONFIG } from "@/lib/walrus/walrus-config";
 
 const CATEGORY_LABELS: Record<MemoryCategory, string> = {
   career_goal: "Career Goal",
@@ -185,11 +186,11 @@ export function MemoryManagementCard() {
 
                       {mem.walrusBlobId ? (
                         <a
-                          href={`https://walrus-testnet.walrus.space/v1/blobs/${mem.walrusBlobId}`}
+                          href={`${WALRUS_CONFIG.explorerUrl}/${mem.walrusBlobId}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-[11px] text-emerald-400 hover:text-emerald-300 font-mono transition-colors"
-                          title="View blob on Walrus Testnet"
+                          title="View blob on Walrus"
                         >
                           <CheckCircle2 className="w-3 h-3 text-emerald-400" />
                           <span>Walrus Synced</span>
