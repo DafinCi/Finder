@@ -14,8 +14,7 @@ export const groq = new Groq({
 });
 
 // Primary and fallback models from active Groq quota list
-export const DEFAULT_GROQ_MODEL =
-  process.env.GROQ_MODEL || "qwen/qwen3.8-27b";
+export const DEFAULT_GROQ_MODEL = process.env.GROQ_MODEL || "qwen/qwen3.8-27b";
 export const FALLBACK_GROQ_MODEL =
   process.env.GROQ_FALLBACK_MODEL || "openai/gpt-oss-20b";
 
@@ -116,6 +115,20 @@ export interface ResilienceResult<T> {
 }
 
 /**
+ * Determines whether a Groq error is transient/recoverable enough to warrant a fallback model.
+ */
+export function isRecoverableGroqError(message: string): boolean {
+  return (
+    message.includes("429") ||
+    message.includes("503") ||
+    message.includes("rate limit") ||
+    message.includes("overloaded") ||
+    message.includes("not found") ||
+    message.includes("model")
+  );
+}
+
+/**
  * Executes an AI operation with fallback resiliency and telemetry logging.
  * If the primary model fails due to 429 rate limit, 503 overload, or unexpected model error,
  * it automatically falls back to FALLBACK_GROQ_MODEL.
@@ -137,13 +150,7 @@ export async function executeWithResilience<T>(
     return { data, modelUsed: primaryModel, durationMs };
   } catch (primaryError) {
     const errorMsg = (primaryError as Error).message || "";
-    const isRecoverable =
-      errorMsg.includes("429") ||
-      errorMsg.includes("503") ||
-      errorMsg.includes("rate limit") ||
-      errorMsg.includes("overloaded") ||
-      errorMsg.includes("not found") ||
-      errorMsg.includes("model");
+    const isRecoverable = isRecoverableGroqError(errorMsg);
 
     if (isRecoverable && primaryModel !== fallbackModel) {
       console.warn(
@@ -159,6 +166,48 @@ export async function executeWithResilience<T>(
       } catch (fallbackError) {
         console.error(
           `[AI:Resilience] op=${operationName} fallback=${fallbackModel} also failed:`,
+          fallbackError,
+        );
+        throw fallbackError;
+      }
+    }
+
+    throw primaryError;
+  }
+}
+
+export interface StreamingResilienceResult<T> {
+  stream: AsyncIterable<T>;
+  modelUsed: string;
+}
+
+/**
+ * Creates a streaming chat completion with the same primary/fallback resiliency as
+ * executeWithResilience. Retries stream creation (before any tokens are consumed) when the
+ * primary model fails with a recoverable provider error.
+ */
+export async function executeStreamWithResilience<T>(
+  operationName: string,
+  executeFn: (model: string) => Promise<AsyncIterable<T>>,
+): Promise<StreamingResilienceResult<T>> {
+  try {
+    const stream = await executeFn(DEFAULT_GROQ_MODEL);
+    return { stream, modelUsed: DEFAULT_GROQ_MODEL };
+  } catch (primaryError) {
+    const errorMsg = (primaryError as Error).message || "";
+    if (
+      isRecoverableGroqError(errorMsg) &&
+      DEFAULT_GROQ_MODEL !== FALLBACK_GROQ_MODEL
+    ) {
+      console.warn(
+        `[AI:StreamResilience] op=${operationName} primary=${DEFAULT_GROQ_MODEL} failed (${errorMsg}). Falling back to ${FALLBACK_GROQ_MODEL}...`,
+      );
+      try {
+        const stream = await executeFn(FALLBACK_GROQ_MODEL);
+        return { stream, modelUsed: FALLBACK_GROQ_MODEL };
+      } catch (fallbackError) {
+        console.error(
+          `[AI:StreamResilience] op=${operationName} fallback=${FALLBACK_GROQ_MODEL} also failed:`,
           fallbackError,
         );
         throw fallbackError;
