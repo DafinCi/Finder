@@ -19,6 +19,7 @@ import {
   ActionProposalData,
   AgentToolResult,
 } from "@/features/agent/services/agent-tool-dispatcher.service";
+import { emitAiEvent, obfuscateId } from "@/lib/observability/ai-events";
 
 export const dynamic = "force-dynamic";
 
@@ -479,6 +480,13 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    emitAiEvent("chat.request", {
+      sessionId: session_id,
+      userId: obfuscateId(user.id),
+      contentChars: cleanContent.length,
+      stateless: isStatelessSimulation,
+    });
+
     const maxTokensLimit = Number(process.env.GROQ_MAX_TOKENS) || 2500;
 
     interface TokenUsageStats {
@@ -684,6 +692,9 @@ export async function POST(req: NextRequest) {
                 ),
               );
 
+              const toolStartMs = Date.now();
+              emitAiEvent("chat.tool.start", { tool: tc.name });
+
               let toolResult: AgentToolResult;
               let parsedArgs: Record<string, unknown> = {};
 
@@ -721,6 +732,16 @@ export async function POST(req: NextRequest) {
                 memoryWalrusStatus =
                   toolResult.memoryUpdated.walrusStatus || null;
               }
+
+              emitAiEvent("chat.tool.end", {
+                tool: tc.name,
+                success: toolResult.success,
+                status:
+                  toolResult.status ??
+                  (toolResult.success ? "success" : "failed"),
+                durationMs: Date.now() - toolStartMs,
+                argKeys: Object.keys(parsedArgs),
+              });
 
               controller.enqueue(
                 encoder.encode(
@@ -796,9 +817,15 @@ export async function POST(req: NextRequest) {
           }
 
           const durationMs = Date.now() - startTime;
-          console.log(
-            `[AI:Telemetry] op=ChatStream model=${finalModelUsed} status=success duration=${durationMs}ms chars=${fullAssistantContent.length} tools=${executedToolCallsSummary.length} prompt_tokens=${tokenUsage?.prompt_tokens ?? "N/A"} completion_tokens=${tokenUsage?.completion_tokens ?? "N/A"} total_tokens=${tokenUsage?.total_tokens ?? "N/A"}`,
-          );
+          emitAiEvent("chat.complete", {
+            model: finalModelUsed,
+            durationMs,
+            chars: fullAssistantContent.length,
+            tools: executedToolCallsSummary.length,
+            promptTokens: tokenUsage?.prompt_tokens ?? null,
+            completionTokens: tokenUsage?.completion_tokens ?? null,
+            totalTokens: tokenUsage?.total_tokens ?? null,
+          });
 
           const finalContent =
             fullAssistantContent.trim() ||

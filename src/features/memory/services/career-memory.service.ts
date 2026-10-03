@@ -15,6 +15,7 @@ import {
 } from "../types/memory.types";
 import { memwalClient, MemWalClient } from "@/lib/walrus/memwal-client";
 import type { RecallMemory } from "@mysten-incubation/memwal";
+import { emitAiEvent } from "@/lib/observability/ai-events";
 
 /**
  * Normalizes memory text for comparison by removing category prefixes, punctuation, and extra whitespace.
@@ -266,6 +267,7 @@ ${lines.join("\n")}
     profileId: string,
     memoryData?: CareerMemory,
   ): Promise<void> {
+    const startedAt = Date.now();
     try {
       const memory =
         memoryData ||
@@ -284,6 +286,12 @@ ${lines.join("\n")}
 
       // Never claim decentralized durability when running against the in-memory mock.
       if (memwalResult.isMock) {
+        emitAiEvent("memory.sync", {
+          memoryId,
+          isMock: true,
+          walrusStatus: "pending",
+          durationMs: Date.now() - startedAt,
+        });
         console.info(
           `[WalrusSync] Memory ${memory.id} stored in MemWal mock; leaving walrus_status=pending.`,
         );
@@ -298,8 +306,20 @@ ${lines.join("\n")}
           undefined,
           "stored",
         );
+        emitAiEvent("memory.sync", {
+          memoryId,
+          isMock: false,
+          walrusStatus: "stored",
+          durationMs: Date.now() - startedAt,
+        });
       }
     } catch (error) {
+      emitAiEvent("memory.sync", {
+        memoryId,
+        isMock: false,
+        walrusStatus: "failed",
+        durationMs: Date.now() - startedAt,
+      });
       console.warn(
         `[WalrusSyncError] Failed to store memory ${memoryId} on Walrus:`,
         (error as Error).message,
