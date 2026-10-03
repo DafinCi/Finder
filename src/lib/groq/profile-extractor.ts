@@ -103,7 +103,7 @@ export async function extractCandidateProfile(
           ],
           response_format: { type: "json_object" },
           temperature: 0.2,
-          max_tokens: 2500,
+          max_completion_tokens: 2500,
         });
 
         const content = completion.choices[0]?.message?.content;

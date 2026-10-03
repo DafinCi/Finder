@@ -34,6 +34,15 @@ export function cleanJsonFences(text: string): string {
   return cleaned;
 }
 
+/**
+ * Conservative token estimate for context budgeting. Uses ~4 characters per token,
+ * which is a safe heuristic for mixed multilingual text without a tokenizer.
+ */
+export function estimateTokens(text: string): number {
+  if (!text) return 0;
+  return Math.max(1, Math.ceil(text.length / 4));
+}
+
 export function parseJsonResponse<T>(text: string): T {
   const cleaned = cleanJsonFences(text);
   return JSON.parse(cleaned) as T;
@@ -181,6 +190,11 @@ export interface StreamingResilienceResult<T> {
   modelUsed: string;
 }
 
+export interface StreamingResilienceOptions {
+  primaryModel?: string;
+  fallbackModel?: string;
+}
+
 /**
  * Creates a streaming chat completion with the same primary/fallback resiliency as
  * executeWithResilience. Retries stream creation (before any tokens are consumed) when the
@@ -189,25 +203,26 @@ export interface StreamingResilienceResult<T> {
 export async function executeStreamWithResilience<T>(
   operationName: string,
   executeFn: (model: string) => Promise<AsyncIterable<T>>,
+  options?: StreamingResilienceOptions,
 ): Promise<StreamingResilienceResult<T>> {
+  const primaryModel = options?.primaryModel || DEFAULT_GROQ_MODEL;
+  const fallbackModel = options?.fallbackModel || FALLBACK_GROQ_MODEL;
+
   try {
-    const stream = await executeFn(DEFAULT_GROQ_MODEL);
-    return { stream, modelUsed: DEFAULT_GROQ_MODEL };
+    const stream = await executeFn(primaryModel);
+    return { stream, modelUsed: primaryModel };
   } catch (primaryError) {
     const errorMsg = (primaryError as Error).message || "";
-    if (
-      isRecoverableGroqError(errorMsg) &&
-      DEFAULT_GROQ_MODEL !== FALLBACK_GROQ_MODEL
-    ) {
+    if (isRecoverableGroqError(errorMsg) && primaryModel !== fallbackModel) {
       console.warn(
-        `[AI:StreamResilience] op=${operationName} primary=${DEFAULT_GROQ_MODEL} failed (${errorMsg}). Falling back to ${FALLBACK_GROQ_MODEL}...`,
+        `[AI:StreamResilience] op=${operationName} primary=${primaryModel} failed (${errorMsg}). Falling back to ${fallbackModel}...`,
       );
       try {
-        const stream = await executeFn(FALLBACK_GROQ_MODEL);
-        return { stream, modelUsed: FALLBACK_GROQ_MODEL };
+        const stream = await executeFn(fallbackModel);
+        return { stream, modelUsed: fallbackModel };
       } catch (fallbackError) {
         console.error(
-          `[AI:StreamResilience] op=${operationName} fallback=${FALLBACK_GROQ_MODEL} also failed:`,
+          `[AI:StreamResilience] op=${operationName} fallback=${fallbackModel} also failed:`,
           fallbackError,
         );
         throw fallbackError;

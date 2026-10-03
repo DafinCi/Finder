@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { cleanJsonFences, parseAndValidateJson } from "@/lib/groq/client";
+import {
+  cleanJsonFences,
+  parseAndValidateJson,
+  estimateTokens,
+} from "@/lib/groq/client";
 import {
   ExtractedCandidateSchema,
   ExtractedProfileResultSchema,
@@ -113,6 +117,18 @@ describe("Unit: AI Schemas & JSON Parsers", () => {
     it("should throw on schema mismatch", () => {
       const text = '{"value": "not-a-number"}';
       expect(() => parseAndValidateJson(text, SimpleSchema)).toThrow();
+    });
+  });
+
+  describe("estimateTokens", () => {
+    it("should return zero for empty text and a minimum of one otherwise", () => {
+      expect(estimateTokens("")).toBe(0);
+      expect(estimateTokens("a")).toBe(1);
+    });
+
+    it("should approximate tokens at ~4 characters per token", () => {
+      expect(estimateTokens("12345678")).toBe(2);
+      expect(estimateTokens("123456789")).toBe(3);
     });
   });
 });

@@ -696,4 +696,104 @@ describe("Phase 5 Integration: Chat Agent Tool Calling & Sovereign Memory E2E Fl
       "Invalid tool arguments for remember_fact",
     );
   });
+
+  it("10. should execute independent tools in a single round concurrently", async () => {
+    const dispatchSpy = vi
+      .spyOn(agentToolDispatcher, "executeTool")
+      .mockResolvedValueOnce({
+        success: true,
+        status: "success",
+        toolName: "get_career_recommendations",
+        data: {
+          totalFound: 1,
+          recommendations: [
+            {
+              id: "job-uuid-par-1",
+              title: "Remote Frontend Engineer",
+              company: "Acme",
+              matchScore: 90,
+            },
+          ],
+        },
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        status: "success",
+        toolName: "inspect_job_details",
+        data: {
+          id: "job-uuid-par-1",
+          title: "Remote Frontend Engineer",
+          companyName: "Acme",
+          requirements: ["React", "TypeScript"],
+        },
+      });
+
+    async function* makeParallelToolsTurn() {
+      yield {
+        choices: [
+          {
+            delta: {
+              tool_calls: [
+                {
+                  index: 0,
+                  id: "call_par_1",
+                  type: "function" as const,
+                  function: {
+                    name: "get_career_recommendations",
+                    arguments: JSON.stringify({ workMode: ["remote"] }),
+                  },
+                },
+                {
+                  index: 1,
+                  id: "call_par_2",
+                  type: "function" as const,
+                  function: {
+                    name: "inspect_job_details",
+                    arguments: JSON.stringify({ jobId: "job-uuid-par-1" }),
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      };
+    }
+
+    async function* makeFinalAnswerTurn() {
+      yield {
+        choices: [
+          {
+            delta: {
+              content:
+                "Here is a remote frontend role at Acme matching your stack.",
+            },
+          },
+        ],
+      };
+    }
+
+    mockGroqCreate
+      .mockResolvedValueOnce(makeParallelToolsTurn())
+      .mockResolvedValueOnce(makeFinalAnswerTurn());
+
+    const req = new NextRequest("http://localhost:3000/api/chat/message", {
+      method: "POST",
+      body: JSON.stringify({
+        session_id: testSession.id,
+        content: "Find and inspect a remote frontend role",
+      }),
+    });
+
+    const res = await POST(req);
+    const sseText = await readSseStream(res);
+
+    expect(dispatchSpy).toHaveBeenCalledTimes(2);
+    expect(sseText).toContain('"tool":"get_career_recommendations"');
+    expect(sseText).toContain('"tool":"inspect_job_details"');
+    expect(sseText.match(/"type":"tool_start"/g) || []).toHaveLength(2);
+    expect(sseText.match(/"type":"tool_end"/g) || []).toHaveLength(2);
+    expect(sseText).toContain(
+      "Here is a remote frontend role at Acme matching your stack.",
+    );
+  });
 });

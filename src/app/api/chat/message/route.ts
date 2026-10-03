@@ -6,6 +6,7 @@ import {
   DEFAULT_GROQ_MODEL,
   normalizeGroqError,
   executeStreamWithResilience,
+  estimateTokens,
 } from "@/lib/groq/client";
 import {
   buildCareerCopilotSystemPrompt,
@@ -407,9 +408,9 @@ export async function POST(req: NextRequest) {
 
     const chronologicalHistory = (recentHistory || []).reverse();
 
-    // Budget historical context to max 4,000 characters (preserving most recent messages)
-    const MAX_HISTORY_CHARS = 4000;
-    let accumulatedChars = 0;
+    // Budget historical context by estimated tokens (preserving most recent messages).
+    const MAX_HISTORY_TOKENS = 1024;
+    let accumulatedTokens = 0;
     const budgetedHistory: Array<{
       role: "user" | "assistant";
       content: string;
@@ -417,12 +418,13 @@ export async function POST(req: NextRequest) {
 
     for (let i = chronologicalHistory.length - 1; i >= 0; i--) {
       const msg = chronologicalHistory[i];
-      if (accumulatedChars + msg.content.length <= MAX_HISTORY_CHARS) {
+      const msgTokens = estimateTokens(msg.content);
+      if (accumulatedTokens + msgTokens <= MAX_HISTORY_TOKENS) {
         budgetedHistory.unshift({
           role: msg.role as "user" | "assistant",
           content: msg.content,
         });
-        accumulatedChars += msg.content.length;
+        accumulatedTokens += msgTokens;
       } else {
         break;
       }
@@ -488,6 +490,7 @@ export async function POST(req: NextRequest) {
     });
 
     const maxTokensLimit = Number(process.env.GROQ_MAX_TOKENS) || 2500;
+    const agentModel = process.env.GROQ_AGENT_MODEL || DEFAULT_GROQ_MODEL;
 
     interface TokenUsageStats {
       prompt_tokens?: number;
@@ -560,11 +563,11 @@ export async function POST(req: NextRequest) {
               ? {
                   tools: AGENT_TOOL_DEFINITIONS as any,
                   tool_choice: "auto",
-                  parallel_tool_calls: false,
+                  parallel_tool_calls: true,
                 }
               : {}),
             temperature: 0.6,
-            max_tokens: maxTokensLimit,
+            max_completion_tokens: maxTokensLimit,
             stream: true,
             stream_options: { include_usage: true },
           } as any) as unknown as Promise<AsyncIterable<ChatCompletionChunk>>;
@@ -598,6 +601,7 @@ export async function POST(req: NextRequest) {
                 await executeStreamWithResilience(
                   "ChatStream",
                   (model) => buildStream(model, true),
+                  { primaryModel: agentModel },
                 );
               finalModelUsed = roundModel;
 
@@ -681,6 +685,7 @@ export async function POST(req: NextRequest) {
               })),
             });
 
+            // Emit tool-start events first, then execute independent tools concurrently.
             for (const tc of toolCallList) {
               controller.enqueue(
                 encoder.encode(
@@ -691,33 +696,45 @@ export async function POST(req: NextRequest) {
                   })}\n\n`,
                 ),
               );
-
-              const toolStartMs = Date.now();
               emitAiEvent("chat.tool.start", { tool: tc.name });
+            }
 
-              let toolResult: AgentToolResult;
-              let parsedArgs: Record<string, unknown> = {};
+            const toolExecutions = await Promise.all(
+              toolCallList.map(async (tc) => {
+                const toolStartMs = Date.now();
+                let toolResult: AgentToolResult;
+                let parsedArgs: Record<string, unknown> = {};
 
-              try {
-                parsedArgs = JSON.parse(tc.arguments || "{}");
-                toolResult = await agentToolDispatcher.executeTool(
-                  user.id,
-                  tc.name,
-                  parsedArgs,
-                );
-              } catch (parseErr) {
-                console.warn(
-                  `[AgentTool] Failed to parse arguments for ${tc.name}:`,
-                  tc.arguments,
-                );
-                toolResult = {
-                  success: false,
-                  status: "failed",
-                  toolName: tc.name,
-                  error: `Invalid tool arguments for ${tc.name}: expected valid JSON, got "${tc.arguments}".`,
-                };
-              }
+                try {
+                  parsedArgs = JSON.parse(tc.arguments || "{}");
+                  toolResult = await agentToolDispatcher.executeTool(
+                    user.id,
+                    tc.name,
+                    parsedArgs,
+                  );
+                } catch (parseErr) {
+                  console.warn(
+                    `[AgentTool] Failed to parse arguments for ${tc.name}:`,
+                    tc.arguments,
+                  );
+                  toolResult = {
+                    success: false,
+                    status: "failed",
+                    toolName: tc.name,
+                    error: `Invalid tool arguments for ${tc.name}: expected valid JSON, got "${tc.arguments}".`,
+                  };
+                }
 
+                return { tc, toolResult, parsedArgs, toolStartMs };
+              }),
+            );
+
+            for (const {
+              tc,
+              toolResult,
+              parsedArgs,
+              toolStartMs,
+            } of toolExecutions) {
               executedToolCallsSummary.push({
                 name: tc.name,
                 args: parsedArgs,
@@ -783,6 +800,7 @@ export async function POST(req: NextRequest) {
                 await executeStreamWithResilience(
                   "ChatStream:synthesis",
                   (model) => buildStream(model, false),
+                  { primaryModel: agentModel },
                 );
               finalModelUsed = roundModel;
 
