@@ -142,7 +142,7 @@ export const AGENT_TOOL_DEFINITIONS: ChatToolDefinition[] = [
     function: {
       name: "remember_fact",
       description:
-        "Persists a long-term, durable career fact about the candidate (e.g. career goals, salary expectations, remote requirements, tech preferences, constraints/exclusions) into sovereign memory and synchronizes it with Walrus Mainnet and MemWal.",
+        "Persists a durable career fact about the candidate (career goals, salary expectations, remote/location rules, tech preferences, constraints/exclusions) into their career memory. The fact is written to the database first and then synchronized to Walrus Mainnet asynchronously; the result status is either 'pending' (saved, still syncing) or 'stored' (verified on Walrus). Do NOT use this for language or communication-style preferences.",
       parameters: {
         type: "object",
         properties: {

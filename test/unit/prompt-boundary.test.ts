@@ -17,7 +17,7 @@ import {
 describe("Unit: Prompt Injection Boundary & System Prompts", () => {
   describe("Career Copilot Prompt", () => {
     it("should enforce prompt version tracking", () => {
-      expect(CAREER_COPILOT_PROMPT_VERSION).toBe("v2.3");
+      expect(CAREER_COPILOT_PROMPT_VERSION).toBe("v2.4");
     });
 
     it("should contain explicit security boundary instructions against untrusted inputs", () => {
@@ -35,6 +35,13 @@ describe("Unit: Prompt Injection Boundary & System Prompts", () => {
       );
       expect(prompt).toContain(
         "MUST NOT claim an action succeeded",
+      );
+      expect(prompt).toContain("MEMORY & PREFERENCE POLICY (CRITICAL)");
+      expect(prompt).toContain(
+        "language or communication-style preferences",
+      );
+      expect(prompt).toContain(
+        "the system resolves superseding automatically",
       );
     });
 
