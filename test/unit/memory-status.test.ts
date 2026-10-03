@@ -1,28 +1,28 @@
 import { describe, it, expect } from "vitest";
-import { getMemoryStatusPresentation } from "@/features/chat/utils/memory-status";
+import { getMemoryStatusPresentation } from "@/features/memory/utils/memory-status";
 
 describe("Memory status presentation", () => {
-  it("should treat 'stored' as verified", () => {
+  it("should treat 'stored' as Mainnet certified", () => {
     expect(getMemoryStatusPresentation("stored")).toEqual({
-      label: "Sovereign Career Memory Updated",
+      label: "Mainnet Certified",
       tone: "verified",
     });
   });
 
   it("should treat 'failed' as a failure", () => {
     expect(getMemoryStatusPresentation("failed")).toEqual({
-      label: "Memory sync failed",
+      label: "Sync failed",
       tone: "failed",
     });
   });
 
   it("should treat 'pending' and missing status as syncing", () => {
     expect(getMemoryStatusPresentation("pending")).toEqual({
-      label: "Saved · Syncing to Walrus…",
+      label: "Syncing to Walrus…",
       tone: "pending",
     });
     expect(getMemoryStatusPresentation()).toEqual({
-      label: "Saved · Syncing to Walrus…",
+      label: "Syncing to Walrus…",
       tone: "pending",
     });
   });

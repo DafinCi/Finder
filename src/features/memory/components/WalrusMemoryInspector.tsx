@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { CareerMemory } from "@/features/memory/types/memory.types";
 import { useAgent } from "@/contexts/AgentContext";
+import { getMemoryStatusPresentation } from "../utils/memory-status";
 
 interface WalrusMetadata {
   network: string;
@@ -353,6 +354,7 @@ export default function WalrusMemoryInspector() {
             const explorerUrl = mem.walrusBlobId
               ? `https://walruscan.com/mainnet/blob/${mem.walrusBlobId}`
               : null;
+            const memoryStatus = getMemoryStatusPresentation(mem.walrusStatus);
 
             return (
               <div
@@ -364,16 +366,20 @@ export default function WalrusMemoryInspector() {
                   <span className="px-2 py-0.5 rounded-sm font-semibold text-[10px] uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
                     {getCategoryLabel(mem.category)}
                   </span>
-                  {mem.walrusBlobId ? (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+                  <span
+                    className={`inline-flex items-center gap-1 text-[10px] font-medium ${
+                      memoryStatus.tone === "verified"
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : memoryStatus.tone === "failed"
+                          ? "text-destructive"
+                          : "text-amber-500"
+                    }`}
+                  >
+                    {memoryStatus.tone === "verified" && (
                       <ShieldCheck className="w-3 h-3" />
-                      Mainnet Certified
-                    </span>
-                  ) : (
-                    <span className="text-[10px] font-medium text-amber-500">
-                      Syncing to Walrus...
-                    </span>
-                  )}
+                    )}
+                    {memoryStatus.label}
+                  </span>
                 </div>
 
                 {/* Fact Content */}

@@ -8,10 +8,12 @@ import {
   RefreshCw,
   CheckCircle2,
   Clock,
+  AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { CareerMemory, MemoryCategory } from "../types/memory.types";
 import { WALRUS_CONFIG } from "@/lib/walrus/walrus-config";
+import { getMemoryStatusPresentation } from "../utils/memory-status";
 
 const CATEGORY_LABELS: Record<MemoryCategory, string> = {
   career_goal: "Career Goal",
@@ -167,6 +169,7 @@ export function MemoryManagementCard() {
           {filteredMemories.map((mem) => {
             const isForgotten = mem.status === "forgotten";
             const isDeleting = deletingId === mem.id;
+            const memoryStatus = getMemoryStatusPresentation(mem.walrusStatus);
 
             return (
               <div
@@ -184,7 +187,7 @@ export function MemoryManagementCard() {
                         {CATEGORY_LABELS[mem.category] || mem.category}
                       </span>
 
-                      {mem.walrusBlobId ? (
+                      {mem.walrusBlobId && memoryStatus.tone === "verified" ? (
                         <a
                           href={`${WALRUS_CONFIG.explorerUrl}/${mem.walrusBlobId}`}
                           target="_blank"
@@ -193,13 +196,18 @@ export function MemoryManagementCard() {
                           title="View blob on Walrus"
                         >
                           <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                          <span>Walrus Synced</span>
+                          <span>{memoryStatus.label}</span>
                           <ExternalLink className="w-2.5 h-2.5" />
                         </a>
+                      ) : memoryStatus.tone === "failed" ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] text-destructive font-medium">
+                          <AlertCircle className="w-3 h-3" />
+                          {memoryStatus.label}
+                        </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
                           <Clock className="w-2.5 h-2.5" />
-                          Sync Pending
+                          {memoryStatus.label}
                         </span>
                       )}
 

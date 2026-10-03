@@ -47,6 +47,7 @@ const INITIAL_STATE: OnboardingFormState = {
   relocationProhibited: false,
   salaryMin: null,
   salaryCurrency: "USD",
+  salaryPeriod: "year",
   priorities: [],
   negativePreferences: [],
   skills: [],
@@ -108,6 +109,7 @@ export function useOnboardingProfile() {
       relocationProhibited: Boolean(profile.constraints?.relocation_prohibited),
       salaryMin: profile.preferences?.salary?.min_amount ?? null,
       salaryCurrency: profile.preferences?.salary?.currency || "USD",
+      salaryPeriod: profile.preferences?.salary?.period || "year",
       priorities: profile.preferences?.priorities || [],
       negativePreferences: profile.preferences?.negative_preferences || [],
     }));
@@ -487,6 +489,7 @@ export function useOnboardingProfile() {
               ? {
                   min_amount: state.salaryMin,
                   currency: state.salaryCurrency,
+                  period: state.salaryPeriod,
                 }
               : null,
           negative_preferences: state.negativePreferences,
@@ -616,6 +619,7 @@ export function useOnboardingProfile() {
               ? {
                   min_amount: state.salaryMin,
                   currency: state.salaryCurrency,
+                  period: state.salaryPeriod,
                 }
               : null,
           negative_preferences: state.negativePreferences,
@@ -711,6 +715,7 @@ export function useOnboardingProfile() {
                 ? {
                     min_amount: state.salaryMin,
                     currency: state.salaryCurrency,
+                    period: state.salaryPeriod,
                   }
                 : null,
             negative_preferences: state.negativePreferences,
@@ -969,6 +974,7 @@ export function useOnboardingProfile() {
                 ? {
                     min_amount: state.salaryMin,
                     currency: state.salaryCurrency,
+                    period: state.salaryPeriod,
                   }
                 : null,
             negative_preferences: state.negativePreferences,
@@ -1063,6 +1069,10 @@ export function useOnboardingProfile() {
     setState((prev) => ({ ...prev, salaryCurrency: currency }));
   }, []);
 
+  const setSalaryPeriod = useCallback((period: "year" | "month" | "hour") => {
+    setState((prev) => ({ ...prev, salaryPeriod: period }));
+  }, []);
+
   const setPriorities = useCallback((priorities: string[]) => {
     setState((prev) => ({ ...prev, priorities }));
   }, []);
@@ -1104,6 +1114,7 @@ export function useOnboardingProfile() {
     setRelocationProhibited,
     setSalaryMin,
     setSalaryCurrency,
+    setSalaryPeriod,
     setPriorities,
     setNegativePreferences,
     reloadProfile,

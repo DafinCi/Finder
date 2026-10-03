@@ -32,8 +32,11 @@ export function ProfilePreferencesCard({
   const isWorkModeStrict = Boolean(constraints?.work_mode_strict);
   const isRelocationProhibited = Boolean(constraints?.relocation_prohibited);
 
+  const salaryPeriod =
+    preferences?.salary?.period ||
+    (preferences?.salary?.currency === "IDR" ? "month" : "year");
   const formattedSalary = preferences?.salary?.min_amount
-    ? `${preferences.salary.currency} ${preferences.salary.min_amount.toLocaleString("en-US")}`
+    ? `${preferences.salary.currency} ${preferences.salary.min_amount.toLocaleString("en-US")} / ${salaryPeriod === "month" ? "mo" : "yr"}`
     : "Flexible (No minimum constraint)";
 
   return (

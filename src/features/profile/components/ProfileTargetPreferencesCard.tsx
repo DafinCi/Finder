@@ -70,8 +70,11 @@ export function ProfileTargetPreferencesCard({
     ? LEVEL_LABELS[careerIntent.target_level] || careerIntent.target_level
     : "Not specified";
 
+  const salaryPeriod =
+    preferences?.salary?.period ||
+    (preferences?.salary?.currency === "IDR" ? "month" : "year");
   const formattedSalary = preferences?.salary?.min_amount
-    ? `${preferences.salary.currency} ${preferences.salary.min_amount.toLocaleString("en-US")}`
+    ? `${preferences.salary.currency} ${preferences.salary.min_amount.toLocaleString("en-US")} / ${salaryPeriod === "month" ? "mo" : "yr"}`
     : "Flexible (No minimum constraint)";
 
   return (

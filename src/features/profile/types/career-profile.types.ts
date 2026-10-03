@@ -120,6 +120,8 @@ export interface NegativePreferenceItem {
   penalty_weight?: number; // 0.0 to 1.0 (default 1.0)
 }
 
+export type SalaryPeriod = "year" | "month" | "hour";
+
 export interface Preferences {
   locations: string[];
   work_modes: WorkMode[];
@@ -127,6 +129,7 @@ export interface Preferences {
   salary: {
     min_amount: number | null;
     currency: string;
+    period?: SalaryPeriod | null;
   } | null;
   negative_preferences: NegativePreferenceItem[];
 }

@@ -55,6 +55,7 @@ export function EditPreferencesDialog({
   const [salaryNotSpecified, setSalaryNotSpecified] = useState(true);
   const [salaryMin, setSalaryMin] = useState<number | null>(null);
   const [salaryCurrency, setSalaryCurrency] = useState("USD");
+  const [salaryPeriod, setSalaryPeriod] = useState<"year" | "month">("year");
 
   // Priorities and Negative Preferences
   const [priorities, setPriorities] = useState<string[]>([]);
@@ -83,10 +84,16 @@ export function EditPreferencesDialog({
         setSalaryNotSpecified(false);
         setSalaryMin(preferences.salary.min_amount);
         setSalaryCurrency(preferences.salary.currency || "USD");
+        setSalaryPeriod(
+          preferences.salary.period === "month" ? "month" : "year",
+        );
       } else {
         setSalaryNotSpecified(true);
         setSalaryMin(null);
         setSalaryCurrency(preferences?.salary?.currency || "USD");
+        setSalaryPeriod(
+          preferences?.salary?.period === "month" ? "month" : "year",
+        );
       }
 
       setPriorities(preferences?.priorities || []);
@@ -229,7 +236,11 @@ export function EditPreferencesDialog({
       salary:
         salaryNotSpecified || !salaryMin
           ? null
-          : { min_amount: Number(salaryMin), currency: salaryCurrency },
+          : {
+              min_amount: Number(salaryMin),
+              currency: salaryCurrency,
+              period: salaryPeriod,
+            },
       negative_preferences: negativePreferences,
     };
 
@@ -452,13 +463,24 @@ export function EditPreferencesDialog({
                   <option value="IDR">IDR (Rp)</option>
                 </select>
 
+                <select
+                  value={salaryPeriod}
+                  onChange={(e) =>
+                    setSalaryPeriod(e.target.value as "year" | "month")
+                  }
+                  className="w-28 bg-card border border-border rounded-sm px-2 py-2 text-xs text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground"
+                >
+                  <option value="year">per year</option>
+                  <option value="month">per month</option>
+                </select>
+
                 <input
                   type="number"
                   value={salaryMin || ""}
                   onChange={(e) =>
                     setSalaryMin(e.target.value ? Number(e.target.value) : null)
                   }
-                  placeholder="Minimum monthly amount..."
+                  placeholder="Minimum amount..."
                   className="flex-1 bg-secondary/30 border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground"
                 />
               </div>

@@ -65,6 +65,7 @@ export interface SaveDraftPayload {
     salary?: {
       min_amount: number | null;
       currency: string;
+      period?: "year" | "month" | "hour" | null;
     } | null;
     negative_preferences?: NegativePreferenceItem[];
   };
@@ -88,6 +89,7 @@ export interface ConfirmProfilePayload {
     salary: {
       min_amount: number | null;
       currency: string;
+      period?: "year" | "month" | "hour" | null;
     } | null;
     negative_preferences: NegativePreferenceItem[];
   };

@@ -25,6 +25,8 @@ import {
 import { scoreJobOpportunity } from "../engine/stage2-scoring-engine";
 import { RecommendedJobOpportunity } from "../types/matching.types";
 import { MATCHING_WEIGHTS } from "../constants/matching-weights";
+import { parseSalaryRange } from "../utils/salary-parser";
+import type { SalaryPeriod } from "@/features/profile/types/career-profile.types";
 
 export interface MatchQueryOptions {
   limit?: number;
@@ -91,12 +93,18 @@ export function extractExclusionKeywordsFromMemories(
   return Array.from(keywords);
 }
 
+export interface MemorySalaryFloor {
+  amount: number;
+  currency: string;
+  period: SalaryPeriod;
+}
+
 /**
- * Extracts minimum salary requirement from memory text if present.
+ * Extracts minimum salary requirement (with currency and period) from memory text.
  */
 export function extractMinSalaryFromMemories(
   memories: CareerMemory[],
-): number | null {
+): MemorySalaryFloor | null {
   const relevant = memories.filter(
     (m) =>
       (m.category === "constraint_avoid" || m.category === "work_preference") &&
@@ -104,15 +112,13 @@ export function extractMinSalaryFromMemories(
   );
 
   for (const m of relevant) {
-    const text = m.content.toLowerCase();
-    // Look for "$180k", "180k", "180,000", "min 180k"
-    const kMatch = /\$?(\d{2,3})\s*k/i.exec(text);
-    if (kMatch && kMatch[1]) {
-      return parseInt(kMatch[1], 10) * 1000;
-    }
-    const fullMatch = /\$?(\d{2,3}),?(\d{3})/i.exec(text);
-    if (fullMatch && fullMatch[1] && fullMatch[2]) {
-      return parseInt(fullMatch[1] + fullMatch[2], 10);
+    const parsed = parseSalaryRange(m.content);
+    if (parsed.min !== null && parsed.min > 0) {
+      return {
+        amount: parsed.min,
+        currency: parsed.currency,
+        period: parsed.period,
+      };
     }
   }
 
@@ -209,6 +215,7 @@ export class MatchingOrchestratorService {
         job_type: (j.job_type as string) || null,
         salary_range: (j.salary_range as string) || null,
         salary_currency: (j.salary_currency as string) || null,
+        salary_period: (j.salary_period as SalaryPeriod) || null,
         experience_level: (j.experience_level as string) || null,
         is_active: j.is_active as boolean,
         apply_url: (j.apply_url as string) || null,
@@ -250,8 +257,12 @@ export class MatchingOrchestratorService {
       ? profile.preferences.salary
       : memoryMinSalary
         ? {
-            min_amount: memoryMinSalary,
-            currency: profile.preferences.salary?.currency || "USD",
+            min_amount: memoryMinSalary.amount,
+            currency:
+              memoryMinSalary.currency ||
+              profile.preferences.salary?.currency ||
+              "USD",
+            period: memoryMinSalary.period,
           }
         : profile.preferences.salary;
 
@@ -283,6 +294,7 @@ export class MatchingOrchestratorService {
             ? {
                 min_amount: overrides.minSalary,
                 currency: effectiveProfile.preferences.salary?.currency || "USD",
+                period: effectiveProfile.preferences.salary?.period || "year",
               }
             : effectiveProfile.preferences.salary,
         },

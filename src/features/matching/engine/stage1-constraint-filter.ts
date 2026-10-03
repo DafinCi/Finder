@@ -4,9 +4,15 @@
 import {
   CareerProfile,
   WorkMode,
+  SalaryPeriod,
 } from "@/features/profile/types/career-profile.types";
 import { MATCHING_WEIGHTS } from "../constants/matching-weights";
-import { parseSalaryRange, convertSalary } from "../utils/salary-parser";
+import {
+  parseSalaryRange,
+  convertSalary,
+  normalizeSalaryToAnnual,
+  resolveSalaryPeriod,
+} from "../utils/salary-parser";
 import { evaluateLocationCompatibility } from "../utils/location-matcher";
 
 export interface JobMatchCandidate {
@@ -24,6 +30,7 @@ export interface JobMatchCandidate {
   salary_min?: number | null;
   salary_max?: number | null;
   salary_currency?: string | null;
+  salary_period?: SalaryPeriod | null;
   experience_level?: string | null;
   is_active?: boolean;
   apply_url?: string | null;
@@ -128,8 +135,17 @@ export function isJobConstraintCompliant(
   if (profile.preferences.salary?.min_amount) {
     const candidateMin = profile.preferences.salary.min_amount;
     const candidateCurrency = profile.preferences.salary.currency || "USD";
+    const candidatePeriod = resolveSalaryPeriod(
+      profile.preferences.salary.period,
+      candidateCurrency,
+    );
+    const candidateAnnualMin = normalizeSalaryToAnnual(
+      candidateMin,
+      candidatePeriod,
+    );
     let jobMax: number | null = job.salary_max ?? null;
     let jobCurrency = job.salary_currency || "USD";
+    let jobPeriod = job.salary_period ?? null;
 
     if (jobMax === null && job.salary_range) {
       const parsed = parseSalaryRange(job.salary_range);
@@ -137,6 +153,7 @@ export function isJobConstraintCompliant(
       if (parsed.currency) {
         jobCurrency = parsed.currency;
       }
+      jobPeriod = parsed.period;
     }
 
     // Convert job salary to candidate currency before comparison to prevent currency mismatch errors
@@ -146,7 +163,11 @@ export function isJobConstraintCompliant(
         jobCurrency,
         candidateCurrency,
       );
-      if (normalizedJobMax < candidateMin) {
+      const normalizedJobAnnualMax = normalizeSalaryToAnnual(
+        normalizedJobMax,
+        resolveSalaryPeriod(jobPeriod, jobCurrency),
+      );
+      if (normalizedJobAnnualMax < candidateAnnualMin) {
         return { compliant: false, rejectionReason: "below_minimum_salary" };
       }
     }

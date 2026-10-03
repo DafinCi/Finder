@@ -125,6 +125,7 @@ export const CareerIntentSchema = z.object({
 
 // --- Preferences & Constraints Schemas ---
 export const WorkModeSchema = z.enum(["remote", "hybrid", "onsite"]);
+export const SalaryPeriodSchema = z.enum(["year", "month", "hour"]);
 
 export const HardConstraintsSchema = z.object({
   relocation_prohibited: z.boolean().default(false),
@@ -145,6 +146,7 @@ export const PreferencesSchema = z.object({
     .object({
       min_amount: z.number().positive().nullable(),
       currency: z.string().trim().min(1).max(10).default("USD"),
+      period: SalaryPeriodSchema.optional().nullable().default(null),
     })
     .nullable()
     .default(null),
@@ -205,6 +207,7 @@ export const ConfirmProfileRequestSchema = z.object({
       .object({
         min_amount: z.number().positive().nullable(),
         currency: z.string().trim().default("USD"),
+        period: SalaryPeriodSchema.optional().nullable().default(null),
       })
       .nullable()
       .default(null),
@@ -257,6 +260,7 @@ export const UpdatePreferencesRequestSchema = z.object({
       .object({
         min_amount: z.number().positive().nullable(),
         currency: z.string().trim().default("USD"),
+        period: SalaryPeriodSchema.optional().nullable().default(null),
       })
       .nullable()
       .default(null),

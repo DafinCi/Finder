@@ -11,7 +11,12 @@ import {
 import { MatchScoreBreakdown } from "../types/matching.types";
 import { MATCHING_WEIGHTS } from "../constants/matching-weights";
 import { matchesSkill } from "../utils/skill-normalizer";
-import { parseSalaryRange, convertSalary } from "../utils/salary-parser";
+import {
+  parseSalaryRange,
+  convertSalary,
+  normalizeSalaryToAnnual,
+  resolveSalaryPeriod,
+} from "../utils/salary-parser";
 import { evaluateLocationCompatibility } from "../utils/location-matcher";
 import {
   JobMatchCandidate,
@@ -241,8 +246,17 @@ export function computePreferenceScore(
   if (hasSalary) {
     const candidateMin = preferences.salary!.min_amount!;
     const candidateCurrency = preferences.salary!.currency || "USD";
+    const candidatePeriod = resolveSalaryPeriod(
+      preferences.salary!.period,
+      candidateCurrency,
+    );
+    const candidateAnnualMin = normalizeSalaryToAnnual(
+      candidateMin,
+      candidatePeriod,
+    );
     let jobMax: number | null = job.salary_max ?? null;
     let jobCurrency = job.salary_currency || "USD";
+    let jobPeriod = job.salary_period ?? null;
 
     if (jobMax === null && job.salary_range) {
       const parsed = parseSalaryRange(job.salary_range);
@@ -250,6 +264,7 @@ export function computePreferenceScore(
       if (parsed.currency) {
         jobCurrency = parsed.currency;
       }
+      jobPeriod = parsed.period;
     }
 
     if (jobMax !== null) {
@@ -258,7 +273,11 @@ export function computePreferenceScore(
         jobCurrency,
         candidateCurrency,
       );
-      salScore = normalizedJobMax >= candidateMin ? 100 : 0;
+      const normalizedJobAnnualMax = normalizeSalaryToAnnual(
+        normalizedJobMax,
+        resolveSalaryPeriod(jobPeriod, jobCurrency),
+      );
+      salScore = normalizedJobAnnualMax >= candidateAnnualMin ? 100 : 0;
     } else {
       salScore = 70; // Neutral if job did not state salary
     }

@@ -17,7 +17,7 @@ import {
 describe("Unit: Prompt Injection Boundary & System Prompts", () => {
   describe("Career Copilot Prompt", () => {
     it("should enforce prompt version tracking", () => {
-      expect(CAREER_COPILOT_PROMPT_VERSION).toBe("v2.4");
+      expect(CAREER_COPILOT_PROMPT_VERSION).toBe("v2.5");
     });
 
     it("should contain explicit security boundary instructions against untrusted inputs", () => {
@@ -35,6 +35,9 @@ describe("Unit: Prompt Injection Boundary & System Prompts", () => {
       );
       expect(prompt).toContain(
         "MUST NOT claim an action succeeded",
+      );
+      expect(prompt).toContain(
+        "Do NOT mention Walrus, Mainnet, decentralized storage, syncing, or verification status",
       );
       expect(prompt).toContain("MEMORY & PREFERENCE POLICY (CRITICAL)");
       expect(prompt).toContain(

@@ -303,4 +303,37 @@ describe("Unit: Stage 1 Constraint Filter", () => {
       expect(pool[0].id).toBe(sampleJob.id);
     });
   });
+
+  describe("Salary floor period normalization", () => {
+    const monthlyFloorProfile = {
+      ...baseProfile,
+      preferences: {
+        ...baseProfile.preferences,
+        salary: {
+          min_amount: 10000,
+          currency: "USD",
+          period: "month" as const,
+        },
+      },
+    };
+
+    it("should reject an annual job whose maximum is below a monthly floor", () => {
+      const job = { ...sampleJob, salary_range: "$80,000 - $100,000" };
+      const check = isJobConstraintCompliant(job, monthlyFloorProfile);
+      expect(check.compliant).toBe(false);
+      expect(check.rejectionReason).toBe("below_minimum_salary");
+    });
+
+    it("should accept an annual job whose maximum meets a monthly floor", () => {
+      const job = { ...sampleJob, salary_range: "$130,000 - $150,000" };
+      const check = isJobConstraintCompliant(job, monthlyFloorProfile);
+      expect(check.compliant).toBe(true);
+    });
+
+    it("should compare a monthly job against a monthly floor", () => {
+      const job = { ...sampleJob, salary_range: "$8,000 - $9,000 per month" };
+      const check = isJobConstraintCompliant(job, monthlyFloorProfile);
+      expect(check.compliant).toBe(false);
+    });
+  });
 });

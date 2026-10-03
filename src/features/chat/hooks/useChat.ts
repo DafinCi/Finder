@@ -139,8 +139,7 @@ export function useChat(sessionId?: string) {
     options?: { simulateStateless?: boolean },
   ) => {
     if (!sessionId) return;
-    const shouldSimulateStateless =
-      options?.simulateStateless ?? isAmnesiaMode;
+    const shouldSimulateStateless = options?.simulateStateless ?? isAmnesiaMode;
 
     try {
       setIsLoading(true);
@@ -243,23 +242,10 @@ export function useChat(sessionId?: string) {
                 ),
               );
             },
-            onMemoryUpdated: (status) => {
-              if (status === "stored") {
-                toast.success("Verified on Walrus Mainnet", {
-                  description:
-                    "Your career fact is now certified on decentralized memory.",
-                });
-              } else if (status === "failed") {
-                toast.error("Memory saved, but Walrus sync failed", {
-                  description:
-                    "Your fact is stored locally; syncing to Walrus could not be completed.",
-                });
-              } else {
-                toast.success("Saved to career memory", {
-                  description:
-                    "Syncing your fact to Walrus Mainnet in the background.",
-                });
-              }
+            onMemoryUpdated: () => {
+              toast.success("Saved to career memory", {
+                description: "Finder recorded your career fact.",
+              });
             },
           },
         );

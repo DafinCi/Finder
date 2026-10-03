@@ -354,10 +354,7 @@ export class AgentToolDispatcher {
         category: memory.category,
         content: memory.content,
         walrusStatus: memory.walrusStatus,
-        message:
-          memory.walrusStatus === "stored"
-            ? "Fact saved to sovereign career memory and verified on Walrus."
-            : "Fact saved to sovereign career memory and syncing to Walrus.",
+        message: "Fact saved to your career memory.",
       },
       memoryUpdated: {
         id: memory.id,

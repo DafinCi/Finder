@@ -222,7 +222,38 @@ describe("Unit: MatchingOrchestratorService", () => {
       ];
 
       const minSalary = extractMinSalaryFromMemories(memories);
-      expect(minSalary).toBe(150000);
+      expect(minSalary).toEqual({
+        amount: 150000,
+        currency: "USD",
+        period: "year",
+      });
+    });
+
+    it("should capture a monthly salary floor together with its period", () => {
+      const memories: CareerMemory[] = [
+        {
+          id: "m-monthly",
+          profileId: "p1",
+          category: "constraint_avoid",
+          content:
+            "Candidate requires a salary above $10,000 per month (updated from previous $100,000/month floor).",
+          source: "explicit_user",
+          confidence: "high",
+          status: "active",
+          walrusStatus: "stored",
+          walrusBlobId: "b-monthly",
+          walrusObjectId: null,
+          metadata: {},
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ];
+
+      expect(extractMinSalaryFromMemories(memories)).toEqual({
+        amount: 10000,
+        currency: "USD",
+        period: "month",
+      });
     });
 
     it("should detect remote only constraint from memories", () => {
