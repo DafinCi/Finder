@@ -18,6 +18,72 @@ const MODEL_NAME = process.env.GROQ_MODEL || DEFAULT_GROQ_MODEL;
 const DB_CANDIDATE_POOL_LIMIT = 25;
 const AI_MATCHING_POOL_LIMIT = 5;
 
+export interface DeterministicJobScore {
+  preRankingScore: number;
+  matchedCount: number;
+  totalReqs: number;
+  missingSkills: string[];
+}
+
+/**
+ * Scores a job against the candidate's extracted skill sets using the same
+ * deterministic weighting used for pre-ranking. Core skills carry 2.0x,
+ * supporting skills 1.2x, and general extracted skills 1.0x per requirement.
+ */
+export function scoreCandidateSkillsAgainstJob(
+  job: RawJobInput,
+  coreSet: Set<string>,
+  supportingSet: Set<string>,
+  allSet: Set<string>,
+): DeterministicJobScore {
+  const reqs = (job.requirements || []).map((r) => r.toLowerCase().trim());
+  let coreCount = 0;
+  let supportingCount = 0;
+  let generalCount = 0;
+  const missingSkills: string[] = [];
+
+  for (const r of reqs) {
+    if (coreSet.has(r)) {
+      coreCount++;
+    } else if (supportingSet.has(r)) {
+      supportingCount++;
+    } else if (allSet.has(r)) {
+      generalCount++;
+    } else {
+      missingSkills.push(r);
+    }
+  }
+
+  const totalReqs = Math.max(1, reqs.length);
+  const preRankingScore =
+    (coreCount * 2.0 + supportingCount * 1.2 + generalCount * 1.0) /
+    totalReqs;
+
+  return {
+    preRankingScore,
+    matchedCount: coreCount + supportingCount + generalCount,
+    totalReqs: reqs.length,
+    missingSkills: missingSkills.slice(0, 5),
+  };
+}
+
+/**
+ * Converts the pre-ranking score (max 2.0 per requirement) into an authoritative
+ * [0, 100] match score. This keeps the displayed score deterministic.
+ */
+export function toDeterministicMatchScore(preRankingScore: number): number {
+  return Math.min(
+    100,
+    Math.max(0, Math.round((preRankingScore / 2.0) * 100)),
+  );
+}
+
+export function buildDeterministicReason(
+  score: DeterministicJobScore,
+): string {
+  return `Kecocokan dihitung berdasarkan keselarasan keahlian (${score.matchedCount} dari ${score.totalReqs} kualifikasi terpenuhi).`;
+}
+
 export interface RunResumeAnalysisParams {
   userId: string;
   resumeId: string;
@@ -280,31 +346,19 @@ export async function runResumeAnalysisWorkflow({
     const allSet = new Set(allCandidateSkills);
 
     const scoredCandidates = candidateJobs.map((job) => {
-      const reqs = (job.requirements || []).map((r) => r.toLowerCase().trim());
-      let coreCount = 0;
-      let supportingCount = 0;
-      let generalCount = 0;
-
-      for (const r of reqs) {
-        if (coreSet.has(r)) {
-          coreCount++;
-        } else if (supportingSet.has(r)) {
-          supportingCount++;
-        } else if (allSet.has(r)) {
-          generalCount++;
-        }
-      }
-
-      const totalReqs = Math.max(1, reqs.length);
-      // Core skills carry 2.0x weight, supporting carry 1.2x weight, general carry 1.0x weight
-      const preRankingScore =
-        (coreCount * 2.0 + supportingCount * 1.2 + generalCount * 1.0) /
-        totalReqs;
-
-      return { job, preRankingScore };
+      const scoring = scoreCandidateSkillsAgainstJob(
+        job,
+        coreSet,
+        supportingSet,
+        allSet,
+      );
+      return { job, preRankingScore: scoring.preRankingScore, scoring };
     });
 
     scoredCandidates.sort((a, b) => b.preRankingScore - a.preRankingScore);
+    const deterministicByJobId = new Map(
+      scoredCandidates.map((item) => [item.job.id, item.scoring]),
+    );
     const topJobs = scoredCandidates
       .slice(0, AI_MATCHING_POOL_LIMIT)
       .map((item) => item.job);
@@ -313,8 +367,6 @@ export async function runResumeAnalysisWorkflow({
     let matchedJobsWithDetails: MatchedJobItem[] = [];
 
     if (topJobs && topJobs.length > 0) {
-      let matchResults;
-
       const compactCandidateContext = toCandidateMatchingContext(
         aiCandidateData.json_profile,
       );
@@ -322,62 +374,48 @@ export async function runResumeAnalysisWorkflow({
         toJobMatchingContext(job),
       );
 
+      // The LLM contributes qualitative explanation only. The authoritative numerical
+      // match score is always computed deterministically from candidate skills.
+      const llmMatchesByJobId = new Map<
+        string,
+        { reason?: string; missing_skills?: string[] }
+      >();
       try {
-        matchResults = await analyzeJobMatches(
+        const matchResults = await analyzeJobMatches(
           compactCandidateContext,
           compactJobContexts,
         );
+        for (const match of matchResults) {
+          llmMatchesByJobId.set(match.job_id, {
+            reason: match.reason,
+            missing_skills: match.missing_skills,
+          });
+        }
       } catch (matchingError) {
         console.warn(
-          "[ANALYSIS:DEGRADED_MODE] AI job matching failed, applying deterministic fallback:",
+          "[ANALYSIS:DEGRADED_MODE] AI job matching explanation failed; using deterministic rationale only:",
           matchingError,
         );
-
-        // Graceful Degradation: Compute deterministic match score based on skill overlap
-        const candidateSkillSet = new Set(
-          (aiCandidateData.extracted_skills || []).map((s) =>
-            s.toLowerCase().trim(),
-          ),
-        );
-
-        matchResults = topJobs.map((job) => {
-          const jobReqs = (job.requirements || []).map((r) =>
-            r.toLowerCase().trim(),
-          );
-          const matchedCount = jobReqs.filter((r) =>
-            candidateSkillSet.has(r),
-          ).length;
-          const overlapRatio =
-            jobReqs.length > 0 ? matchedCount / jobReqs.length : 0.5;
-          const score = Math.round(55 + overlapRatio * 35); // 55 - 90
-          const missing = (job.requirements || []).filter(
-            (r) => !candidateSkillSet.has(r.toLowerCase().trim()),
-          );
-
-          return {
-            job_id: job.id,
-            score,
-            reason: `Kecocokan dihitung berdasarkan keselarasan keahlian (${matchedCount} dari ${jobReqs.length} kualifikasi terpenuhi).`,
-            missing_skills: missing.slice(0, 3),
-          };
-        });
       }
 
-      // Validate that returned job_ids actually exist in topJobs (foreign key integrity guard)
-      const validJobIdSet = new Set(topJobs.map((j) => j.id));
-      const validMatches = matchResults.filter((match) =>
-        validJobIdSet.has(match.job_id),
-      );
+      const matchInsertData = topJobs.map((job) => {
+        const det = deterministicByJobId.get(job.id);
+        const llm = llmMatchesByJobId.get(job.id);
 
-      const matchInsertData = validMatches.map((match) => ({
-        analysis_id: analysisId,
-        job_id: match.job_id,
-        match_score: Math.min(100, Math.max(0, Math.round(match.score))),
-        reason: match.reason?.trim() || "Kecocokan profil teridentifikasi.",
-        missing_skills: Array.isArray(match.missing_skills)
-          ? match.missing_skills
-          : [],
-      }));
+        return {
+          analysis_id: analysisId,
+          job_id: job.id,
+          match_score: toDeterministicMatchScore(det?.preRankingScore ?? 0),
+          reason:
+            llm?.reason?.trim() ||
+            (det
+              ? buildDeterministicReason(det)
+              : "Kecocokan profil teridentifikasi."),
+          missing_skills: Array.isArray(llm?.missing_skills)
+            ? llm.missing_skills
+            : det?.missingSkills || [],
+        };
+      });
 
       if (matchInsertData.length > 0) {
         const { error: matchInsertError } = await supabaseAdmin

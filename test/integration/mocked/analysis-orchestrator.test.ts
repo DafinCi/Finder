@@ -148,9 +148,21 @@ vi.mock("@/lib/supabase/admin", () => ({
         return {
           select: vi.fn(() => ({
             eq: vi.fn(() => ({
-              filter: vi.fn(() => ({
-                limit: vi.fn(async () => ({ data: mockJobs, error: null })),
-              })),
+              filter: vi.fn((_col: string, _op: string, value: string) => {
+                const skills = (value || "")
+                  .replace(/[{}]/g, "")
+                  .split(",")
+                  .map((s) => s.trim().toLowerCase())
+                  .filter(Boolean);
+                const filtered = mockJobs.filter((j) =>
+                  (j.requirements || []).some((r: string) =>
+                    skills.includes(r.toLowerCase()),
+                  ),
+                );
+                return {
+                  limit: vi.fn(async () => ({ data: filtered, error: null })),
+                };
+              }),
               limit: vi.fn(async () => ({ data: mockJobs, error: null })),
             })),
           })),
@@ -270,7 +282,11 @@ describe("Integration (Mock-Based): Analysis Orchestrator Service", () => {
     expect(result.analysis.candidate.name).toBe("Budi Santoso");
     expect(result.jobMatches).toHaveLength(1);
     expect(result.jobMatches[0].job_id).toBe("job-101");
-    expect(result.jobMatches[0].match_score).toBe(92);
+    // Numerical score must be deterministic (skill alignment), not the LLM's 92.
+    expect(result.jobMatches[0].match_score).toBe(87);
+    expect(result.jobMatches[0].reason).toContain(
+      "Strong React & TypeScript skills match perfectly.",
+    );
 
     // Verify resume status transitioned to completed
     const updatedResume = mockResumes.get("res-pending-1");
