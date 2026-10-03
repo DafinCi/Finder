@@ -3,6 +3,7 @@ import {
   CareerMemoryRepository,
   mapDbRowToCareerMemory,
   CareerMemoryDbRow,
+  memoryOverlapRatio,
 } from "@/features/memory/repositories/career-memory.repository";
 import { CareerMemoryService } from "@/features/memory/services/career-memory.service";
 
@@ -14,6 +15,26 @@ describe("Phase 1: Sovereign Career Memory Repository & Service", () => {
   let service: CareerMemoryService;
 
   const TEST_PROFILE_ID = "profile-uuid-123";
+
+  describe("memoryOverlapRatio", () => {
+    it("should report high overlap for topically similar memories", () => {
+      expect(
+        memoryOverlapRatio(
+          "Focusing on Next.js, React, and TypeScript",
+          "Currently focusing on learning Next.js and React",
+        ),
+      ).toBeGreaterThanOrEqual(0.5);
+    });
+
+    it("should report low overlap for unrelated memories sharing one common word", () => {
+      expect(
+        memoryOverlapRatio(
+          "Prefers remote roles only",
+          "Prefers four-day work week",
+        ),
+      ).toBeLessThan(0.5);
+    });
+  });
 
   beforeEach(() => {
     mockDbRows = [];
@@ -60,6 +81,7 @@ describe("Phase 1: Sovereign Career Memory Repository & Service", () => {
                   walrus_status: payload.walrus_status,
                   walrus_blob_id: payload.walrus_blob_id || null,
                   walrus_object_id: payload.walrus_object_id || null,
+                  supersedes_id: payload.supersedes_id || null,
                   metadata: payload.metadata || {},
                   created_at: payload.created_at,
                   updated_at: payload.updated_at,
@@ -231,11 +253,31 @@ describe("Phase 1: Sovereign Career Memory Repository & Service", () => {
 
       expect(mem2.status).toBe("active");
       expect(mockDbRows).toHaveLength(2);
+      expect(mem2.supersedesId).toBe(mem1.id);
 
       const row1 = mockDbRows.find((r) => r.id === mem1.id);
       const row2 = mockDbRows.find((r) => r.id === mem2.id);
       expect(row1?.status).toBe("superseded");
       expect(row2?.status).toBe("active");
+    });
+
+    it("should NOT supersede unrelated memories in the same category", async () => {
+      const mem1 = await service.rememberFact(TEST_PROFILE_ID, {
+        category: "work_preference",
+        content: "Prefers remote roles only",
+        source: "explicit_user",
+        confidence: "high",
+      });
+      const mem2 = await service.rememberFact(TEST_PROFILE_ID, {
+        category: "work_preference",
+        content: "Prefers four-day work week",
+        source: "explicit_user",
+        confidence: "high",
+      });
+
+      expect(mem1.status).toBe("active");
+      expect(mem2.status).toBe("active");
+      expect(mem2.supersedesId).toBeNull();
     });
 
     it("should trigger non-blocking Walrus sync on rememberFact", async () => {

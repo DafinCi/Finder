@@ -37,29 +37,36 @@ export class MemWalClient {
     const isTestEnv =
       (process.env.VITEST === "true" || process.env.NODE_ENV === "test") &&
       !options?.forceLive;
-    const shouldMock = options?.forceMock || isTestEnv || !key || !accountId;
 
-    if (!shouldMock && key && accountId) {
-      try {
-        this.client = MemWal.create({
-          key,
-          accountId,
-          serverUrl,
-          namespace: "finder:default",
-        });
-        this.isMockMode = false;
-        console.info(`[MemWalClient] Connected to live MemWal relayer at: ${serverUrl}`);
-      } catch (err) {
-        console.warn(
-          "[MemWalClient] Failed to initialize live MemWal client. Falling back to MemWalMock:",
-          (err as Error).message
-        );
-        this.client = MemWalMock.create({ namespace: "finder:default" });
-        this.isMockMode = true;
-      }
-    } else {
+    // Test/demo mode is explicit and self-contained.
+    if (options?.forceMock || isTestEnv) {
       this.client = MemWalMock.create({ namespace: "finder:default" });
       this.isMockMode = true;
+      return;
+    }
+
+    // Production: fail loudly instead of silently degrading to a non-durable mock.
+    if (!key || !accountId) {
+      throw new Error(
+        "MemWal is not configured: MEMWAL_DELEGATE_PRIVATE_KEY and MEMWAL_ACCOUNT_ID are required in production.",
+      );
+    }
+
+    try {
+      this.client = MemWal.create({
+        key,
+        accountId,
+        serverUrl,
+        namespace: "finder:default",
+      });
+      this.isMockMode = false;
+      console.info(`[MemWalClient] Connected to live MemWal relayer at: ${serverUrl}`);
+    } catch (err) {
+      console.error(
+        "[MemWalClient] Failed to initialize live MemWal client:",
+        (err as Error).message,
+      );
+      throw err;
     }
   }
 

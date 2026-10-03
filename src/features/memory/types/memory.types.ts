@@ -35,6 +35,7 @@ export interface CareerMemory {
   walrusStatus: WalrusMemoryStatus;
   walrusBlobId: string | null;
   walrusObjectId: string | null;
+  supersedesId?: string | null;
   metadata: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
@@ -62,6 +63,7 @@ export const CreateMemorySchema = z.object({
 
 export type CreateMemoryInput = z.input<typeof CreateMemorySchema> & {
   profileId: string;
+  supersedesId?: string | null;
 };
 
 export const UpdateMemoryStatusSchema = z.object({

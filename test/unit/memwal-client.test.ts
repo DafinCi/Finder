@@ -294,3 +294,21 @@ describe("MemWalClient & CareerMemoryService Semantic Integration", () => {
     });
   });
 });
+
+describe("MemWalClient production configuration guard", () => {
+  it("should fail explicitly in production when MemWal credentials are missing", () => {
+    const prevKey = process.env.MEMWAL_DELEGATE_PRIVATE_KEY;
+    const prevAccount = process.env.MEMWAL_ACCOUNT_ID;
+    delete process.env.MEMWAL_DELEGATE_PRIVATE_KEY;
+    delete process.env.MEMWAL_ACCOUNT_ID;
+
+    try {
+      expect(() => new MemWalClient({ forceLive: true })).toThrow(
+        /not configured/,
+      );
+    } finally {
+      if (prevKey) process.env.MEMWAL_DELEGATE_PRIVATE_KEY = prevKey;
+      if (prevAccount) process.env.MEMWAL_ACCOUNT_ID = prevAccount;
+    }
+  });
+});

@@ -23,9 +23,36 @@ export interface CareerMemoryDbRow {
   walrus_status: string;
   walrus_blob_id: string | null;
   walrus_object_id: string | null;
+  supersedes_id?: string | null;
   metadata: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
+}
+
+/**
+ * Computes a normalized token-overlap ratio between two memory strings.
+ * Higher values indicate the memories cover the same topic.
+ */
+export function memoryOverlapRatio(a: string, b: string): number {
+  const tokenize = (text: string): Set<string> =>
+    new Set(
+      text
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, "")
+        .split(/\s+/)
+        .filter((w) => w.length >= 3),
+    );
+
+  const tokensA = tokenize(a);
+  const tokensB = tokenize(b);
+  if (tokensA.size === 0 || tokensB.size === 0) return 0;
+
+  let overlap = 0;
+  for (const token of tokensA) {
+    if (tokensB.has(token)) overlap++;
+  }
+
+  return overlap / Math.max(tokensA.size, tokensB.size);
 }
 
 export function mapDbRowToCareerMemory(row: CareerMemoryDbRow): CareerMemory {
@@ -40,6 +67,7 @@ export function mapDbRowToCareerMemory(row: CareerMemoryDbRow): CareerMemory {
     walrusStatus: row.walrus_status as WalrusMemoryStatus,
     walrusBlobId: row.walrus_blob_id,
     walrusObjectId: row.walrus_object_id,
+    supersedesId: row.supersedes_id ?? null,
     metadata: row.metadata || {},
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -124,6 +152,7 @@ export class CareerMemoryRepository {
         confidence: payload.confidence || "high",
         status: "active",
         walrus_status: "pending",
+        supersedes_id: payload.supersedesId || null,
         metadata: payload.metadata || {},
         created_at: now,
         updated_at: now,
@@ -202,7 +231,7 @@ export class CareerMemoryRepository {
   async findSimilarActiveMemory(
     profileId: string,
     category: MemoryCategory,
-    keywords: string[],
+    content: string,
   ): Promise<CareerMemory | null> {
     const activeMemories = await this.getActiveMemories(profileId, 20);
     const categoryMatches = activeMemories.filter(
@@ -211,13 +240,10 @@ export class CareerMemoryRepository {
 
     if (categoryMatches.length === 0) return null;
 
-    // Check keyword overlap
+    // Treat same-category memories as duplicates/superseding candidates only when
+    // their normalized content overlaps meaningfully, not on a single shared keyword.
     for (const mem of categoryMatches) {
-      const lower = mem.content.toLowerCase();
-      const hasOverlap = keywords.some(
-        (kw) => kw.length > 2 && lower.includes(kw.toLowerCase()),
-      );
-      if (hasOverlap) {
+      if (memoryOverlapRatio(mem.content, content) >= 0.5) {
         return mem;
       }
     }

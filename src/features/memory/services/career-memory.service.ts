@@ -94,17 +94,10 @@ export class CareerMemoryService {
   ): Promise<CareerMemory> {
     const validated = CreateMemorySchema.parse(input);
 
-    // 1. Keyword extraction for deduplication / superseding
-    const words = validated.content
-      .toLowerCase()
-      .replace(/[^a-zA-Z0-9\s]/g, "")
-      .split(/\s+/)
-      .filter((w) => w.length >= 3);
-
     const existingSimilar = await this.repository.findSimilarActiveMemory(
       profileId,
       validated.category,
-      words.slice(0, 5),
+      validated.content,
     );
 
     // If an active memory of the same category with overlapping topic exists, supersede it
@@ -120,6 +113,7 @@ export class CareerMemoryService {
     const memory = await this.repository.createMemory({
       ...validated,
       profileId,
+      supersedesId: existingSimilar?.id ?? null,
     });
 
     // 3. Fire-and-forget background sync to Walrus Mainnet and MemWal
@@ -287,6 +281,14 @@ ${lines.join("\n")}
         atomicFactText,
         namespace,
       );
+
+      // Never claim decentralized durability when running against the in-memory mock.
+      if (memwalResult.isMock) {
+        console.info(
+          `[WalrusSync] Memory ${memory.id} stored in MemWal mock; leaving walrus_status=pending.`,
+        );
+        return;
+      }
 
       // Update repository with certified Walrus metadata
       if (memwalResult.blobId) {
