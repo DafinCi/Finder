@@ -15,7 +15,7 @@ export const groq = new Groq({
 
 // Primary and fallback models from active Groq quota list
 export const DEFAULT_GROQ_MODEL =
-  process.env.GROQ_MODEL || "openai/gpt-oss-120b";
+  process.env.GROQ_MODEL || "qwen/qwen3.8-27b";
 export const FALLBACK_GROQ_MODEL =
   process.env.GROQ_FALLBACK_MODEL || "openai/gpt-oss-20b";
 

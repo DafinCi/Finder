@@ -22,7 +22,7 @@ export default function ArchitectureTransparencySection() {
     {
       icon: Cpu,
       title: "AI & LLM Acceleration",
-      technologies: "Groq Cloud API • openai/gpt-oss-120b",
+      technologies: "Groq Cloud API • qwen/qwen3.8-27b",
       description:
         "Ultra-low latency inference using Groq SDK with automatic secondary fallback (openai/gpt-oss-20b) and deterministic mathematical degradation formulas.",
     },

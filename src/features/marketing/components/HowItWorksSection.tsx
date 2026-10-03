@@ -27,7 +27,7 @@ export default function HowItWorksSection() {
       icon: Cpu,
       title: "AI Candidate Intelligence",
       description:
-        "Groq-accelerated models (openai/gpt-oss-120b / Prompt v2.1.0) decompose your CV into normalized skills, Core vs Supporting capabilities, seniority level, and verified strengths.",
+        "Groq-accelerated models (qwen/qwen3.8-27b / Prompt v2.1.0) decompose your CV into normalized skills, Core vs Supporting capabilities, seniority level, and verified strengths.",
       specs: [
         "Prompt template v2.1.0",
         "Strict Zod schema validation",

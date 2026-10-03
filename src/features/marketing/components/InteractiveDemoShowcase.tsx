@@ -88,7 +88,7 @@ export default function InteractiveDemoShowcase() {
             </div>
             <div className="flex items-center gap-2 text-[11px] font-mono">
               <span className="px-2 py-0.5 rounded bg-secondary text-muted-foreground border border-border">
-                Model: openai/gpt-oss-120b
+                Model: qwen/qwen3.8-27b
               </span>
               <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
                 Status: Complete

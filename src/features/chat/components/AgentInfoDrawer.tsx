@@ -236,7 +236,7 @@ export default function AgentInfoDrawer({
                       Active Model
                     </span>
                     <span className="font-mono text-[11px] font-semibold text-foreground px-2 py-0.5 rounded-sm bg-background border border-border">
-                      openai/gpt-oss-120b
+                      qwen/qwen3.8-27b
                     </span>
                   </div>
 

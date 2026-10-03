@@ -611,6 +611,7 @@ export async function POST(req: NextRequest) {
 
           let lastActionProposal: ActionProposalData | null = null;
           let memoryUpdated = false;
+          let memoryWalrusStatus: string | null = null;
           const executedToolCallsSummary: Array<{
             name: string;
             args: unknown;
@@ -671,8 +672,10 @@ export async function POST(req: NextRequest) {
               if (toolResult.actionProposal) {
                 lastActionProposal = toolResult.actionProposal;
               }
-              if (toolResult.memoryUpdated) {
+              if (toolResult.success && toolResult.memoryUpdated) {
                 memoryUpdated = true;
+                memoryWalrusStatus =
+                  toolResult.memoryUpdated.walrusStatus || null;
               }
 
               controller.enqueue(
@@ -681,6 +684,9 @@ export async function POST(req: NextRequest) {
                     type: "tool_end",
                     tool: tc.name,
                     success: toolResult.success,
+                    status:
+                      toolResult.status ??
+                      (toolResult.success ? "success" : "failed"),
                   })}\n\n`,
                 ),
               );
@@ -689,12 +695,17 @@ export async function POST(req: NextRequest) {
                 role: "tool",
                 tool_call_id: tc.id,
                 name: tc.name,
-                content: JSON.stringify(
-                  toolResult.data ?? {
-                    success: toolResult.success,
-                    error: toolResult.error,
-                  },
-                ),
+                content: JSON.stringify({
+                  success: toolResult.success,
+                  status:
+                    toolResult.status ??
+                    (toolResult.success ? "success" : "failed"),
+                  ...(toolResult.data ? { data: toolResult.data } : {}),
+                  ...(toolResult.message
+                    ? { message: toolResult.message }
+                    : {}),
+                  ...(toolResult.error ? { error: toolResult.error } : {}),
+                }),
               });
             }
 
@@ -745,8 +756,15 @@ export async function POST(req: NextRequest) {
               }
             } catch (turn2Error) {
               console.error("[AgentTool:Turn2Error]", turn2Error);
+              const statusParts = executedToolCallsSummary.map(
+                (t) => `${t.name}: ${t.success ? "succeeded" : "failed"}`,
+              );
               const fallbackNotice =
-                "\n\n(Action processed successfully by the system.)";
+                "\n\n(I couldn't generate a full summary of the result. Tool outcome: " +
+                (statusParts.length > 0
+                  ? statusParts.join("; ")
+                  : "no tools executed") +
+                ".)";
               fullAssistantContent += fallbackNotice;
               controller.enqueue(
                 encoder.encode(
@@ -825,6 +843,7 @@ export async function POST(req: NextRequest) {
               encoder.encode(
                 `data: ${JSON.stringify({
                   type: "memory_updated",
+                  status: memoryWalrusStatus ?? "pending",
                 })}\n\n`,
               ),
             );
@@ -838,6 +857,7 @@ export async function POST(req: NextRequest) {
                 assistantMessage: assistantMsg,
                 actionProposal: lastActionProposal,
                 memoryUpdated: memoryUpdated,
+                memoryStatus: memoryWalrusStatus,
               })}\n\n`,
             ),
           );

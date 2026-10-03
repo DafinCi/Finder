@@ -62,6 +62,8 @@ export interface ActionProposalData {
 
 export interface AgentToolResult {
   success: boolean;
+  status?: AgentToolStatus;
+  message?: string;
   toolName: string;
   data?: unknown;
   error?: string;
@@ -73,6 +75,13 @@ export interface AgentToolResult {
     walrusStatus: string;
   };
 }
+
+export type AgentToolStatus =
+  | "success"
+  | "pending"
+  | "failed"
+  | "duplicate"
+  | "rejected";
 
 export class AgentToolDispatcher {
   constructor(
@@ -94,6 +103,7 @@ export class AgentToolDispatcher {
     if (!profileId || typeof profileId !== "string") {
       return {
         success: false,
+        status: "failed",
         toolName,
         error: "Unauthorized. Missing valid profile identity.",
       };
@@ -153,6 +163,7 @@ export class AgentToolDispatcher {
         default:
           return {
             success: false,
+            status: "failed",
             toolName,
             error: `Unrecognized tool: '${toolName}'. Supported tools: get_career_recommendations, inspect_job_details, save_job, reject_job, remember_fact, propose_preference_update, read_candidate_cv.`,
           };
@@ -161,6 +172,7 @@ export class AgentToolDispatcher {
       console.warn(`[AgentToolDispatcher] Error executing ${toolName}:`, err);
       return {
         success: false,
+        status: "failed",
         toolName,
         error: (err as Error).message || "Tool execution failed.",
       };
@@ -207,6 +219,7 @@ export class AgentToolDispatcher {
 
     return {
       success: true,
+      status: "success",
       toolName: "get_career_recommendations",
       data: {
         totalFound: compactResults.length,
@@ -230,6 +243,7 @@ export class AgentToolDispatcher {
     if (error || !job) {
       return {
         success: false,
+        status: "failed",
         toolName: "inspect_job_details",
         error: `Job with ID '${args.jobId}' was not found or is no longer active.`,
       };
@@ -237,6 +251,7 @@ export class AgentToolDispatcher {
 
     return {
       success: true,
+      status: "success",
       toolName: "inspect_job_details",
       data: {
         id: job.id,
@@ -271,6 +286,7 @@ export class AgentToolDispatcher {
 
     return {
       success: true,
+      status: "success",
       toolName: "save_job",
       data: {
         savedJobId: saved.id,
@@ -297,6 +313,7 @@ export class AgentToolDispatcher {
 
     return {
       success: true,
+      status: "success",
       toolName: "reject_job",
       data: {
         jobId: args.jobId,
@@ -321,15 +338,26 @@ export class AgentToolDispatcher {
       source: "explicit_user",
     });
 
+    const status: AgentToolStatus =
+      memory.walrusStatus === "stored"
+        ? "success"
+        : memory.walrusStatus === "failed"
+          ? "failed"
+          : "pending";
+
     return {
       success: true,
+      status,
       toolName: "remember_fact",
       data: {
         memoryId: memory.id,
         category: memory.category,
         content: memory.content,
         walrusStatus: memory.walrusStatus,
-        message: "Fact saved to sovereign career memory and syncing to Walrus.",
+        message:
+          memory.walrusStatus === "stored"
+            ? "Fact saved to sovereign career memory and verified on Walrus."
+            : "Fact saved to sovereign career memory and syncing to Walrus.",
       },
       memoryUpdated: {
         id: memory.id,
@@ -355,6 +383,7 @@ export class AgentToolDispatcher {
 
     return {
       success: true,
+      status: "pending",
       toolName: "propose_preference_update",
       data: {
         proposedChanges,
@@ -399,6 +428,7 @@ export class AgentToolDispatcher {
     if (!profileData && !resumeData) {
       return {
         success: false,
+        status: "failed",
         toolName: "read_candidate_cv",
         error: "Candidate has not uploaded a resume or completed their career profile in the system yet.",
       };
@@ -440,6 +470,7 @@ export class AgentToolDispatcher {
 
     return {
       success: true,
+      status: "success",
       toolName: "read_candidate_cv",
       data: result,
     };

@@ -428,4 +428,91 @@ describe("Phase 5 Integration: Chat Agent Tool Calling & Sovereign Memory E2E Fl
     expect(sseText).toContain("Maaf, detail lowongan tersebut tidak dapat ditemukan");
     expect(sseText).toContain('"done":true');
   });
+
+  it("6. should NOT emit memory_updated when the model claims success without calling a tool", async () => {
+    async function* makeFabricatedStream() {
+      yield { choices: [{ delta: { content: "I've saved your preference to always use English." } }] };
+      yield { choices: [{ delta: { content: " Done!" } }], usage: { total_tokens: 12 } };
+    }
+    mockGroqCreate.mockResolvedValueOnce(makeFabricatedStream());
+
+    const req = new NextRequest("http://localhost:3000/api/chat/message", {
+      method: "POST",
+      body: JSON.stringify({
+        session_id: testSession.id,
+        content: "always use English, save it to your memo",
+      }),
+    });
+
+    const res = await POST(req);
+    const sseText = await readSseStream(res);
+
+    expect(sseText).toContain("I've saved your preference");
+    expect(sseText).not.toContain('"type":"memory_updated"');
+    expect(sseText).not.toContain('"memoryUpdated":true');
+    expect(sseText).toContain('"done":true');
+  });
+
+  it("7. should ground the turn-2 fallback in actual tool outcomes instead of claiming success", async () => {
+    vi.spyOn(agentToolDispatcher, "executeTool").mockResolvedValueOnce({
+      success: true,
+      status: "pending",
+      toolName: "remember_fact",
+      memoryUpdated: {
+        id: "mem-uuid-77",
+        category: "work_preference",
+        content: "Remote jobs from America only",
+        walrusStatus: "pending",
+      },
+      data: {
+        success: true,
+        memoryId: "mem-uuid-77",
+        walrusStatus: "pending",
+      },
+    });
+
+    async function* makeTurn1() {
+      yield {
+        choices: [
+          {
+            delta: {
+              tool_calls: [
+                {
+                  index: 0,
+                  id: "call_mem_t2",
+                  type: "function" as const,
+                  function: {
+                    name: "remember_fact",
+                    arguments: JSON.stringify({
+                      category: "work_preference",
+                      content: "Remote jobs from America only",
+                    }),
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      };
+    }
+
+    mockGroqCreate.mockResolvedValueOnce(makeTurn1());
+    mockGroqCreate.mockRejectedValueOnce(new Error("Turn 2 stream failed"));
+
+    const req = new NextRequest("http://localhost:3000/api/chat/message", {
+      method: "POST",
+      body: JSON.stringify({
+        session_id: testSession.id,
+        content: "Remember I only want remote jobs from America",
+      }),
+    });
+
+    const res = await POST(req);
+    const sseText = await readSseStream(res);
+
+    expect(sseText).toContain("Tool outcome:");
+    expect(sseText).toContain("remember_fact: succeeded");
+    expect(sseText).not.toContain("Action processed successfully by the system");
+    expect(sseText).toContain('"type":"memory_updated"');
+  });
 });
