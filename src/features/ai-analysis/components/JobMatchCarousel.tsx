@@ -1,7 +1,6 @@
 "use client";
 
-import React from "react";
-import Link from "next/link";
+import React, { useState } from "react";
 import {
   Briefcase,
   MapPin,
@@ -12,6 +11,7 @@ import {
 } from "lucide-react";
 import CompanyLogo from "@/components/common/CompanyLogo";
 import { MatchedJobItem } from "@/types/chat";
+import JobDetailModal from "@/features/jobs/components/JobDetailModal";
 
 interface JobMatchCarouselProps {
   jobs: MatchedJobItem[];
@@ -63,6 +63,8 @@ export default function JobMatchCarousel({
   jobs,
   onAskAboutJob,
 }: JobMatchCarouselProps) {
+  const [selectedJob, setSelectedJob] = useState<MatchedJobItem | null>(null);
+
   if (!jobs || jobs.length === 0) return null;
 
   const topJob = jobs[0];
@@ -154,13 +156,14 @@ export default function JobMatchCarousel({
               <span>Ask Finder about this role</span>
             </button>
 
-            <Link
-              href={`/jobs?jobId=${topJob.job_id || topJob.id}`}
-              className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+            <button
+              type="button"
+              onClick={() => setSelectedJob(topJob)}
+              className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline cursor-pointer"
             >
               <span>View Details</span>
               <ArrowRight className="w-3 h-3" />
-            </Link>
+            </button>
           </div>
         </div>
       )}
@@ -247,19 +250,27 @@ export default function JobMatchCarousel({
                     <span>Ask Finder</span>
                   </button>
 
-                  <Link
-                    href={`/jobs?jobId=${job.job_id || job.id}`}
-                    className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+                  <button
+                    type="button"
+                    onClick={() => setSelectedJob(job)}
+                    className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline cursor-pointer"
                   >
                     <span>View Details</span>
                     <ArrowRight className="w-3 h-3" />
-                  </Link>
+                  </button>
                 </div>
               </div>
             ))}
           </div>
         </div>
       )}
+
+      <JobDetailModal
+        jobId={selectedJob?.job_id || selectedJob?.id || null}
+        summary={selectedJob}
+        onClose={() => setSelectedJob(null)}
+        onAskAboutJob={onAskAboutJob}
+      />
     </div>
   );
 }

@@ -8,7 +8,7 @@ import React, {
   useMemo,
 } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useJobs } from "../hooks/useJobs";
 import JobSummary from "../components/JobSummary";
 import JobCard from "../components/JobCard";
@@ -69,6 +69,7 @@ export default function JobsView() {
     recordTelemetry,
   } = useJobs();
 
+  const router = useRouter();
   const searchParams = useSearchParams();
   const paramJobId = searchParams
     ? searchParams.get("jobId") || searchParams.get("job")
@@ -76,12 +77,14 @@ export default function JobsView() {
 
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [directJob, setDirectJob] = useState<FormattedJobMatch | null>(null);
+  const consumedJobParamRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (paramJobId && !selectedJobId) {
+    if (paramJobId && consumedJobParamRef.current !== paramJobId) {
+      consumedJobParamRef.current = paramJobId;
       setSelectedJobId(paramJobId);
     }
-  }, [paramJobId, selectedJobId]);
+  }, [paramJobId]);
 
   useEffect(() => {
     if (!selectedJobId) {
@@ -128,12 +131,22 @@ export default function JobsView() {
       })
       .catch((err) => {
         console.warn("Direct job fetch failed for ID:", selectedJobId, err);
+        if (!cancelled) {
+          toast.error("This job is no longer available", {
+            description:
+              "It may have been closed or removed. Try another role.",
+          });
+          setSelectedJobId(null);
+          if (paramJobId) {
+            router.replace("/jobs");
+          }
+        }
       });
 
     return () => {
       cancelled = true;
     };
-  }, [selectedJobId, allMatches]);
+  }, [selectedJobId, allMatches, paramJobId, router]);
 
   const selectedJob = useMemo(() => {
     if (!selectedJobId) return null;
@@ -260,10 +273,14 @@ export default function JobsView() {
     }
     drawerViewStartTime.current = null;
     setSelectedJobId(null);
+    if (paramJobId) {
+      consumedJobParamRef.current = paramJobId;
+      router.replace("/jobs");
+    }
     requestAnimationFrame(() => {
       triggerElementRef.current?.focus();
     });
-  }, [selectedJob, recordTelemetry]);
+  }, [selectedJob, recordTelemetry, paramJobId, router]);
 
   useEffect(() => {
     if (!selectedJob) return;
@@ -759,9 +776,15 @@ export default function JobsView() {
                     <div className="flex-1 space-y-1 min-w-0">
                       <div className="flex flex-col gap-1.5">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs font-bold text-foreground bg-secondary border border-border-strong px-2.5 py-0.5 rounded-sm shrink-0">
-                            {selectedJob.matchScore} / 100 Match Score
-                          </span>
+                          {selectedJob.matchScore > 0 ? (
+                            <span className="text-xs font-bold text-foreground bg-secondary border border-border-strong px-2.5 py-0.5 rounded-sm shrink-0">
+                              {selectedJob.matchScore} / 100 Match Score
+                            </span>
+                          ) : (
+                            <span className="text-xs font-medium text-muted-foreground bg-secondary border border-border px-2.5 py-0.5 rounded-sm shrink-0">
+                              Not scored for you yet
+                            </span>
+                          )}
                           {renderWorkModeBadge(selectedJob.workMode)}
                         </div>
                         <h2

@@ -142,9 +142,9 @@ export function useSessions() {
       await chatService.deleteSession(id);
       toast.success("Chat session deleted");
 
-      // If user deletes the session they are currently viewing, navigate to home (new chat)
+      // If the user deletes the session they are viewing, go to a new chat.
       if (pathname === `/c/${id}`) {
-        router.push("/");
+        router.replace("/c");
       }
     } catch (err) {
       console.error("Failed to delete session:", err);
