@@ -15,6 +15,7 @@ import CandidateSummaryCard from "@/features/ai-analysis/components/CandidateSum
 import JobMatchCarousel from "@/features/ai-analysis/components/JobMatchCarousel";
 import ChatMarkdown from "./ChatMarkdown";
 import ActionProposalCard from "./ActionProposalCard";
+import MemoryRecallChip from "./MemoryRecallChip";
 
 interface ChatMessageItemProps {
   message: ChatMessage;
@@ -149,6 +150,15 @@ export default function ChatMessageItem({
             messageId={message.id}
           />
         )}
+
+        {/* Memory recall trace: shows which memories shaped this answer */}
+        {message.metadata?.memory_recall &&
+          (message.metadata.memory_recall.count > 0 ||
+            message.metadata.memory_recall.stateless) && (
+            <div className="flex items-center gap-1.5 py-1">
+              <MemoryRecallChip recall={message.metadata.memory_recall} />
+            </div>
+          )}
 
         {/* Career Memory Saved Badge */}
         {message.metadata?.memory_updated && (

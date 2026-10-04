@@ -327,6 +327,18 @@ export function useChat(sessionId?: string) {
                 description: "Finder recorded your career fact.",
               });
             },
+            onMemoryRecall: (recall) => {
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === tempAssistantId
+                    ? {
+                        ...msg,
+                        metadata: { ...msg.metadata, memory_recall: recall },
+                      }
+                    : msg,
+                ),
+              );
+            },
           },
         );
 

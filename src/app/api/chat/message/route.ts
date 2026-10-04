@@ -26,6 +26,17 @@ export const dynamic = "force-dynamic";
 
 const MAX_PROMPT_CHARS = 2000;
 
+interface MemoryRecallPayload {
+  source: "walrus" | "cache" | "none";
+  count: number;
+  stateless: boolean;
+  memories: Array<{
+    content: string;
+    category: string | null;
+    blobId: string | null;
+  }>;
+}
+
 function getToolStartLabel(toolName: string): string {
   switch (toolName) {
     case "get_career_recommendations":
@@ -432,17 +443,31 @@ export async function POST(req: NextRequest) {
 
     // Load durable sovereign career memories for personalized agent reasoning
     let memoryContext = "";
+    let memoryRecall: MemoryRecallPayload | null = isStatelessSimulation
+      ? { source: "none", count: 0, stateless: true, memories: [] }
+      : null;
     if (isStatelessSimulation) {
       console.info(
         `[ReviewerBenchmark:Stateless] Amnesia mode active for session ${session_id}. Walrus memory recall bypassed.`,
       );
     } else {
       try {
-        memoryContext = await careerMemoryService.getDurableContextSummary(
+        const recall = await careerMemoryService.getDurableContext(
           user.id,
           5,
           cleanContent,
         );
+        memoryContext = recall.context;
+        memoryRecall = {
+          source: recall.source,
+          count: recall.memories.length,
+          stateless: false,
+          memories: recall.memories.map((memory) => ({
+            content: memory.content,
+            category: memory.category,
+            blobId: memory.blobId,
+          })),
+        };
       } catch (memErr) {
         console.warn(
           `[CareerMemory] Failed to load durable context for user ${user.id}:`,
@@ -529,6 +554,17 @@ export async function POST(req: NextRequest) {
                 type: "simulation_mode",
                 mode: "stateless",
                 label: "Amnesia Mode (Memory Bypassed)",
+              })}\n\n`,
+            ),
+          );
+        }
+
+        if (memoryRecall && (memoryRecall.count > 0 || memoryRecall.stateless)) {
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({
+                type: "memory_recall",
+                recall: memoryRecall,
               })}\n\n`,
             ),
           );
@@ -870,6 +906,11 @@ export async function POST(req: NextRequest) {
                 action_proposal: lastActionProposal || undefined,
                 memory_updated: memoryUpdated || undefined,
                 memory_status: memoryWalrusStatus || undefined,
+                memory_recall:
+                  memoryRecall &&
+                  (memoryRecall.count > 0 || memoryRecall.stateless)
+                    ? memoryRecall
+                    : undefined,
               },
             })
             .select()
@@ -925,6 +966,7 @@ export async function POST(req: NextRequest) {
                 actionProposal: lastActionProposal,
                 memoryUpdated: memoryUpdated,
                 memoryStatus: memoryWalrusStatus,
+                memoryRecall: memoryRecall,
               })}\n\n`,
             ),
           );

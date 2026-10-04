@@ -117,6 +117,46 @@ describe("MemWalClient & CareerMemoryService Semantic Integration", () => {
     expect(summary).toContain("150k");
   });
 
+  it("should report recall source and items via getDurableContext", async () => {
+    const namespace = memwal.getUserNamespace(TEST_PROFILE_ID);
+    await memwal.rememberAndWait(
+      "Candidate [TECH_FOCUS]: Deep expertise in Rust and Sui Move",
+      namespace
+    );
+
+    const recall = await service.getDurableContext(
+      TEST_PROFILE_ID,
+      3,
+      "Which stack does the candidate use?"
+    );
+
+    expect(recall.source).toBe("walrus");
+    expect(recall.memories.length).toBeGreaterThan(0);
+    expect(recall.memories[0].content).toContain("Rust");
+    expect(recall.context).toContain("RECALLED FROM WALRUS MEMORY");
+  });
+
+  it("should report 'cache' when Walrus recall returns nothing", async () => {
+    mockDbRows.push({
+      id: "m-cache-1",
+      profile_id: TEST_PROFILE_ID,
+      category: "tech_focus",
+      content: "Knows Go and PostgreSQL",
+      status: "active",
+      walrus_status: "stored",
+      walrus_blob_id: "blob-cache-1",
+    });
+
+    const recall = await service.getDurableContext(
+      TEST_PROFILE_ID,
+      3,
+      "What databases does the candidate know?"
+    );
+
+    expect(recall.source).toBe("cache");
+    expect(recall.memories[0].content).toContain("Go");
+  });
+
   describe("Zombie Memory Elimination & Lifecycle Authority", () => {
     it("should normalize memory content by stripping candidate prefixes and punctuation", () => {
       const norm1 = normalizeMemoryContent("Candidate [WORK_PREFERENCE]: 100% Remote Only!");

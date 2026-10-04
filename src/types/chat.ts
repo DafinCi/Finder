@@ -34,6 +34,19 @@ export interface ActionProposalData {
   status?: "proposed" | "applied" | "rejected";
 }
 
+export interface MemoryRecallItem {
+  content: string;
+  category?: string | null;
+  blobId?: string | null;
+}
+
+export interface MemoryRecallMetadata {
+  source: "walrus" | "cache" | "none";
+  count: number;
+  stateless?: boolean;
+  memories: MemoryRecallItem[];
+}
+
 export interface ChatMessageMetadata {
   attachment?: {
     name: string;
@@ -49,6 +62,7 @@ export interface ChatMessageMetadata {
   action_proposal?: ActionProposalData | null;
   memory_updated?: boolean;
   memory_status?: "pending" | "stored" | "failed" | null;
+  memory_recall?: MemoryRecallMetadata | null;
   [key: string]: unknown;
 }
 

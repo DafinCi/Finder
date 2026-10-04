@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { POST } from "@/app/api/chat/message/route";
 import { NextRequest } from "next/server";
 import { agentToolDispatcher } from "@/features/agent/services/agent-tool-dispatcher.service";
+import { careerMemoryService } from "@/features/memory/services/career-memory.service";
 
 const mockAuthUser = vi.fn();
 const mockAdminSingle = vi.fn();
@@ -795,5 +796,58 @@ describe("Phase 5 Integration: Chat Agent Tool Calling & Sovereign Memory E2E Fl
     expect(sseText).toContain(
       "Here is a remote frontend role at Acme matching your stack.",
     );
+  });
+
+  it("11. should emit a memory_recall event when memories shaped the answer", async () => {
+    const recallSpy = vi
+      .spyOn(careerMemoryService, "getDurableContext")
+      .mockResolvedValueOnce({
+        source: "walrus",
+        memories: [
+          {
+            id: null,
+            content: "Prefers remote roles based in America",
+            category: "work_preference",
+            blobId: "blob-recall-1",
+            source: "walrus",
+          },
+        ],
+        context: "\n\n[RECALLED FROM WALRUS MEMORY]: remote",
+      });
+
+    async function* makeRecallStream() {
+      yield {
+        choices: [
+          {
+            delta: {
+              content:
+                "Since you prefer remote roles based in America, here are options.",
+            },
+          },
+        ],
+      };
+    }
+    mockGroqCreate.mockResolvedValueOnce(makeRecallStream());
+
+    const req = new NextRequest("http://localhost:3000/api/chat/message", {
+      method: "POST",
+      body: JSON.stringify({
+        session_id: testSession.id,
+        content: "What do you remember about me?",
+      }),
+    });
+
+    const res = await POST(req);
+    const sseText = await readSseStream(res);
+
+    try {
+      expect(recallSpy).toHaveBeenCalled();
+      expect(sseText).toContain('"type":"memory_recall"');
+      expect(sseText).toContain('"source":"walrus"');
+      expect(sseText).toContain("Prefers remote roles based in America");
+      expect(sseText).toContain('"memoryRecall"');
+    } finally {
+      recallSpy.mockRestore();
+    }
   });
 });

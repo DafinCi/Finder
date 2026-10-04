@@ -3,6 +3,7 @@ import {
   ChatMessage,
   SendMessagePayload,
   ActionProposalData,
+  MemoryRecallMetadata,
 } from "@/types/chat";
 
 export interface ToolStreamingEvent {
@@ -29,6 +30,7 @@ export interface SendMessageCallbacks {
   onToolEvent?: (event: ToolStreamingEvent) => void;
   onActionProposal?: (proposal: ActionProposalData) => void;
   onMemoryUpdated?: (status?: string) => void;
+  onMemoryRecall?: (recall: MemoryRecallMetadata) => void;
 }
 
 export const chatService = {
@@ -125,6 +127,7 @@ export const chatService = {
     actionProposal?: ActionProposalData | null;
     memoryUpdated?: boolean;
     memoryStatus?: string | null;
+    memoryRecall?: MemoryRecallMetadata | null;
   }> {
     const res = await fetch("/api/chat/message", {
       method: "POST",
@@ -149,6 +152,8 @@ export const chatService = {
       typeof callbacks === "object" ? callbacks?.onActionProposal : undefined;
     const cbOnMemoryUpdated =
       typeof callbacks === "object" ? callbacks?.onMemoryUpdated : undefined;
+    const cbOnMemoryRecall =
+      typeof callbacks === "object" ? callbacks?.onMemoryRecall : undefined;
 
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
@@ -157,6 +162,7 @@ export const chatService = {
     let actionProposal: ActionProposalData | null = null;
     let memoryUpdated = false;
     let memoryStatus: string | null = null;
+    let memoryRecall: MemoryRecallMetadata | null = null;
     let buffer = "";
 
     while (true) {
@@ -199,12 +205,18 @@ export const chatService = {
             memoryStatus = parsed.status ?? "pending";
           }
 
+          if (parsed.type === "memory_recall" && parsed.recall) {
+            memoryRecall = parsed.recall as MemoryRecallMetadata;
+            cbOnMemoryRecall?.(memoryRecall);
+          }
+
           if (parsed.done) {
             userMessage = parsed.userMessage;
             assistantMessage = parsed.assistantMessage;
             actionProposal = parsed.actionProposal || null;
             memoryUpdated = Boolean(parsed.memoryUpdated);
             memoryStatus = parsed.memoryStatus ?? null;
+            memoryRecall = parsed.memoryRecall ?? memoryRecall;
           }
 
           if (parsed.error) {
@@ -231,6 +243,7 @@ export const chatService = {
       actionProposal,
       memoryUpdated,
       memoryStatus,
+      memoryRecall,
     };
   },
 

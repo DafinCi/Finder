@@ -20,6 +20,13 @@ vi.mock("@/lib/supabase/server", () => ({
 vi.mock("@/features/memory/services/career-memory.service", () => ({
   careerMemoryService: {
     getDurableContextSummary: vi.fn().mockResolvedValue("\n\n[RECALLED FROM WALRUS MEMORY]: Rust and Move"),
+    getDurableContext: vi.fn().mockResolvedValue({
+      source: "walrus",
+      memories: [
+        { id: null, content: "Rust and Move", category: "tech_focus", blobId: "blob-1", source: "walrus" },
+      ],
+      context: "\n\n[RECALLED FROM WALRUS MEMORY]: Rust and Move",
+    }),
   },
 }));
 
@@ -141,7 +148,7 @@ describe("Reviewer Demo / Amnesia Mode Simulation", () => {
       expect(res.status).toBe(200);
 
       // Verify careerMemoryService was NEVER queried for durable context
-      expect(careerMemoryService.getDurableContextSummary).not.toHaveBeenCalled();
+      expect(careerMemoryService.getDurableContext).not.toHaveBeenCalled();
 
       // Read SSE stream to verify simulation_mode event was emitted
       const text = await res.text();
@@ -174,7 +181,7 @@ describe("Reviewer Demo / Amnesia Mode Simulation", () => {
 
       const res = await POST(req);
       expect(res.status).toBe(200);
-      expect(careerMemoryService.getDurableContextSummary).not.toHaveBeenCalled();
+      expect(careerMemoryService.getDurableContext).not.toHaveBeenCalled();
 
       const text = await res.text();
       expect(text).toContain('"mode":"stateless"');
@@ -194,7 +201,7 @@ describe("Reviewer Demo / Amnesia Mode Simulation", () => {
 
       const res = await POST(req);
       expect(res.status).toBe(200);
-      expect(careerMemoryService.getDurableContextSummary).not.toHaveBeenCalled();
+      expect(careerMemoryService.getDurableContext).not.toHaveBeenCalled();
     });
 
     it("should recall memory normally when simulation mode is false or absent", async () => {
@@ -211,7 +218,7 @@ describe("Reviewer Demo / Amnesia Mode Simulation", () => {
       expect(res.status).toBe(200);
 
       // In normal mode, memory recall is actively invoked
-      expect(careerMemoryService.getDurableContextSummary).toHaveBeenCalledWith(
+      expect(careerMemoryService.getDurableContext).toHaveBeenCalledWith(
         sampleUser.id,
         5,
         "What are my career preferences?",
