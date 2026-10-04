@@ -31,6 +31,7 @@ interface MemoryRecallPayload {
   count: number;
   stateless: boolean;
   memories: Array<{
+    id: string | null;
     content: string;
     category: string | null;
     blobId: string | null;
@@ -463,6 +464,7 @@ export async function POST(req: NextRequest) {
           count: recall.memories.length,
           stateless: false,
           memories: recall.memories.map((memory) => ({
+            id: memory.id,
             content: memory.content,
             category: memory.category,
             blobId: memory.blobId,

@@ -35,6 +35,7 @@ export interface ActionProposalData {
 }
 
 export interface MemoryRecallItem {
+  id?: string | null;
   content: string;
   category?: string | null;
   blobId?: string | null;

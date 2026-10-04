@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { ChatMessage } from "@/types/chat";
+import { Button } from "@/components/ui/button";
 import CandidateSummaryCard from "@/features/ai-analysis/components/CandidateSummaryCard";
 import JobMatchCarousel from "@/features/ai-analysis/components/JobMatchCarousel";
 import ChatMarkdown from "./ChatMarkdown";
@@ -40,6 +41,9 @@ export default function ChatMessageItem({
     (message.metadata?.feedback as "helpful" | "unhelpful") || null,
   );
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+  const [showCorrection, setShowCorrection] = useState(false);
+  const [correctionText, setCorrectionText] = useState("");
+  const [isSavingCorrection, setIsSavingCorrection] = useState(false);
 
   const handleCopy = async () => {
     if (!message.content) return;
@@ -50,6 +54,69 @@ export default function ChatMessageItem({
       setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error("Failed to copy text");
+    }
+  };
+
+  const reinforceUsedMemories = async () => {
+    const memories = message.metadata?.memory_recall?.memories ?? [];
+    if (memories.length === 0) return;
+
+    try {
+      const res = await fetch("/api/memory/reinforce", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          memories: memories.map((memory) => ({
+            id: memory.id ?? null,
+            content: memory.content,
+          })),
+        }),
+      });
+      if (!res.ok) return;
+
+      const data = await res.json().catch(() => ({}));
+      if (data?.reinforced > 0) {
+        toast.success("Thanks. Finder will weigh this context more strongly.");
+      }
+    } catch {
+      // Reinforcement is best-effort and must never affect the answer itself.
+    }
+  };
+
+  const handleSaveCorrection = async () => {
+    const content = correctionText.trim();
+    if (content.length < 3) {
+      toast.error("Tell Finder what to remember, in a few words.");
+      return;
+    }
+
+    setIsSavingCorrection(true);
+    try {
+      const res = await fetch("/api/memory", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          category: "user_correction",
+          content,
+          confidence: "high",
+          source: "user_correction",
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to save the correction.");
+      }
+
+      toast.success("Correction saved to your career memory", {
+        description: "Future answers will use it.",
+      });
+      setShowCorrection(false);
+      setCorrectionText("");
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setIsSavingCorrection(false);
     }
   };
 
@@ -79,6 +146,12 @@ export default function ChatMessageItem({
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
         throw new Error(errorData.error || "Failed to update feedback");
+      }
+
+      if (nextFeedback === "unhelpful") {
+        setShowCorrection(true);
+      } else if (nextFeedback === "helpful") {
+        void reinforceUsedMemories();
       }
     } catch {
       // Rollback to previous state on failure
@@ -226,6 +299,49 @@ export default function ChatMessageItem({
             >
               <ThumbsDown className="w-3.5 h-3.5" />
             </button>
+          </div>
+        )}
+
+        {showCorrection && (
+          <div className="rounded-sm border border-border bg-secondary/30 p-3 space-y-2">
+            <label
+              htmlFor={`correction-${message.id}`}
+              className="block text-xs font-medium text-foreground"
+            >
+              What should Finder remember instead?
+            </label>
+            <textarea
+              id={`correction-${message.id}`}
+              value={correctionText}
+              onChange={(e) => setCorrectionText(e.target.value)}
+              rows={2}
+              maxLength={500}
+              placeholder="Example: I prefer hybrid roles in Jakarta, not remote."
+              className="w-full resize-none rounded-sm border border-border bg-card px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            />
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={handleSaveCorrection}
+                disabled={isSavingCorrection}
+              >
+                {isSavingCorrection ? "Saving" : "Save correction"}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setShowCorrection(false);
+                  setCorrectionText("");
+                }}
+                disabled={isSavingCorrection}
+              >
+                Skip
+              </Button>
+            </div>
           </div>
         )}
       </div>

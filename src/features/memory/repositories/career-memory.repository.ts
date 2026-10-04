@@ -8,6 +8,7 @@ import {
   CareerMemory,
   CreateMemoryInput,
   MemoryCategory,
+  MemoryConfidence,
   MemoryStatus,
   WalrusMemoryStatus,
 } from "../types/memory.types";
@@ -249,6 +250,53 @@ export class CareerMemoryRepository {
     }
 
     return null;
+  }
+
+  /**
+   * Finds the active memory whose normalized content best matches the given text.
+   */
+  async findActiveMemoryByContent(
+    profileId: string,
+    content: string,
+    threshold: number = 0.9,
+  ): Promise<CareerMemory | null> {
+    const activeMemories = await this.getActiveMemories(profileId, 50);
+    let best: CareerMemory | null = null;
+    let bestScore = 0;
+
+    for (const memory of activeMemories) {
+      const score = memoryOverlapRatio(memory.content, content);
+      if (score > bestScore) {
+        bestScore = score;
+        best = memory;
+      }
+    }
+
+    return bestScore >= threshold ? best : null;
+  }
+
+  /**
+   * Updates a memory's confidence level (used when feedback reinforces it).
+   */
+  async updateMemoryConfidence(
+    id: string,
+    profileId: string,
+    confidence: MemoryConfidence,
+  ): Promise<CareerMemory> {
+    const now = new Date().toISOString();
+    const { data, error } = await this.client
+      .from("career_memories")
+      .update({
+        confidence,
+        updated_at: now,
+      })
+      .eq("id", id)
+      .eq("profile_id", profileId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return mapDbRowToCareerMemory(data);
   }
 }
 

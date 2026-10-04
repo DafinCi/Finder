@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GET as getMemories, POST as postMemory } from "@/app/api/memory/route";
 import { DELETE as deleteMemory } from "@/app/api/memory/[id]/route";
+import { POST as postReinforce } from "@/app/api/memory/reinforce/route";
 import { NextRequest } from "next/server";
 
 const { mockAuthUser, mockMemoryService } = vi.hoisted(() => ({
@@ -9,6 +10,7 @@ const { mockAuthUser, mockMemoryService } = vi.hoisted(() => ({
     getAllMemories: vi.fn(),
     rememberFact: vi.fn(),
     forgetMemory: vi.fn(),
+    reinforceMemories: vi.fn(),
   },
 }));
 
@@ -178,6 +180,61 @@ describe("Integration (Mock-Based): /api/memory API Routes", () => {
       expect(mockMemoryService.forgetMemory).toHaveBeenCalledWith(
         sampleUser.id,
         "m-1",
+      );
+    });
+  });
+
+  describe("POST /api/memory/reinforce", () => {
+    it("should return 401 when unauthenticated", async () => {
+      mockAuthUser.mockResolvedValueOnce({
+        data: { user: null },
+        error: new Error("No session"),
+      });
+
+      const req = new NextRequest(
+        "http://localhost:3000/api/memory/reinforce",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            memories: [{ id: null, content: "Prefers remote roles" }],
+          }),
+        },
+      );
+      const res = await postReinforce(req);
+      expect(res.status).toBe(401);
+    });
+
+    it("should reinforce memories that shaped a helpful answer", async () => {
+      mockAuthUser.mockResolvedValueOnce({
+        data: { user: sampleUser },
+        error: null,
+      });
+      mockMemoryService.reinforceMemories.mockResolvedValueOnce(1);
+
+      const req = new NextRequest(
+        "http://localhost:3000/api/memory/reinforce",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            memories: [
+              { id: null, content: "Prefers remote roles based in America" },
+            ],
+          }),
+        },
+      );
+      const res = await postReinforce(req);
+
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json.reinforced).toBe(1);
+      expect(mockMemoryService.reinforceMemories).toHaveBeenCalledWith(
+        sampleUser.id,
+        [
+          {
+            id: null,
+            content: "Prefers remote roles based in America",
+          },
+        ],
       );
     });
   });

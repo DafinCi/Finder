@@ -17,7 +17,7 @@ import {
 describe("Unit: Prompt Injection Boundary & System Prompts", () => {
   describe("Career Copilot Prompt", () => {
     it("should enforce prompt version tracking", () => {
-      expect(CAREER_COPILOT_PROMPT_VERSION).toBe("v2.5");
+      expect(CAREER_COPILOT_PROMPT_VERSION).toBe("v2.6");
     });
 
     it("should contain explicit security boundary instructions against untrusted inputs", () => {
@@ -45,6 +45,9 @@ describe("Unit: Prompt Injection Boundary & System Prompts", () => {
       );
       expect(prompt).toContain(
         "the system resolves superseding automatically",
+      );
+      expect(prompt).toContain(
+        "Treat 'user_correction' memories as the most recent authoritative correction",
       );
     });
 

@@ -12,6 +12,7 @@ import {
   CreateMemoryInput,
   CreateMemorySchema,
   MemoryCategory,
+  MemoryConfidence,
 } from "../types/memory.types";
 import { memwalClient, MemWalClient } from "@/lib/walrus/memwal-client";
 import type { RecallMemory } from "@mysten-incubation/memwal";
@@ -60,6 +61,21 @@ export function parseMemoryText(text: string): {
     };
   }
   return { category: null, content: (text || "").trim() };
+}
+
+const CONFIDENCE_LADDER: MemoryConfidence[] = ["low", "medium", "high"];
+
+/**
+ * Raises a confidence level by one step. Already-high memories stay high.
+ */
+export function bumpMemoryConfidence(
+  confidence: MemoryConfidence,
+): MemoryConfidence {
+  const index = CONFIDENCE_LADDER.indexOf(confidence);
+  if (index < 0) return "high";
+  return CONFIDENCE_LADDER[
+    Math.min(index + 1, CONFIDENCE_LADDER.length - 1)
+  ];
 }
 
 /**
@@ -169,6 +185,52 @@ export class CareerMemoryService {
     memoryId: string,
   ): Promise<CareerMemory> {
     return this.repository.updateMemoryStatus(memoryId, profileId, "forgotten");
+  }
+
+  /**
+   * Reinforces memories that were used in a response the user marked helpful.
+   * Never throws: a failed reinforcement must not break the chat UI.
+   */
+  async reinforceMemories(
+    profileId: string,
+    items: Array<{ id?: string | null; content?: string | null }>,
+  ): Promise<number> {
+    let reinforced = 0;
+
+    for (const item of items) {
+      try {
+        let memory =
+          item.id && item.id.length > 0
+            ? await this.repository.getMemoryById(item.id, profileId)
+            : null;
+
+        if (!memory && item.content) {
+          memory = await this.repository.findActiveMemoryByContent(
+            profileId,
+            item.content,
+          );
+        }
+
+        if (!memory || memory.status !== "active") continue;
+
+        const nextConfidence = bumpMemoryConfidence(memory.confidence);
+        if (nextConfidence === memory.confidence) continue;
+
+        await this.repository.updateMemoryConfidence(
+          memory.id,
+          profileId,
+          nextConfidence,
+        );
+        reinforced++;
+      } catch (err) {
+        console.warn(
+          "[CareerMemoryService] Failed to reinforce memory:",
+          (err as Error).message,
+        );
+      }
+    }
+
+    return reinforced;
   }
 
   /**

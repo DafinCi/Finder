@@ -6,6 +6,7 @@ import {
   memoryOverlapRatio,
 } from "@/features/memory/repositories/career-memory.repository";
 import { CareerMemoryService } from "@/features/memory/services/career-memory.service";
+import { bumpMemoryConfidence } from "@/features/memory/services/career-memory.service";
 
 describe("Phase 1: Sovereign Career Memory Repository & Service", () => {
   let mockDbRows: CareerMemoryDbRow[] = [];
@@ -33,6 +34,14 @@ describe("Phase 1: Sovereign Career Memory Repository & Service", () => {
           "Prefers four-day work week",
         ),
       ).toBeLessThan(0.5);
+    });
+  });
+
+  describe("bumpMemoryConfidence", () => {
+    it("should raise confidence one step and cap at high", () => {
+      expect(bumpMemoryConfidence("low")).toBe("medium");
+      expect(bumpMemoryConfidence("medium")).toBe("high");
+      expect(bumpMemoryConfidence("high")).toBe("high");
     });
   });
 
@@ -290,6 +299,24 @@ describe("Phase 1: Sovereign Career Memory Repository & Service", () => {
 
       expect(mem.id).toBeDefined();
       expect(mockMemWalClient.rememberAndWait).toHaveBeenCalled();
+    });
+
+    it("should bump confidence when a memory is reinforced", async () => {
+      const mem = await service.rememberFact(TEST_PROFILE_ID, {
+        category: "tech_focus",
+        content: "Prefers Rust and Sui Move",
+        source: "explicit_user",
+        confidence: "low",
+      });
+      expect(mem.confidence).toBe("low");
+
+      const reinforced = await service.reinforceMemories(TEST_PROFILE_ID, [
+        { id: mem.id, content: mem.content },
+      ]);
+
+      expect(reinforced).toBe(1);
+      const row = mockDbRows.find((r) => r.id === mem.id);
+      expect(row?.confidence).toBe("medium");
     });
 
     it("should generate a compact context summary for prompt injection", async () => {
