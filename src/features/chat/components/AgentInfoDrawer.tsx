@@ -6,11 +6,21 @@ import { toast } from "sonner";
 import BotAvatar from "@/components/ui/BotAvatar";
 import { useAgent, DrawerTabType } from "@/contexts/AgentContext";
 import WalrusMemoryInspector from "@/features/memory/components/WalrusMemoryInspector";
+import { isBeyondBigTwo } from "../utils/model-eligibility";
 
 interface AgentInfoDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   sessionId?: string;
+}
+
+interface AgentStatus {
+  provider: string;
+  primaryModel: string;
+  agentModel: string;
+  fallbackModel: string;
+  memoryNetwork: string;
+  memwalConfigured: boolean;
 }
 
 export default function AgentInfoDrawer({
@@ -22,6 +32,8 @@ export default function AgentInfoDrawer({
   const currentAgentName = agentCtx.getAgentName(sessionId);
   const [isEditing, setIsEditing] = useState(false);
   const [nameInput, setNameInput] = useState(currentAgentName);
+  const [agentStatus, setAgentStatus] = useState<AgentStatus | null>(null);
+  const [isStatusLoading, setIsStatusLoading] = useState(false);
 
   // Resilient tab state: syncs with AgentContext, with local state fallback to prevent HMR desync
   const [localTab, setLocalTab] = useState<DrawerTabType>("info");
@@ -45,6 +57,31 @@ export default function AgentInfoDrawer({
   useEffect(() => {
     setNameInput(currentAgentName);
   }, [currentAgentName]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    let cancelled = false;
+    setIsStatusLoading(true);
+
+    fetch("/api/agent/status")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled && data && !data.error) {
+          setAgentStatus(data as AgentStatus);
+        }
+      })
+      .catch(() => {
+        // The drawer falls back to "Unavailable" labels on failure.
+      })
+      .finally(() => {
+        if (!cancelled) setIsStatusLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen]);
 
   // Handle escape key to close drawer
   useEffect(() => {
@@ -230,23 +267,74 @@ export default function AgentInfoDrawer({
                 </h5>
 
                 <div className="rounded-sm border border-border bg-secondary p-4 space-y-3.5 text-xs">
-                  {/* Active Model */}
+                  {/* Primary Model */}
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-muted-foreground font-medium">
-                      Active Model
+                      Primary model
                     </span>
                     <span className="font-mono text-[11px] font-semibold text-foreground px-2 py-0.5 rounded-sm bg-background border border-border">
-                      qwen/qwen3.8-27b
+                      {agentStatus?.agentModel ||
+                        (isStatusLoading ? "Loading..." : "Unavailable")}
+                    </span>
+                  </div>
+
+                  {agentStatus && isBeyondBigTwo(agentStatus.agentModel) && (
+                    <p className="text-[10px] text-emerald-600 dark:text-emerald-400">
+                      Primary model is not Anthropic or OpenAI.
+                    </p>
+                  )}
+
+                  {/* Fallback Model */}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-muted-foreground font-medium">
+                      Fallback model
+                    </span>
+                    <span className="font-mono text-[11px] text-foreground">
+                      {agentStatus?.fallbackModel || "Unavailable"}
                     </span>
                   </div>
 
                   {/* Provider */}
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-muted-foreground font-medium">
-                      Inference Engine
+                      Inference engine
                     </span>
                     <span className="text-foreground font-medium">
-                      Groq Cloud (Fast Stream)
+                      {agentStatus?.provider
+                        ? `${agentStatus.provider} Cloud`
+                        : "Groq Cloud"}
+                    </span>
+                  </div>
+
+                  {/* Memory Network */}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-muted-foreground font-medium">
+                      Memory network
+                    </span>
+                    <span className="text-foreground font-medium">
+                      {agentStatus?.memoryNetwork === "mainnet"
+                        ? "Walrus Mainnet"
+                        : agentStatus?.memoryNetwork
+                          ? `Walrus ${agentStatus.memoryNetwork}`
+                          : "Unavailable"}
+                    </span>
+                  </div>
+
+                  {/* Memory Agent */}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-muted-foreground font-medium">
+                      Memory agent
+                    </span>
+                    <span
+                      className={`font-medium ${
+                        agentStatus && !agentStatus.memwalConfigured
+                          ? "text-amber-600 dark:text-amber-400"
+                          : "text-foreground"
+                      }`}
+                    >
+                      {agentStatus?.memwalConfigured
+                        ? "Configured"
+                        : "Not configured"}
                     </span>
                   </div>
 
