@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { runResumeAnalysisWorkflow } from "@/features/ai-analysis/services/analysis-orchestrator.service";
 import { extractCandidateProfile } from "@/lib/groq/profile-extractor";
 import { analyzeJobMatches } from "@/lib/groq/job-matcher";
+import { matchingOrchestratorService } from "@/features/matching/services/matching-orchestrator.service";
+import { careerProfileService } from "@/features/profile/services/career-profile.service";
 
 vi.mock("@/lib/groq/profile-extractor", () => ({
   extractCandidateProfile: vi.fn(),
@@ -141,6 +143,9 @@ vi.mock("@/lib/supabase/admin", () => ({
             }
             return { error: null };
           }),
+          delete: vi.fn(() => ({
+            eq: vi.fn(async () => ({ error: null })),
+          })),
         };
       }
 
@@ -377,5 +382,86 @@ describe("Integration (Mock-Based): Analysis Orchestrator Service", () => {
     // Status in DB must be updated to 'failed'
     const updatedResume = mockResumes.get("res-fail-1");
     expect(updatedResume.status).toBe("failed");
+  });
+
+  it("should prefer the Stage 2 deterministic engine when a career profile exists", async () => {
+    mockResumes.set("res-stage2-1", { id: "res-stage2-1", status: "pending" });
+
+    vi.mocked(extractCandidateProfile).mockResolvedValueOnce({
+      json_profile: {
+        candidate: {
+          name: "Stage Two",
+          title: "Frontend Engineer",
+          years_of_experience: 5,
+          summary: "Frontend engineer",
+          skills: { core: ["React"], supporting: [] },
+          experience: [],
+          education: [],
+        },
+        career: {
+          recommended_roles: ["Frontend Engineer"],
+          career_level: "Senior",
+          strengths: [],
+          weaknesses: [],
+        },
+      },
+      extracted_skills: ["React"],
+      _modelUsed: "openai/gpt-oss-120b",
+    });
+
+    const stage2Spy = vi
+      .spyOn(matchingOrchestratorService, "matchJobsForProfile")
+      .mockResolvedValueOnce([
+        {
+          job_id: "job-101",
+          title: "Senior React Engineer",
+          company_name: "TechCorp",
+          company_logo: null,
+          location: "Remote",
+          work_mode: "remote",
+          salary_range: "$120,000",
+          match_score: 88,
+          score_breakdown: {
+            final_score: 88,
+            role_score: 90,
+            capability_score: 85,
+            preference_score: 90,
+            negative_penalty: 0,
+          },
+          qualitative: {
+            fit_rationale: "Stage 2 deterministic rationale",
+            missing_skills: ["GraphQL"],
+          },
+          apply_url: null,
+          posted_at: new Date().toISOString(),
+        },
+      ]);
+
+    const profileSpy = vi
+      .spyOn(careerProfileService, "getProfile")
+      .mockResolvedValueOnce({
+        capabilities: { skills: [{ skill: "React" }] },
+        careerIntent: { target_roles: [{ role: "Frontend Engineer" }] },
+        preferences: { work_modes: ["remote"] },
+      } as any);
+
+    try {
+      const result = await runResumeAnalysisWorkflow({
+        userId: "user-stage2",
+        resumeId: "res-stage2-1",
+        rawText: "Stage two resume text",
+      });
+
+      expect(stage2Spy).toHaveBeenCalled();
+      expect(result.jobMatches).toHaveLength(1);
+      expect(result.jobMatches[0].match_score).toBe(88);
+      expect(result.jobMatches[0].reason).toBe(
+        "Stage 2 deterministic rationale",
+      );
+      expect(result.jobMatches[0].missing_skills).toEqual(["GraphQL"]);
+    } finally {
+      stage2Spy.mockRestore();
+      profileSpy.mockRestore();
+    }
   });
 });

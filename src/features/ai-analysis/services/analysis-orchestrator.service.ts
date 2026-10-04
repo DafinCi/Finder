@@ -14,6 +14,9 @@ import {
   RawJobInput,
 } from "@/features/jobs/domain/job-matching-context";
 import type { ResumeProcessingStageReporter } from "../types/resume-processing.types";
+import { matchingOrchestratorService } from "@/features/matching/services/matching-orchestrator.service";
+import type { RecommendedJobOpportunity } from "@/features/matching/types/matching.types";
+import { careerProfileService } from "@/features/profile/services/career-profile.service";
 
 const MODEL_NAME = process.env.GROQ_MODEL || DEFAULT_GROQ_MODEL;
 const DB_CANDIDATE_POOL_LIMIT = 25;
@@ -190,6 +193,7 @@ async function getCachedCompletedAnalysis(
  * foreign key integrity guarantees, idempotency caching, concurrency locks, and graceful degradation.
  */
 export async function runResumeAnalysisWorkflow({
+  userId,
   resumeId,
   rawText,
   sessionId,
@@ -380,10 +384,76 @@ export async function runResumeAnalysisWorkflow({
       .slice(0, AI_MATCHING_POOL_LIMIT)
       .map((item) => item.job);
 
-    // 6. Perform Job Matching with Graceful Degradation fallback
+    // 6. Matching. The Stage 2 deterministic engine is authoritative whenever
+    // the candidate has a canonical career profile. The analysis-path scoring
+    // below is only a fallback snapshot for users without a profile yet.
     let matchedJobsWithDetails: MatchedJobItem[] = [];
 
-    if (topJobs && topJobs.length > 0) {
+    let stage2Matches: RecommendedJobOpportunity[] = [];
+
+    // Only use Stage 2 when the canonical profile already carries evidence.
+    // A fresh onboarding draft exists but is empty, so Stage 2 there would rank
+    // against nothing; in that case we fall back to the CV analysis snapshot.
+    const existingProfile = await careerProfileService
+      .getProfile(userId)
+      .catch(() => null);
+    const profileHasEvidence = Boolean(
+      existingProfile &&
+        ((existingProfile.capabilities?.skills?.length ?? 0) > 0 ||
+          (existingProfile.careerIntent?.target_roles?.length ?? 0) > 0 ||
+          (existingProfile.preferences?.work_modes?.length ?? 0) > 0),
+    );
+
+    if (profileHasEvidence) {
+      try {
+        stage2Matches = await matchingOrchestratorService.matchJobsForProfile(
+          userId,
+          { limit: AI_MATCHING_POOL_LIMIT },
+        );
+      } catch (stage2Error) {
+        console.warn(
+          "[ANALYSIS] Stage 2 matching unavailable; using analysis snapshot:",
+          (stage2Error as Error).message,
+        );
+      }
+    }
+
+    if (stage2Matches.length > 0) {
+      await reportStage("matching");
+      await reportStage("persisting");
+
+      const snapshotRows = stage2Matches.map((match) => ({
+        analysis_id: analysisId,
+        job_id: match.job_id,
+        match_score: match.match_score,
+        reason: match.qualitative?.fit_rationale || "Deterministic match",
+        missing_skills: match.qualitative?.missing_skills || [],
+      }));
+
+      // Replace any prior snapshot so job_matches holds one engine's output.
+      await supabaseAdmin
+        .from("job_matches")
+        .delete()
+        .eq("analysis_id", analysisId);
+
+      const { error: snapshotInsertError } = await supabaseAdmin
+        .from("job_matches")
+        .insert(snapshotRows);
+      if (snapshotInsertError) throw snapshotInsertError;
+
+      matchedJobsWithDetails = stage2Matches.map((match) => ({
+        id: match.job_id,
+        job_id: match.job_id,
+        match_score: match.match_score,
+        reason: match.qualitative?.fit_rationale || null,
+        missing_skills: match.qualitative?.missing_skills || [],
+        title: match.title,
+        company: match.company_name,
+        logo_url: match.company_logo,
+        location: match.location,
+        salary_range: match.salary_range,
+      }));
+    } else if (topJobs && topJobs.length > 0) {
       const compactCandidateContext = toCandidateMatchingContext(
         aiCandidateData.json_profile,
       );
