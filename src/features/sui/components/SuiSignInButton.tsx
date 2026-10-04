@@ -12,6 +12,10 @@ import { useDAppKit, useCurrentWallet } from "@mysten/dapp-kit-react";
 import { useSuiAuth } from "../hooks/useSuiAuth";
 import { SuiWalletModal } from "./SuiWalletModal";
 import { Button } from "@/components/ui/button";
+import {
+  formatSuiNetworkLabel,
+  getConfiguredSuiNetwork,
+} from "@/lib/sui/network";
 
 interface SuiSignInButtonProps {
   mode?: "signin" | "signup";
@@ -31,7 +35,9 @@ export function SuiSignInButton({ mode = "signin" }: SuiSignInButtonProps) {
     resetError,
   } = useSuiAuth();
 
-  const isTestnet = !currentNetwork || currentNetwork === "testnet";
+  const expectedNetwork = getConfiguredSuiNetwork();
+  const isExpectedNetwork =
+    !currentNetwork || currentNetwork === expectedNetwork;
   const isSignUp = mode === "signup";
 
   const getStatusLabel = () => {
@@ -108,12 +114,12 @@ export function SuiSignInButton({ mode = "signin" }: SuiSignInButtonProps) {
                 {currentWallet?.name || "Connected"} •{" "}
                 <span
                   className={
-                    isTestnet
+                    isExpectedNetwork
                       ? "text-emerald-400"
                       : "text-amber-400 font-semibold"
                   }
                 >
-                  {currentNetwork || "testnet"}
+                  {currentNetwork || expectedNetwork}
                 </span>
               </span>
             </div>
@@ -131,10 +137,13 @@ export function SuiSignInButton({ mode = "signin" }: SuiSignInButtonProps) {
       )}
 
       {/* Wrong Network Warning */}
-      {account && !isTestnet && (
+      {account && !isExpectedNetwork && (
         <div className="p-2 rounded-sm bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[11px] flex items-center gap-1.5">
           <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-          <span>Please switch your wallet to Sui Testnet to authenticate.</span>
+          <span>
+            Please switch your wallet to Sui{" "}
+            {formatSuiNetworkLabel(expectedNetwork)} to authenticate.
+          </span>
         </div>
       )}
 
@@ -143,7 +152,7 @@ export function SuiSignInButton({ mode = "signin" }: SuiSignInButtonProps) {
         type="button"
         variant="outline"
         onClick={handleAction}
-        disabled={isBusy || (Boolean(account) && !isTestnet)}
+        disabled={isBusy || (Boolean(account) && !isExpectedNetwork)}
         aria-busy={isBusy}
         className={`w-full min-h-[44px] h-11 text-xs font-semibold border-border hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-primary transition-all ${
           account

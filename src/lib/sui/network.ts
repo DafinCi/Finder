@@ -17,7 +17,8 @@ export const SUPPORTED_NETWORKS: readonly SuiNetwork[] = [
 
 /**
  * Resolves the authoritative configured Sui network for the current environment.
- * Defaults to 'testnet' if not specified.
+ * Reads NEXT_PUBLIC_SUI_NETWORK, then falls back to mainnet in production and
+ * testnet otherwise. Unrecognized values fall back to testnet.
  */
 export function getConfiguredSuiNetwork(): SuiNetwork {
   const envNet = (
@@ -37,6 +38,15 @@ export function getConfiguredSuiNetwork(): SuiNetwork {
  */
 export function formatSuiChainId(network: SuiNetwork): string {
   return `sui:${network}`;
+}
+
+/**
+ * Human-readable network name for UI copy, for example "Mainnet".
+ */
+export function formatSuiNetworkLabel(
+  network: SuiNetwork = getConfiguredSuiNetwork(),
+): string {
+  return network.charAt(0).toUpperCase() + network.slice(1);
 }
 
 /**

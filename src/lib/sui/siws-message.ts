@@ -1,6 +1,10 @@
 import { normalizeSuiAddress, isValidSuiAddress } from "@mysten/sui/utils";
 import { SiwsPurpose } from "./nonce-manager";
-import { SuiNetwork, formatSuiChainId } from "./network";
+import {
+  SuiNetwork,
+  formatSuiChainId,
+  getConfiguredSuiNetwork,
+} from "./network";
 
 export interface SiwsMessageParams {
   domain: string;
@@ -44,7 +48,7 @@ export function buildSiwsMessage(params: SiwsMessageParams): string {
     statement = SIWS_STATEMENTS[params.purpose],
     uri,
     version = "1",
-    network = "testnet",
+    network = getConfiguredSuiNetwork(),
     nonce,
     issuedAt = new Date().toISOString(),
     expirationTime,

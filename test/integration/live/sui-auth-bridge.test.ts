@@ -5,6 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { nonceManager } from "@/lib/sui/nonce-manager";
 import { buildSiwsMessage, parseSiwsMessage } from "@/lib/sui/siws-message";
+import { getConfiguredSuiNetwork } from "@/lib/sui/network";
 import { verifySiwsMessage } from "@/lib/sui/siws-verifier";
 import { resolveSuiWalletIdentity } from "@/lib/sui/identity-resolver";
 import {
@@ -340,7 +341,7 @@ describe(
         uri: "http://localhost:3000/login",
         nonce: nonceData.nonce,
         purpose: "SIWS_LOGIN",
-        network: "testnet",
+        network: getConfiguredSuiNetwork(),
       });
       const { signature } = await keypair.signPersonalMessage(
         new TextEncoder().encode(messageText),

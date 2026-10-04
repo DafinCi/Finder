@@ -16,6 +16,7 @@ import { supabase } from "@/lib/supabase/client";
 import { useSuiAuth } from "../hooks/useSuiAuth";
 import { SuiWalletModal } from "./SuiWalletModal";
 import { Button } from "@/components/ui/button";
+import { getConfiguredSuiNetwork } from "@/lib/sui/network";
 
 export function SuiWalletLinkCard() {
   const { user } = useAuth();
@@ -117,7 +118,9 @@ export function SuiWalletLinkCard() {
     }
   }
 
-  const isTestnet = !currentNetwork || currentNetwork === "testnet";
+  const expectedNetwork = getConfiguredSuiNetwork();
+  const isExpectedNetwork =
+    !currentNetwork || currentNetwork === expectedNetwork;
 
   return (
     <div className="rounded-sm border border-border bg-card p-5 shadow-sm space-y-4 text-foreground">
@@ -285,10 +288,10 @@ export function SuiWalletLinkCard() {
               </div>
               <span
                 className={`text-[11px] font-medium ${
-                  isTestnet ? "text-emerald-400" : "text-amber-400"
+                  isExpectedNetwork ? "text-emerald-400" : "text-amber-400"
                 }`}
               >
-                {currentNetwork || "testnet"}
+                {currentNetwork || expectedNetwork}
               </span>
             </div>
           )}
@@ -312,7 +315,7 @@ export function SuiWalletLinkCard() {
                 type="button"
                 size="sm"
                 onClick={handleLink}
-                disabled={isBusy || !isTestnet}
+                disabled={isBusy || !isExpectedNetwork}
                 className="h-9 text-xs font-semibold"
               >
                 {isBusy ? (

@@ -11,19 +11,29 @@ export interface MemoryEvidenceRow {
   updated_at?: string | null;
 }
 
+export interface MemoryEvidenceProfile {
+  id: string;
+  full_name?: string | null;
+  sui_address?: string | null;
+}
+
 export interface MemoryEvidenceUser {
   profileId: string;
+  displayName: string | null;
+  suiAddress: string | null;
   total: number;
   active: number;
   storedBlobs: number;
   pending: number;
   failed: number;
+  sampleBlobIds: string[];
   meetsSubmissionThreshold: boolean;
 }
 
 export interface MemoryEvidenceReport {
   agentId: string | null;
   network: string;
+  explorerBaseUrl: string;
   generatedAt: string;
   submissionThreshold: number;
   totalMemories: number;
@@ -34,31 +44,70 @@ export interface MemoryEvidenceReport {
   users: MemoryEvidenceUser[];
 }
 
+function explorerBaseUrlFor(network: string): string {
+  return `https://walruscan.com/${network}/blob`;
+}
+
+function toSingleLine(value: string): string {
+  return value.replace(/\r?\n/g, " ").trim();
+}
+
+function emptyUser(profileId: string): MemoryEvidenceUser {
+  return {
+    profileId,
+    displayName: null,
+    suiAddress: null,
+    total: 0,
+    active: 0,
+    storedBlobs: 0,
+    pending: 0,
+    failed: 0,
+    sampleBlobIds: [],
+    meetsSubmissionThreshold: false,
+  };
+}
+
 export function buildMemoryEvidenceReport(
   rows: MemoryEvidenceRow[],
   options?: {
     agentId?: string | null;
     network?: string;
+    explorerBaseUrl?: string;
+    profiles?: MemoryEvidenceProfile[];
+    sampleBlobIdsPerUser?: number;
     now?: string;
     submissionThreshold?: number;
   },
 ): MemoryEvidenceReport {
+  const network = options?.network ?? "mainnet";
   const submissionThreshold = options?.submissionThreshold ?? 10;
+  // Default to the threshold, so the report always proves at least that many.
+  const sampleLimit = options?.sampleBlobIdsPerUser ?? submissionThreshold;
+
   const byUser = new Map<string, MemoryEvidenceUser>();
+  const profileById = new Map<string, MemoryEvidenceProfile>();
+
+  // Profiles come first so an account with no memories still shows up as a
+  // zero row, which is how you notice a seeded user that fell short.
+  for (const profile of options?.profiles ?? []) {
+    profileById.set(profile.id, profile);
+    const user = emptyUser(profile.id);
+    user.displayName = profile.full_name?.trim() || null;
+    user.suiAddress = profile.sui_address?.trim() || null;
+    byUser.set(profile.id, user);
+  }
+
   let lastStoredAt: string | null = null;
 
   for (const row of rows) {
-    const user =
-      byUser.get(row.profile_id) ??
-      ({
-        profileId: row.profile_id,
-        total: 0,
-        active: 0,
-        storedBlobs: 0,
-        pending: 0,
-        failed: 0,
-        meetsSubmissionThreshold: false,
-      } satisfies MemoryEvidenceUser);
+    const profile = profileById.get(row.profile_id);
+    const user = byUser.get(row.profile_id) ?? emptyUser(row.profile_id);
+    if (user.displayName === null) {
+      user.displayName = profile?.full_name?.trim() || null;
+    }
+    if (user.suiAddress === null) {
+      user.suiAddress = profile?.sui_address?.trim() || null;
+    }
 
     user.total += 1;
     if (row.status === "active") user.active += 1;
@@ -67,6 +116,9 @@ export function buildMemoryEvidenceReport(
 
     if (row.walrus_status === "stored" && row.walrus_blob_id) {
       user.storedBlobs += 1;
+      if (user.sampleBlobIds.length < sampleLimit) {
+        user.sampleBlobIds.push(row.walrus_blob_id);
+      }
       if (row.updated_at && (!lastStoredAt || row.updated_at > lastStoredAt)) {
         lastStoredAt = row.updated_at;
       }
@@ -79,11 +131,12 @@ export function buildMemoryEvidenceReport(
     ...user,
     meetsSubmissionThreshold: user.storedBlobs >= submissionThreshold,
   }));
-  users.sort((a, b) => b.storedBlobs - a.storedBlobs);
+  users.sort((a, b) => b.storedBlobs - a.storedBlobs || b.total - a.total);
 
   return {
     agentId: options?.agentId ?? null,
-    network: options?.network ?? "mainnet",
+    network,
+    explorerBaseUrl: options?.explorerBaseUrl ?? explorerBaseUrlFor(network),
     generatedAt: options?.now ?? new Date().toISOString(),
     submissionThreshold,
     totalMemories: rows.length,
@@ -105,7 +158,6 @@ export function renderMemoryEvidenceMarkdown(
     `Generated: ${report.generatedAt}`,
     `Network: ${report.network}`,
     `Agent ID: ${report.agentId || "not configured"}`,
-    `Submission threshold: ${report.submissionThreshold} stored blobs per user`,
     "",
     "## Totals",
     "",
@@ -114,21 +166,59 @@ export function renderMemoryEvidenceMarkdown(
     `- Memories: ${report.totalMemories}`,
     `- Stored blobs on Mainnet: ${report.totalStoredBlobs}`,
     `- Last stored at: ${report.lastStoredAt || "not yet"}`,
+    `- Submission threshold: ${report.submissionThreshold} stored blobs per user`,
     "",
     "## Per user",
     "",
-    "| Profile | Total | Active | Stored | Pending | Failed | Meets threshold |",
-    "| --- | --- | --- | --- | --- | --- | --- |",
   ];
 
-  for (const user of report.users) {
-    lines.push(
-      `| ${user.profileId} | ${user.total} | ${user.active} | ${user.storedBlobs} | ${user.pending} | ${user.failed} | ${user.meetsSubmissionThreshold ? "yes" : "no"} |`,
-    );
+  if (report.users.length === 0) {
+    lines.push("No users found.", "");
+    return lines.join("\n");
   }
 
-  if (report.users.length === 0) {
-    lines.push("| (no memories yet) | 0 | 0 | 0 | 0 | 0 | no |");
+  let truncated = false;
+
+  report.users.forEach((user, index) => {
+    const heading = toSingleLine(user.displayName || user.profileId);
+    lines.push(`### ${index + 1}. ${heading}`, "");
+    lines.push(`- Profile: ${user.profileId}`);
+    lines.push(`- Wallet: ${user.suiAddress || "not linked"}`);
+    lines.push(
+      `- Memories: ${user.total} total, ${user.active} active, ${user.pending} pending, ${user.failed} failed`,
+    );
+    lines.push(
+      `- Stored on Mainnet: ${user.storedBlobs} of ${report.submissionThreshold} needed`,
+    );
+    lines.push(
+      `- Meets threshold: ${user.meetsSubmissionThreshold ? "yes" : "no"}`,
+    );
+
+    if (user.sampleBlobIds.length === 0) {
+      lines.push("- Blobs: none stored", "");
+      return;
+    }
+
+    const isTruncated = user.storedBlobs > user.sampleBlobIds.length;
+    if (isTruncated) truncated = true;
+    lines.push(
+      `- Blobs: ${
+        isTruncated
+          ? `${user.sampleBlobIds.length} of ${user.storedBlobs} shown`
+          : `all ${user.storedBlobs} shown`
+      }`,
+    );
+    for (const blobId of user.sampleBlobIds) {
+      lines.push(`  - [${blobId}](${report.explorerBaseUrl}/${blobId})`);
+    }
+    lines.push("");
+  });
+
+  if (truncated) {
+    lines.push(
+      "Some users have more stored blobs than shown. Pass --all-blobs to list every stored blob.",
+      "",
+    );
   }
 
   return lines.join("\n");
