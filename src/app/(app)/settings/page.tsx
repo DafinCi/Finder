@@ -20,6 +20,7 @@ import { useCareerProfile } from "@/features/profile/hooks/useCareerProfile";
 import { SuiWalletLinkCard } from "@/features/sui/components/SuiWalletLinkCard";
 import { WalrusStorageCard } from "@/features/walrus/components/WalrusStorageCard";
 import { MemoryManagementCard } from "@/features/memory/components/MemoryManagementCard";
+import { MemoryProofCard } from "@/features/memory/components/MemoryProofCard";
 import { isSyntheticSuiEmail } from "@/lib/sui/auth-abstraction";
 import UserAvatar from "@/components/ui/UserAvatar";
 import AppHeader from "@/components/layouts/AppHeader";
@@ -145,16 +146,6 @@ export default function SettingsPage() {
                 </button>
               );
             })}
-          </div>
-
-          {/* Active Tab Header Context */}
-          <div className="flex flex-col gap-1 pb-2 border-b border-border/70">
-            <h2 className="text-base sm:text-lg font-bold font-heading text-foreground">
-              {currentTabConfig.title}
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              {currentTabConfig.subtitle}
-            </p>
           </div>
 
           {/* Tab 1: Account & Identity (Single Canonical Profile & Credentials) */}
@@ -296,6 +287,7 @@ export default function SettingsPage() {
           {/* Tab 3: Career Memories */}
           {activeTab === "memories" && (
             <div className="space-y-6">
+              <MemoryProofCard />
               <MemoryManagementCard />
             </div>
           )}

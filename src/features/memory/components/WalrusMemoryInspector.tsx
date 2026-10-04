@@ -148,7 +148,7 @@ export default function WalrusMemoryInspector() {
             )}
           </div>
           <div className="font-mono text-[11px] text-foreground bg-background p-2 rounded-sm border border-border break-all">
-            {walrusMeta?.agentId || "0x14feb3ca03e713d91a3a3a0810d650fb25e19189fe50871ced0b1d56b1a87cdc"}
+            {walrusMeta?.agentId || "Not configured"}
           </div>
         </div>
 

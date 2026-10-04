@@ -64,6 +64,9 @@ describe("Integration (Mock-Based): /api/memory API Routes", () => {
           category: "tech_focus",
           content: "Fokus ke Rust dan Go",
           status: "active",
+          walrusStatus: "stored",
+          walrusBlobId: "blob-1",
+          updatedAt: "2026-10-04T00:00:00.000Z",
         },
       ];
 
@@ -76,6 +79,10 @@ describe("Integration (Mock-Based): /api/memory API Routes", () => {
       const json = await res.json();
       expect(json.memories).toHaveLength(1);
       expect(json.memories[0].content).toBe("Fokus ke Rust dan Go");
+      expect(json.stats.total).toBe(1);
+      expect(json.stats.active).toBe(1);
+      expect(json.stats.stored).toBe(1);
+      expect(json.stats.lastStoredAt).toBe("2026-10-04T00:00:00.000Z");
       expect(mockMemoryService.getAllMemories).toHaveBeenCalledWith(
         sampleUser.id,
       );

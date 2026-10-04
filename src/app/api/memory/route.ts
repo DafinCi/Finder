@@ -22,15 +22,37 @@ export async function GET(req: NextRequest) {
     }
 
     const memories = await careerMemoryService.getAllMemories(user.id);
+
+    const storedMemories = memories.filter(
+      (memory) =>
+        memory.walrusStatus === "stored" && Boolean(memory.walrusBlobId),
+    );
+    const lastStoredAt =
+      storedMemories
+        .map((memory) => memory.updatedAt)
+        .filter(Boolean)
+        .sort()
+        .reverse()[0] ?? null;
+
+    const stats = {
+      total: memories.length,
+      active: memories.filter((memory) => memory.status === "active").length,
+      stored: storedMemories.length,
+      pending: memories.filter((memory) => memory.walrusStatus === "pending")
+        .length,
+      failed: memories.filter((memory) => memory.walrusStatus === "failed")
+        .length,
+      lastStoredAt,
+    };
+
     return NextResponse.json(
       {
         memories,
+        stats,
         walrus: {
           network: WALRUS_CONFIG.network,
           explorerUrl: WALRUS_CONFIG.explorerUrl,
-          agentId:
-            process.env.MEMWAL_ACCOUNT_ID ||
-            "0x14feb3ca03e713d91a3a3a0810d650fb25e19189fe50871ced0b1d56b1a87cdc",
+          agentId: process.env.MEMWAL_ACCOUNT_ID || null,
           namespace: `finder:user:${user.id}`,
           relayerUrl: WALRUS_CONFIG.relayerUrl,
         },
