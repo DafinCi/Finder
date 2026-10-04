@@ -3,6 +3,43 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { walrusClient } from "@/lib/walrus/walrus-client";
+import { resumeProcessingService } from "@/features/ai-analysis/services/resume-processing.service";
+import { scoreResumeHeuristic } from "@/features/ai-analysis/utils/resume-heuristic";
+import type { ResumeProcessingPatch } from "@/features/ai-analysis/repositories/resume-processing.repository";
+
+const NOT_A_RESUME_MESSAGE =
+  "Kami tidak menemukan ciri-ciri CV pada dokumen ini (riwayat kerja, pendidikan, atau skill), dan dokumen tidak disimpan. Silakan unggah file CV, atau konfirmasi untuk tetap melanjutkan.";
+
+/**
+ * Pipeline tracking must never break the upload itself. Failures are logged so
+ * the UI can fall back to the coarse resume status via /api/analyze/status.
+ */
+async function safeEnsureProcessingState(resumeId: string, userId: string) {
+  try {
+    await resumeProcessingService.ensureState(resumeId, userId);
+  } catch (err) {
+    console.error("[UPLOAD:PipelineState] ensure failed:", err);
+  }
+}
+
+async function safeAdvanceProcessingStage(
+  resumeId: string,
+  userId: string,
+  stage:
+    | "received"
+    | "text_extracted"
+    | "heuristic_checked"
+    | "stored"
+    | "rejected"
+    | "failed",
+  patch?: ResumeProcessingPatch,
+) {
+  try {
+    await resumeProcessingService.advance(resumeId, userId, stage, patch);
+  } catch (err) {
+    console.error(`[UPLOAD:PipelineState] advance '${stage}' failed:`, err);
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -136,9 +173,84 @@ export async function POST(req: NextRequest) {
       rawText = rawText.slice(0, MAX_RAW_TEXT_CHARS);
     }
 
+    const heuristic = scoreResumeHeuristic(rawText);
+
     const timestamp = Date.now();
     const safeFileName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
     const storagePath = `${userId}/${timestamp}_${safeFileName}`;
+
+    // Insert the resume row first so processing state can reference it (FK) and so
+    // raw text is only persisted after the document check passes.
+    const { data: resumeRecord, error: dbError } = await supabaseAdmin
+      .from("resumes")
+      .insert({
+        profile_id: userId,
+        file_name: file.name,
+        storage_path: storagePath,
+        raw_text: null,
+        status: "uploaded",
+        walrus_status: "pending",
+      })
+      .select("id")
+      .single();
+
+    if (dbError) {
+      console.error("Database Insert Error:", dbError);
+      return NextResponse.json(
+        { error: "Couldn't save file data. Please try again." },
+        { status: 500 },
+      );
+    }
+
+    await safeEnsureProcessingState(resumeRecord.id, userId);
+    await safeAdvanceProcessingStage(resumeRecord.id, userId, "text_extracted");
+    await safeAdvanceProcessingStage(
+      resumeRecord.id,
+      userId,
+      "heuristic_checked",
+      { heuristicScore: heuristic.score },
+    );
+
+    // Hard reject only when the document is clearly not a resume. Nuanced cases
+    // continue to LLM classification in /api/analyze, where soft block + override applies.
+    if (heuristic.verdict === "likely_not_resume") {
+      await safeAdvanceProcessingStage(resumeRecord.id, userId, "rejected", {
+        isResume: false,
+        heuristicScore: heuristic.score,
+        decision: "rejected",
+        classificationReason: "Heuristic pre-filter: likely not a resume",
+        errorCode: "NOT_A_RESUME_HEURISTIC",
+        errorMessage: NOT_A_RESUME_MESSAGE,
+        rawContentDeletedAt: new Date().toISOString(),
+      });
+
+      await supabaseAdmin
+        .from("resumes")
+        .update({
+          raw_text: null,
+          status: "failed",
+          storage_path: `rejected/${userId}/${timestamp}`,
+        })
+        .eq("id", resumeRecord.id)
+        .eq("profile_id", userId);
+
+      return NextResponse.json(
+        {
+          error: NOT_A_RESUME_MESSAGE,
+          code: "NOT_A_RESUME",
+          resumeId: resumeRecord.id,
+          decision: "rejected",
+        },
+        { status: 422 },
+      );
+    }
+
+    // Persist raw text only after the document check passes.
+    await supabaseAdmin
+      .from("resumes")
+      .update({ raw_text: rawText })
+      .eq("id", resumeRecord.id)
+      .eq("profile_id", userId);
 
     const { error: storageError } = await supabaseAdmin.storage
       .from("resumes")
@@ -149,35 +261,26 @@ export async function POST(req: NextRequest) {
 
     if (storageError) {
       console.error("Storage Upload Error:", storageError);
+      await supabaseAdmin
+        .from("resumes")
+        .update({ status: "failed" })
+        .eq("id", resumeRecord.id)
+        .eq("profile_id", userId);
+      await safeAdvanceProcessingStage(resumeRecord.id, userId, "failed", {
+        errorCode: "STORAGE_UPLOAD_FAILED",
+        errorMessage: "Couldn't upload the file. Please try again.",
+      });
       return NextResponse.json(
         { error: "Couldn't upload the file. Please try again." },
         { status: 500 },
       );
     }
 
-    const { data: resumeRecord, error: dbError } = await supabaseAdmin
-      .from("resumes")
-      .insert({
-        profile_id: userId,
-        file_name: file.name,
-        storage_path: storagePath,
-        raw_text: rawText,
-        status: "uploaded",
-        walrus_status: "pending",
-      })
-      .select("id")
-      .single();
+    await safeAdvanceProcessingStage(resumeRecord.id, userId, "stored");
 
-    if (dbError) {
-      console.error("Database Insert Error:", dbError);
-      await supabaseAdmin.storage.from("resumes").remove([storagePath]);
-      return NextResponse.json(
-        { error: "Couldn't save file data. Please try again." },
-        { status: 500 },
-      );
-    }
-
-    // Non-blocking background sync to Walrus Testnet (epochs=50 for ~50 days retention)
+    // Non-blocking background sync to Walrus (epochs=50 for ~50 days retention).
+    // NOTE: this still runs at upload time for accepted files; it will move to run
+    // only after LLM document classification in a later step.
     // Does not delay client response or risk serverless gateway timeout
     (async () => {
       try {
