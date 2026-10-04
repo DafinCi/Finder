@@ -225,7 +225,8 @@ export function computePreferenceScore(
     preferences.priorities && preferences.priorities.length > 0;
   let prioScore = 70; // default neutral
   if (hasPriorities) {
-    const textToMatch = `${job.title || ""} ${job.description || ""}`.toLowerCase();
+    const textToMatch =
+      `${job.title || ""} ${job.description || ""}`.toLowerCase();
     const cleanReqs = (job.requirements || []).map((r) => r.toLowerCase());
     const matchedCount = preferences.priorities.filter((p) => {
       const terms = getPriorityMatchTerms(p);
@@ -345,11 +346,20 @@ export function computeNegativePreferencePenalty(
 
     for (const term of terms) {
       if (cleanTitle.includes(term)) {
-        severity = Math.max(severity, MATCHING_WEIGHTS.SEVERITY_PRIMARY_REQUIRED); // 1.0
+        severity = Math.max(
+          severity,
+          MATCHING_WEIGHTS.SEVERITY_PRIMARY_REQUIRED,
+        ); // 1.0
       } else if (cleanReqs.some((r) => r.includes(term))) {
-        severity = Math.max(severity, MATCHING_WEIGHTS.SEVERITY_SECONDARY_REQUIRED); // 0.5
+        severity = Math.max(
+          severity,
+          MATCHING_WEIGHTS.SEVERITY_SECONDARY_REQUIRED,
+        ); // 0.5
       } else if (cleanDesc.includes(term)) {
-        severity = Math.max(severity, MATCHING_WEIGHTS.SEVERITY_OPTIONAL_MENTION); // 0.2
+        severity = Math.max(
+          severity,
+          MATCHING_WEIGHTS.SEVERITY_OPTIONAL_MENTION,
+        ); // 0.2
       }
     }
 
