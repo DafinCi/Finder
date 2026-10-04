@@ -54,6 +54,6 @@ describe("Deterministic match score for CV analysis path", () => {
       missingSkills: ["graphql"],
     };
 
-    expect(buildDeterministicReason(scoring)).toContain("3 dari 4");
+    expect(buildDeterministicReason(scoring)).toContain("3 of 4");
   });
 });

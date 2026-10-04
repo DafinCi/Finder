@@ -12,6 +12,18 @@ export interface ToolStreamingEvent {
   success?: boolean;
 }
 
+export interface UploadAnalyzeOutcome {
+  resumeId: string | null;
+  status: "completed" | "needs_review" | "rejected";
+  message: string;
+  classification?: {
+    documentType: string;
+    confidence: number;
+    reason: string;
+  };
+  result?: unknown;
+}
+
 export interface SendMessageCallbacks {
   onToken?: (token: string) => void;
   onToolEvent?: (event: ToolStreamingEvent) => void;
@@ -227,8 +239,8 @@ export const chatService = {
     sessionId: string,
     onProgress?: (status: string) => void,
     prompt?: string,
-  ) {
-    onProgress?.("Uploading and parsing document...");
+  ): Promise<UploadAnalyzeOutcome> {
+    onProgress?.("Uploading and reading your document");
     const formData = new FormData();
     formData.append("file", file);
     formData.append("sessionId", sessionId);
@@ -240,13 +252,21 @@ export const chatService = {
       method: "POST",
       body: formData,
     });
+    const uploadData = await uploadRes.json().catch(() => ({}));
     if (!uploadRes.ok) {
-      const err = await uploadRes.json().catch(() => ({}));
-      throw new Error(err.error || "Failed to upload resume file.");
+      if (uploadData?.code === "NOT_A_RESUME") {
+        return {
+          resumeId: uploadData.resumeId ?? null,
+          status: "rejected",
+          message:
+            uploadData.error ||
+            "This document doesn't look like a resume, so we didn't save it.",
+        };
+      }
+      throw new Error(uploadData.error || "Failed to upload resume file.");
     }
-    const uploadData = await uploadRes.json();
 
-    onProgress?.("Analyzing profile & discovering matched roles via Groq...");
+    onProgress?.("Checking the document and extracting your profile");
     const analyzeRes = await fetch("/api/analyze", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -255,11 +275,24 @@ export const chatService = {
         sessionId,
       }),
     });
+    const analyzeData = await analyzeRes.json().catch(() => ({}));
     if (!analyzeRes.ok) {
-      const err = await analyzeRes.json().catch(() => ({}));
-      throw new Error(err.error || "Failed to evaluate candidate profile.");
+      if (analyzeData?.code === "NEEDS_REVIEW") {
+        return {
+          resumeId: uploadData.resumeId,
+          status: "needs_review",
+          message:
+            analyzeData.message ||
+            analyzeData.error ||
+            "This document doesn't look like a resume.",
+          classification: analyzeData.classification,
+        };
+      }
+      throw new Error(
+        analyzeData.error || "Failed to evaluate candidate profile.",
+      );
     }
-    const result = await analyzeRes.json();
+
     if (typeof window !== "undefined") {
       window.dispatchEvent(
         new CustomEvent("chat-sessions-changed", {
@@ -267,6 +300,75 @@ export const chatService = {
         }),
       );
     }
-    return result;
+
+    return {
+      resumeId: uploadData.resumeId,
+      status: "completed",
+      message: "Analysis complete",
+      result: analyzeData,
+    };
+  },
+
+  async analyzeResume(
+    resumeId: string,
+    sessionId?: string,
+    options?: { allowNonResume?: boolean },
+  ) {
+    const res = await fetch("/api/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        resumeId,
+        sessionId,
+        allowNonResume: options?.allowNonResume,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.error || "Failed to analyze resume.");
+    }
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("chat-sessions-changed", {
+          detail: { action: "refresh" },
+        }),
+      );
+    }
+    return data;
+  },
+
+  async rejectResume(resumeId: string) {
+    const res = await fetch("/api/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ resumeId, decision: "reject" }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.error || "Failed to remove the document.");
+    }
+    return data;
+  },
+
+  async applyResumeToProfile(resumeId: string) {
+    const res = await fetch("/api/profile/resume", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ resumeId }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(
+        data.error || "Failed to save the resume to your career profile.",
+      );
+    }
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("chat-sessions-changed", {
+          detail: { action: "refresh" },
+        }),
+      );
+    }
+    return data;
   },
 };

@@ -6,6 +6,7 @@ import { normalizeGroqError } from "@/lib/groq/client";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { classifyDocument } from "@/lib/groq/document-classifier";
 import { resumeProcessingService } from "@/features/ai-analysis/services/resume-processing.service";
+import { walrusClient } from "@/lib/walrus/walrus-client";
 import type {
   ResumeProcessingPatch,
   ResumeProcessingStage,
@@ -15,7 +16,11 @@ export const dynamic = "force-dynamic";
 
 const CLASSIFICATION_CONFIDENCE_THRESHOLD = 0.5;
 const NEEDS_REVIEW_MESSAGE =
-  "Sepertinya dokumen ini bukan CV. Kami tidak menemukan ciri-ciri CV yang meyakinkan, jadi analisis belum dijalankan. Silakan unggah file CV, atau konfirmasi untuk tetap melanjutkan.";
+  "This document doesn't look like a resume. We didn't find the usual sections such as work history, education, or skills, so the analysis didn't run. Upload a resume, or continue anyway if you're sure.";
+const REJECTED_MESSAGE =
+  "Document removed. We deleted the uploaded file and its extracted text, so nothing stays in our storage.";
+const OVERRIDE_NOTICE =
+  "Analysis complete. This document isn't a resume, so we removed the uploaded file and kept only the extracted profile.";
 
 async function safeAdvanceProcessingStage(
   resumeId: string,
@@ -27,6 +32,81 @@ async function safeAdvanceProcessingStage(
     await resumeProcessingService.advance(resumeId, userId, stage, patch);
   } catch (err) {
     console.error(`[ANALYZE:PipelineState] advance '${stage}' failed:`, err);
+  }
+}
+
+async function deleteResumeContent(
+  resumeId: string,
+  userId: string,
+  storagePath: string | null | undefined,
+): Promise<string> {
+  const deletedAt = new Date().toISOString();
+
+  if (storagePath) {
+    try {
+      await supabaseAdmin.storage.from("resumes").remove([storagePath]);
+    } catch (err) {
+      console.error("[ANALYZE:Cleanup] Failed to remove storage object:", err);
+    }
+  }
+
+  try {
+    await supabaseAdmin
+      .from("resumes")
+      .update({
+        raw_text: null,
+        status: "failed",
+        storage_path: `rejected/${userId}/${Date.now()}`,
+      })
+      .eq("id", resumeId)
+      .eq("profile_id", userId);
+  } catch (err) {
+    console.error("[ANALYZE:Cleanup] Failed to clear resume content:", err);
+  }
+
+  return deletedAt;
+}
+
+async function syncResumeToWalrus(
+  resumeId: string,
+  userId: string,
+  storagePath: string | null | undefined,
+) {
+  if (!storagePath || !supabaseAdmin.storage) return;
+
+  try {
+    const { data: fileData, error } = await supabaseAdmin.storage
+      .from("resumes")
+      .download(storagePath);
+    if (error || !fileData) {
+      throw error || new Error("Resume file not found in storage.");
+    }
+
+    const buffer = Buffer.from(await fileData.arrayBuffer());
+    const walrusResult = await walrusClient.storeBlob(buffer, {
+      epochs: 50,
+      deletable: true,
+    });
+
+    await supabaseAdmin
+      .from("resumes")
+      .update({
+        walrus_blob_id: walrusResult.blobId,
+        walrus_status: "stored",
+      })
+      .eq("id", resumeId)
+      .eq("profile_id", userId);
+  } catch (walrusErr) {
+    console.warn(`[WALRUS] Resume ${resumeId} sync failed:`, walrusErr);
+    try {
+      await supabaseAdmin
+        .from("resumes")
+        .update({ walrus_status: "failed" })
+        .eq("id", resumeId)
+        .eq("profile_id", userId);
+    } catch (updateErr) {
+      console.error("[WALRUS] Failed to mark resume sync failure:", updateErr);
+    }
   }
 }
 
@@ -67,7 +147,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { resumeId, sessionId, allowNonResume } = body;
+    const { resumeId, sessionId, allowNonResume, decision } = body;
 
     if (!resumeId) {
       return NextResponse.json(
@@ -79,7 +159,7 @@ export async function POST(req: NextRequest) {
     // Verify resume ownership and fetch canonical stored raw_text to prevent tampering
     const { data: resumeRecord, error: resumeFetchError } = await supabaseAdmin
       .from("resumes")
-      .select("id, profile_id, raw_text")
+      .select("id, profile_id, raw_text, storage_path")
       .eq("id", resumeId)
       .single();
 
@@ -94,6 +174,31 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: "Forbidden! You do not have permission to access this resume." },
         { status: 403 },
+      );
+    }
+
+    // Finalize a user rejection: remove content, keep only decision metadata.
+    if (decision === "reject") {
+      const deletedAt = await deleteResumeContent(
+        resumeId,
+        user.id,
+        resumeRecord.storage_path,
+      );
+      await safeAdvanceProcessingStage(resumeId, user.id, "rejected", {
+        decision: "rejected",
+        rawContentDeletedAt: deletedAt,
+        errorCode: "USER_REJECTED",
+        errorMessage: REJECTED_MESSAGE,
+      });
+      return NextResponse.json(
+        {
+          code: "REJECTED",
+          resumeId,
+          decision: "rejected",
+          contentDeleted: true,
+          message: REJECTED_MESSAGE,
+        },
+        { status: 200 },
       );
     }
 
@@ -213,6 +318,9 @@ export async function POST(req: NextRequest) {
         decision: "overridden",
         overriddenByUser: true,
       });
+    } else if (isConfidentResume) {
+      // Walrus policy: publish only confirmed resumes, never non-resume content.
+      void syncResumeToWalrus(resumeId, user.id, resumeRecord.storage_path);
     }
 
     // 2. Delegate execution to domain orchestrator service.
@@ -225,6 +333,25 @@ export async function POST(req: NextRequest) {
         await resumeProcessingService.advance(resumeId, user.id, stage, patch);
       },
     });
+
+    if (allowNonResume) {
+      const deletedAt = await deleteResumeContent(
+        resumeId,
+        user.id,
+        resumeRecord.storage_path,
+      );
+      await safeAdvanceProcessingStage(resumeId, user.id, "completed", {
+        decision: "overridden",
+        overriddenByUser: true,
+        rawContentDeletedAt: deletedAt,
+      });
+      return NextResponse.json({
+        success: true,
+        message: OVERRIDE_NOTICE,
+        contentDeleted: true,
+        ...result,
+      });
+    }
 
     return NextResponse.json({
       success: true,

@@ -35,6 +35,11 @@ export function OnboardingWizard() {
     setEmploymentTypes,
     setWorkModes,
     setLocations,
+    resumeReview,
+    resumeProcessing,
+    isResumeActionWorking,
+    continueWithNonResume,
+    rejectResumeDocument,
     reloadProfile,
   } = useOnboardingProfile();
 
@@ -125,6 +130,11 @@ export function OnboardingWizard() {
             }}
             onGoToCvReview={() => setFlowMode("cv_magic")}
             isSaving={isSaving}
+            resumeReview={resumeReview}
+            resumeProcessing={resumeProcessing}
+            isResumeActionWorking={isResumeActionWorking}
+            onContinueWithNonResume={continueWithNonResume}
+            onRejectResume={rejectResumeDocument}
           />
         )}
 

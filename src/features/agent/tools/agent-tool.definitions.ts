@@ -161,7 +161,7 @@ export const AGENT_TOOL_DEFINITIONS: ChatToolDefinition[] = [
           content: {
             type: "string",
             description:
-              "The durable fact or goal to remember (e.g. 'Transisi dari Frontend ke AI Engineer').",
+              "The durable fact or goal to remember (e.g. 'Moving from frontend to AI engineering').",
           },
           confidence: {
             type: "string",

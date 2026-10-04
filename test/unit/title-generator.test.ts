@@ -42,9 +42,9 @@ describe("Unit: Smart Session Title Generator", () => {
     expect(generateSmartSessionTitle("")).toBe("Career Consultation");
     expect(generateSmartSessionTitle("   ")).toBe("Career Consultation");
     expect(generateSmartSessionTitle("Hello")).toBe("Career Consultation");
-    expect(generateSmartSessionTitle("Halo")).toBe("Konsultasi Karir");
+    expect(generateSmartSessionTitle("Halo")).toBe("Career Consultation");
     expect(generateSmartSessionTitle("Selamat pagi kak")).toBe(
-      "Konsultasi Karir",
+      "Career Consultation",
     );
   });
 });

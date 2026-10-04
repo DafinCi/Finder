@@ -174,7 +174,7 @@ vi.mock("@/lib/supabase/admin", () => ({
           select: vi.fn(() => ({
             eq: vi.fn(() => ({
               single: vi.fn(async () => ({
-                data: { title: "Obrolan Karir Baru" },
+                data: { title: "New Career Chat" },
                 error: null,
               })),
             })),
@@ -348,7 +348,7 @@ describe("Integration (Mock-Based): Analysis Orchestrator Service", () => {
     // Workflow must not throw; it must degrade gracefully and compute deterministic score
     expect(result.jobMatches.length).toBeGreaterThan(0);
     expect(result.jobMatches[0].reason).toContain(
-      "Kecocokan dihitung berdasarkan keselarasan keahlian",
+      "Match score computed from skill alignment",
     );
 
     const updatedResume = mockResumes.get("res-degraded-1");

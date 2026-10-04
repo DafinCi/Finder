@@ -10,6 +10,9 @@ import OmniPromptInput from "@/features/chat/components/OmniPromptInput";
 import ChatTimelineSkeleton from "@/features/chat/skeletons/ChatTimelineSkeleton";
 import BotAvatar from "@/components/ui/BotAvatar";
 import AgentInfoDrawer from "@/features/chat/components/AgentInfoDrawer";
+import ResumeProcessingTimeline from "@/features/ai-analysis/components/ResumeProcessingTimeline";
+import ResumeReviewCard from "@/features/ai-analysis/components/ResumeReviewCard";
+import ProfileConfirmationCard from "@/features/ai-analysis/components/ProfileConfirmationCard";
 
 export default function ChatSessionPage({
   params,
@@ -43,9 +46,24 @@ export default function ChatSessionPage({
     isInitialLoading,
     thinkingStatus,
     error,
+    resumeReview,
+    resumeProcessing,
+    profileConfirmation,
+    isResumeActionWorking,
+    continueWithNonResume,
+    rejectResumeDocument,
+    applyResumeToProfile,
+    dismissProfileConfirmation,
     sendMessage,
     retryLastMessage,
   } = useChat(id);
+
+  const showProcessingTimeline =
+    Boolean(resumeProcessing) &&
+    !resumeReview &&
+    resumeProcessing?.stage !== "completed" &&
+    resumeProcessing?.stage !== "rejected" &&
+    resumeProcessing?.stage !== "failed";
 
   const handleAskAboutJob = (jobTitle: string, company: string) => {
     sendMessage(
@@ -141,6 +159,40 @@ export default function ChatSessionPage({
       <div className="flex-1 min-h-0 w-full overflow-y-auto custom-scrollbar relative">
         {/* Chat Content Body */}
         <div className="min-h-full flex flex-col justify-between">
+          {resumeReview && (
+            <div className="px-4 pt-4">
+              <ResumeReviewCard
+                classification={
+                  resumeReview.classification ?? {
+                    documentType: "unknown",
+                    confidence: 0,
+                    reason: resumeReview.message,
+                  }
+                }
+                onContinue={continueWithNonResume}
+                onReject={rejectResumeDocument}
+                isWorking={isResumeActionWorking}
+              />
+            </div>
+          )}
+
+          {!resumeReview && profileConfirmation && (
+            <div className="px-4 pt-4">
+              <ProfileConfirmationCard
+                fileName={profileConfirmation.fileName}
+                onApply={applyResumeToProfile}
+                onDismiss={dismissProfileConfirmation}
+                isWorking={isResumeActionWorking}
+              />
+            </div>
+          )}
+
+          {showProcessingTimeline && (
+            <div className="px-4 pt-4">
+              <ResumeProcessingTimeline processing={resumeProcessing} />
+            </div>
+          )}
+
           {/* Initial Loading Skeleton */}
           {isInitialLoading ? (
             <ChatTimelineSkeleton />

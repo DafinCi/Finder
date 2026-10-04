@@ -13,6 +13,10 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OnboardingFormState } from "../types/onboarding.types";
+import ResumeProcessingTimeline from "@/features/ai-analysis/components/ResumeProcessingTimeline";
+import ResumeReviewCard from "@/features/ai-analysis/components/ResumeReviewCard";
+import type { ResumeProcessing } from "@/features/ai-analysis/types/resume-processing.types";
+import type { OnboardingResumeReview } from "../hooks/useOnboardingProfile";
 
 interface StepWelcomeChoiceProps {
   state: OnboardingFormState;
@@ -20,6 +24,11 @@ interface StepWelcomeChoiceProps {
   onStartManual: () => void;
   onGoToCvReview: () => void;
   isSaving: boolean;
+  resumeReview?: OnboardingResumeReview | null;
+  resumeProcessing?: ResumeProcessing | null;
+  isResumeActionWorking?: boolean;
+  onContinueWithNonResume?: () => void;
+  onRejectResume?: () => void;
 }
 
 export function StepWelcomeChoice({
@@ -28,6 +37,11 @@ export function StepWelcomeChoice({
   onStartManual,
   onGoToCvReview,
   isSaving,
+  resumeReview = null,
+  resumeProcessing = null,
+  isResumeActionWorking = false,
+  onContinueWithNonResume,
+  onRejectResume,
 }: StepWelcomeChoiceProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -99,6 +113,29 @@ export function StepWelcomeChoice({
           </button>
         </div>
       )}
+
+      {resumeReview && (
+        <ResumeReviewCard
+          classification={
+            resumeReview.classification ?? {
+              documentType: "unknown",
+              confidence: 0,
+              reason: resumeReview.message,
+            }
+          }
+          onContinue={onContinueWithNonResume ?? (() => {})}
+          onReject={onRejectResume ?? (() => {})}
+          isWorking={isResumeActionWorking}
+        />
+      )}
+
+      {!resumeReview &&
+        resumeProcessing &&
+        resumeProcessing.stage !== "completed" &&
+        resumeProcessing.stage !== "rejected" &&
+        resumeProcessing.stage !== "failed" && (
+          <ResumeProcessingTimeline processing={resumeProcessing} />
+        )}
 
       {/* 2 Equal Sized Choice Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">

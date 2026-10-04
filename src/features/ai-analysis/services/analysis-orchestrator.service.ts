@@ -82,7 +82,7 @@ export function toDeterministicMatchScore(preRankingScore: number): number {
 export function buildDeterministicReason(
   score: DeterministicJobScore,
 ): string {
-  return `Kecocokan dihitung berdasarkan keselarasan keahlian (${score.matchedCount} dari ${score.totalReqs} kualifikasi terpenuhi).`;
+  return `Match score computed from skill alignment (${score.matchedCount} of ${score.totalReqs} qualifications met).`;
 }
 
 export interface RunResumeAnalysisParams {
@@ -429,7 +429,7 @@ export async function runResumeAnalysisWorkflow({
             llm?.reason?.trim() ||
             (det
               ? buildDeterministicReason(det)
-              : "Kecocokan profil teridentifikasi."),
+              : "Profile match identified."),
           missing_skills: Array.isArray(llm?.missing_skills)
             ? llm.missing_skills
             : det?.missingSkills || [],
@@ -519,7 +519,7 @@ Here is a summary of your skills profile and a curation of **the best matching j
 
       const shouldUpdateTitle =
         !currentSession?.title ||
-        currentSession.title === "Obrolan Karir Baru" ||
+        currentSession.title === "New Career Chat" ||
         currentSession.title.startsWith("CV analysis:") ||
         currentSession.title.startsWith("CV Analysis:");
 

@@ -2,13 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { walrusClient } from "@/lib/walrus/walrus-client";
 import { resumeProcessingService } from "@/features/ai-analysis/services/resume-processing.service";
 import { scoreResumeHeuristic } from "@/features/ai-analysis/utils/resume-heuristic";
 import type { ResumeProcessingPatch } from "@/features/ai-analysis/repositories/resume-processing.repository";
 
 const NOT_A_RESUME_MESSAGE =
-  "Kami tidak menemukan ciri-ciri CV pada dokumen ini (riwayat kerja, pendidikan, atau skill), dan dokumen tidak disimpan. Silakan unggah file CV, atau konfirmasi untuk tetap melanjutkan.";
+  "This document doesn't look like a resume. It has none of the usual sections such as work history, education, or skills, so we didn't save it. Upload a resume, or continue anyway if you're sure.";
 
 /**
  * Pipeline tracking must never break the upload itself. Failures are logged so
@@ -51,7 +50,7 @@ export async function POST(req: NextRequest) {
 
     if (authError || !user) {
       return NextResponse.json(
-        { error: "Unauthorized! Sesi telah habis, silakan login kembali." },
+        { error: "Your session has expired. Sign in again to upload a resume." },
         { status: 401 },
       );
     }
@@ -68,7 +67,7 @@ export async function POST(req: NextRequest) {
     if (!rateLimit.success) {
       return NextResponse.json(
         {
-          error: `Terlalu banyak upload dokumen dalam waktu singkat. Silakan tunggu ${rateLimit.resetInSeconds} detik sebelum mencoba lagi.`,
+          error: `Too many uploads in a short time. Try again in ${rateLimit.resetInSeconds} seconds.`,
         },
         {
           status: 429,
@@ -159,7 +158,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error:
-            "PDF kosong atau berupa hasil scan gambar. AI membutuhkan teks murni.",
+            "This PDF has no readable text. Scanned or image-only files need a text-based PDF.",
         },
         { status: 400 },
       );
@@ -278,37 +277,10 @@ export async function POST(req: NextRequest) {
 
     await safeAdvanceProcessingStage(resumeRecord.id, userId, "stored");
 
-    // Non-blocking background sync to Walrus (epochs=50 for ~50 days retention).
-    // NOTE: this still runs at upload time for accepted files; it will move to run
-    // only after LLM document classification in a later step.
-    // Does not delay client response or risk serverless gateway timeout
-    (async () => {
-      try {
-        const walrusResult = await walrusClient.storeBlob(buffer, {
-          epochs: 50,
-          deletable: true,
-        });
-        await supabaseAdmin
-          .from("resumes")
-          .update({
-            walrus_blob_id: walrusResult.blobId,
-            walrus_status: "stored",
-          })
-          .eq("id", resumeRecord.id);
-        console.log(
-          `[WALRUS] Successfully published resume ${resumeRecord.id} -> ${walrusResult.blobId}`,
-        );
-      } catch (walrusErr) {
-        console.warn(
-          `[WALRUS] Background sync warning for resume ${resumeRecord.id}:`,
-          walrusErr,
-        );
-        await supabaseAdmin
-          .from("resumes")
-          .update({ walrus_status: "failed" })
-          .eq("id", resumeRecord.id);
-      }
-    })().catch(() => {});
+    // Walrus sync intentionally does NOT run here. Per Walrus policy, blobs are
+    // public and deletion is limited, so non-resume content must never reach
+    // Walrus. Sync happens in /api/analyze only after document classification
+    // confirms the file is a resume.
 
     const sessionId = formData.get("sessionId") as string | null;
     const prompt = (formData.get("prompt") as string | null) || "";
@@ -392,7 +364,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("Unhandled Upload Error:", error);
     return NextResponse.json(
-      { error: "Terjadi kesalahan sistem internal server." },
+      { error: "Something went wrong on our side. Please try again." },
       { status: 500 },
     );
   }

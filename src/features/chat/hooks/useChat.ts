@@ -5,6 +5,18 @@ import { toast } from "sonner";
 import { ChatSession, ChatMessage } from "@/types/chat";
 import { useAgent } from "@/contexts/AgentContext";
 import { chatService } from "../services/chat.service";
+import { useResumeProcessingStatus } from "@/features/ai-analysis/hooks/useResumeProcessingStatus";
+
+export interface ResumeReviewState {
+  resumeId: string;
+  fileName: string;
+  classification: {
+    documentType: string;
+    confidence: number;
+    reason: string;
+  } | null;
+  message: string;
+}
 
 export function useChat(sessionId?: string) {
   const { isAmnesiaMode } = useAgent();
@@ -30,6 +42,49 @@ export function useChat(sessionId?: string) {
     prompt: string;
     file?: File;
   } | null>(null);
+  const [resumeReview, setResumeReview] = useState<ResumeReviewState | null>(
+    null,
+  );
+  const [profileConfirmation, setProfileConfirmation] = useState<{
+    resumeId: string;
+    fileName: string;
+  } | null>(null);
+  const [isResumeActionWorking, setIsResumeActionWorking] = useState(false);
+
+  const { processing: resumeProcessing } = useResumeProcessingStatus(
+    session?.resume_id,
+    { enabled: Boolean(session?.resume_id) },
+  );
+
+  useEffect(() => {
+    if (!session?.resume_id || !resumeProcessing) return;
+
+    if (resumeProcessing.stage === "needs_review") {
+      setResumeReview({
+        resumeId: session.resume_id,
+        fileName: session.title,
+        classification: resumeProcessing.documentType
+          ? {
+              documentType: resumeProcessing.documentType,
+              confidence: resumeProcessing.classificationConfidence ?? 0,
+              reason: resumeProcessing.classificationReason ?? "",
+            }
+          : null,
+        message:
+          resumeProcessing.classificationReason ||
+          "This document doesn't look like a resume.",
+      });
+      return;
+    }
+
+    if (
+      resumeProcessing.stage === "completed" ||
+      resumeProcessing.stage === "rejected" ||
+      resumeProcessing.stage === "failed"
+    ) {
+      setResumeReview(null);
+    }
+  }, [resumeProcessing, session?.resume_id, session?.title]);
 
   const fetchSessionData = useCallback(async () => {
     if (!sessionId) return;
@@ -147,7 +202,7 @@ export function useChat(sessionId?: string) {
 
       // If file attached, upload and analyze
       if (file) {
-        setThinkingStatus("Uploading and parsing resume document...");
+        setThinkingStatus("Uploading and reading your document");
 
         // Optimistically add user message
         const tempUserMsg: ChatMessage = {
@@ -168,7 +223,7 @@ export function useChat(sessionId?: string) {
         };
         setMessages((prev) => [...prev, tempUserMsg]);
 
-        await chatService.uploadAndAnalyzeResume(
+        const outcome = await chatService.uploadAndAnalyzeResume(
           file,
           sessionId,
           (status) => {
@@ -176,6 +231,31 @@ export function useChat(sessionId?: string) {
           },
           prompt,
         );
+
+        if (outcome.status === "needs_review") {
+          setResumeReview({
+            resumeId: outcome.resumeId ?? "",
+            fileName: file.name,
+            classification: outcome.classification ?? null,
+            message: outcome.message,
+          });
+          const updatedData = await chatService.getSessionDetail(sessionId);
+          setMessages(updatedData.messages);
+          return;
+        }
+
+        if (outcome.status === "rejected") {
+          setError(outcome.message);
+          setMessages((prev) => prev.filter((m) => !m.id.startsWith("temp-")));
+          return;
+        }
+
+        if (outcome.status === "completed" && outcome.resumeId) {
+          setProfileConfirmation({
+            resumeId: outcome.resumeId,
+            fileName: file.name,
+          });
+        }
 
         // Refetch complete session messages to sync with database
         const updatedData = await chatService.getSessionDetail(sessionId);
@@ -282,6 +362,60 @@ export function useChat(sessionId?: string) {
     }
   };
 
+  const continueWithNonResume = async () => {
+    if (!resumeReview?.resumeId || !sessionId) return;
+    setIsResumeActionWorking(true);
+    setError(null);
+    try {
+      await chatService.analyzeResume(resumeReview.resumeId, sessionId, {
+        allowNonResume: true,
+      });
+      setResumeReview(null);
+      const updatedData = await chatService.getSessionDetail(sessionId);
+      setMessages(updatedData.messages);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setIsResumeActionWorking(false);
+    }
+  };
+
+  const rejectResumeDocument = async () => {
+    if (!resumeReview?.resumeId) return;
+    setIsResumeActionWorking(true);
+    setError(null);
+    try {
+      await chatService.rejectResume(resumeReview.resumeId);
+      setResumeReview(null);
+      if (sessionId) {
+        const updatedData = await chatService.getSessionDetail(sessionId);
+        setMessages(updatedData.messages);
+      }
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setIsResumeActionWorking(false);
+    }
+  };
+
+  const applyResumeToProfile = async () => {
+    if (!profileConfirmation?.resumeId) return;
+    setIsResumeActionWorking(true);
+    setError(null);
+    try {
+      await chatService.applyResumeToProfile(profileConfirmation.resumeId);
+      setProfileConfirmation(null);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setIsResumeActionWorking(false);
+    }
+  };
+
+  const dismissProfileConfirmation = () => {
+    setProfileConfirmation(null);
+  };
+
   return {
     session,
     messages,
@@ -292,6 +426,14 @@ export function useChat(sessionId?: string) {
     failedPrompt: failedSubmission?.prompt ?? null,
     canRetry: failedSubmission !== null,
     isAmnesiaMode,
+    resumeReview,
+    resumeProcessing,
+    profileConfirmation,
+    isResumeActionWorking,
+    continueWithNonResume,
+    rejectResumeDocument,
+    applyResumeToProfile,
+    dismissProfileConfirmation,
     sendMessage,
     retryLastMessage,
     updateTitle,

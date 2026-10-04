@@ -72,13 +72,32 @@ function AppChatHomeContent() {
             "Please analyze my resume and recommend matching career opportunities.",
         });
 
-        setStatusText("Analyzing your profile and finding matching jobs...");
-        await chatService.uploadAndAnalyzeResume(file, session.id, (status) => {
-          setStatusText(status);
-        });
+        setStatusText("Checking the document and extracting your profile");
+        const outcome = await chatService.uploadAndAnalyzeResume(
+          file,
+          session.id,
+          (status) => {
+            setStatusText(status);
+          },
+        );
 
-        toast.success("CV analyzed", {
-          description: "Opening your results...",
+        if (outcome.status === "rejected") {
+          toast.error("Resume not analyzed", {
+            description: outcome.message,
+          });
+          return;
+        }
+
+        if (outcome.status === "needs_review") {
+          toast.info("One quick check", {
+            description: outcome.message,
+          });
+          router.push(`/c/${session.id}`);
+          return;
+        }
+
+        toast.success("Resume analyzed", {
+          description: "Opening your results.",
         });
 
         router.push(`/c/${session.id}`);
