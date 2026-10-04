@@ -52,6 +52,24 @@ export interface ResumeProcessing {
   updatedAt: string;
 }
 
+export interface ResumeProcessingPatch {
+  documentType?: string | null;
+  isResume?: boolean | null;
+  classificationConfidence?: number | null;
+  classificationReason?: string | null;
+  heuristicScore?: number | null;
+  decision?: ResumeProcessingDecision | null;
+  overriddenByUser?: boolean;
+  errorCode?: string | null;
+  errorMessage?: string | null;
+  rawContentDeletedAt?: string | null;
+}
+
+export type ResumeProcessingStageReporter = (
+  stage: ResumeProcessingStage,
+  patch?: ResumeProcessingPatch,
+) => Promise<void> | void;
+
 /**
  * Ordered stages for the user-facing progress checklist. Review/rejection/error
  * states are outcomes, not sequential steps, so they are excluded here.

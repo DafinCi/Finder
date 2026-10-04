@@ -13,6 +13,7 @@ import {
   toCandidateMatchingContext,
   RawJobInput,
 } from "@/features/jobs/domain/job-matching-context";
+import type { ResumeProcessingStageReporter } from "../types/resume-processing.types";
 
 const MODEL_NAME = process.env.GROQ_MODEL || DEFAULT_GROQ_MODEL;
 const DB_CANDIDATE_POOL_LIMIT = 25;
@@ -89,6 +90,7 @@ export interface RunResumeAnalysisParams {
   resumeId: string;
   rawText: string;
   sessionId?: string;
+  onStage?: ResumeProcessingStageReporter;
 }
 
 export interface RunResumeAnalysisResult {
@@ -191,7 +193,20 @@ export async function runResumeAnalysisWorkflow({
   resumeId,
   rawText,
   sessionId,
+  onStage,
 }: RunResumeAnalysisParams): Promise<RunResumeAnalysisResult> {
+  const reportStage = async (
+    stage: Parameters<ResumeProcessingStageReporter>[0],
+    patch?: Parameters<ResumeProcessingStageReporter>[1],
+  ) => {
+    if (!onStage) return;
+    try {
+      await onStage(stage, patch);
+    } catch (stageError) {
+      console.error(`[ANALYSIS:Stage] Failed to report stage '${stage}':`, stageError);
+    }
+  };
+
   // 1. Idempotency Check: Reuse existing analysis if resume is already completed
   const { data: currentResume } = await supabaseAdmin
     .from("resumes")
@@ -278,7 +293,9 @@ export async function runResumeAnalysisWorkflow({
 
   try {
     // 3. Extract profile using AI model with fallback resilience
+    await reportStage("extracting");
     const aiCandidateData = await extractCandidateProfile(rawText);
+    await reportStage("extracted");
 
     // 4. Persist analysis record with accurate model lineage and prompt version
     const actualModelUsed = aiCandidateData._modelUsed || MODEL_NAME;
@@ -380,6 +397,7 @@ export async function runResumeAnalysisWorkflow({
         string,
         { reason?: string; missing_skills?: string[] }
       >();
+      await reportStage("matching");
       try {
         const matchResults = await analyzeJobMatches(
           compactCandidateContext,
@@ -398,6 +416,7 @@ export async function runResumeAnalysisWorkflow({
         );
       }
 
+      await reportStage("persisting");
       const matchInsertData = topJobs.map((job) => {
         const det = deterministicByJobId.get(job.id);
         const llm = llmMatchesByJobId.get(job.id);
@@ -529,6 +548,8 @@ Here is a summary of your skills profile and a curation of **the best matching j
       .update({ status: "completed" })
       .eq("id", resumeId);
 
+    await reportStage("completed");
+
     return {
       analysisId,
       analysis: aiCandidateData.json_profile,
@@ -540,6 +561,11 @@ Here is a summary of your skills profile and a curation of **the best matching j
       .from("resumes")
       .update({ status: "failed" })
       .eq("id", resumeId);
+
+    await reportStage("failed", {
+      errorCode: "ANALYSIS_FAILED",
+      errorMessage: (error as Error).message || "Analysis workflow failed.",
+    });
 
     throw error;
   }

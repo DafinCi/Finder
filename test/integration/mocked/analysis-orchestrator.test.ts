@@ -271,12 +271,14 @@ describe("Integration (Mock-Based): Analysis Orchestrator Service", () => {
       },
     ]);
 
+    const onStage = vi.fn();
     const result = await runResumeAnalysisWorkflow({
       userId: "user-1",
       resumeId: "res-pending-1",
       rawText:
         "Budi Santoso - Senior Frontend Developer with 4 years experience in React.",
       sessionId: "session-1",
+      onStage,
     });
 
     expect(result.analysis.candidate.name).toBe("Budi Santoso");
@@ -286,6 +288,17 @@ describe("Integration (Mock-Based): Analysis Orchestrator Service", () => {
     expect(result.jobMatches[0].match_score).toBe(87);
     expect(result.jobMatches[0].reason).toContain(
       "Strong React & TypeScript skills match perfectly.",
+    );
+
+    const reportedStages = onStage.mock.calls.map((call) => call[0]);
+    expect(reportedStages).toEqual(
+      expect.arrayContaining([
+        "extracting",
+        "extracted",
+        "matching",
+        "persisting",
+        "completed",
+      ]),
     );
 
     // Verify resume status transitioned to completed

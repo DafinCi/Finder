@@ -4,8 +4,31 @@ import { createClient } from "@/lib/supabase/server";
 import { runResumeAnalysisWorkflow } from "@/features/ai-analysis/services/analysis-orchestrator.service";
 import { normalizeGroqError } from "@/lib/groq/client";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { classifyDocument } from "@/lib/groq/document-classifier";
+import { resumeProcessingService } from "@/features/ai-analysis/services/resume-processing.service";
+import type {
+  ResumeProcessingPatch,
+  ResumeProcessingStage,
+} from "@/features/ai-analysis/types/resume-processing.types";
 
 export const dynamic = "force-dynamic";
+
+const CLASSIFICATION_CONFIDENCE_THRESHOLD = 0.5;
+const NEEDS_REVIEW_MESSAGE =
+  "Sepertinya dokumen ini bukan CV. Kami tidak menemukan ciri-ciri CV yang meyakinkan, jadi analisis belum dijalankan. Silakan unggah file CV, atau konfirmasi untuk tetap melanjutkan.";
+
+async function safeAdvanceProcessingStage(
+  resumeId: string,
+  userId: string,
+  stage: ResumeProcessingStage,
+  patch?: ResumeProcessingPatch,
+) {
+  try {
+    await resumeProcessingService.advance(resumeId, userId, stage, patch);
+  } catch (err) {
+    console.error(`[ANALYZE:PipelineState] advance '${stage}' failed:`, err);
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -44,7 +67,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { resumeId, sessionId } = body;
+    const { resumeId, sessionId, allowNonResume } = body;
 
     if (!resumeId) {
       return NextResponse.json(
@@ -111,12 +134,96 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Delegate execution to domain orchestrator service
+    // 1. Classification gate (LLM) before any extraction/matching work.
+    await safeAdvanceProcessingStage(resumeId, user.id, "classifying");
+
+    const existing = await resumeProcessingService
+      .getStatus(resumeId, user.id)
+      .catch(() => null);
+
+    const canReuseExistingClassification = Boolean(
+      allowNonResume &&
+        existing?.stage === "needs_review" &&
+        existing?.documentType &&
+        existing?.isResume === false,
+    );
+
+    let classification: {
+      isResume: boolean;
+      documentType: string;
+      confidence: number;
+      reason: string;
+    };
+
+    if (canReuseExistingClassification && existing) {
+      classification = {
+        isResume: Boolean(existing.isResume),
+        documentType: existing.documentType || "other",
+        confidence: existing.classificationConfidence ?? 0,
+        reason: existing.classificationReason || "",
+      };
+    } else {
+      let llmClassification;
+      try {
+        llmClassification = await classifyDocument(canonicalRawText);
+      } catch (classificationError) {
+        await safeAdvanceProcessingStage(resumeId, user.id, "failed", {
+          errorCode: "CLASSIFICATION_FAILED",
+          errorMessage: (classificationError as Error).message,
+        });
+        throw classificationError;
+      }
+
+      classification = {
+        isResume: llmClassification.is_resume,
+        documentType: llmClassification.document_type,
+        confidence: llmClassification.confidence,
+        reason: llmClassification.reason,
+      };
+    }
+
+    await safeAdvanceProcessingStage(resumeId, user.id, "classified", {
+      documentType: classification.documentType,
+      isResume: classification.isResume,
+      classificationConfidence: classification.confidence,
+      classificationReason: classification.reason,
+    });
+
+    const isConfidentResume =
+      classification.isResume &&
+      classification.confidence >= CLASSIFICATION_CONFIDENCE_THRESHOLD;
+
+    // Soft block: the UI can ask the user to confirm before overriding.
+    if (!isConfidentResume && !allowNonResume) {
+      await safeAdvanceProcessingStage(resumeId, user.id, "needs_review");
+      return NextResponse.json(
+        {
+          code: "NEEDS_REVIEW",
+          error: NEEDS_REVIEW_MESSAGE,
+          message: NEEDS_REVIEW_MESSAGE,
+          resumeId,
+          classification,
+        },
+        { status: 409 },
+      );
+    }
+
+    if (allowNonResume) {
+      await safeAdvanceProcessingStage(resumeId, user.id, "classified", {
+        decision: "overridden",
+        overriddenByUser: true,
+      });
+    }
+
+    // 2. Delegate execution to domain orchestrator service.
     const result = await runResumeAnalysisWorkflow({
       userId: user.id,
       resumeId,
       rawText: canonicalRawText,
       sessionId,
+      onStage: async (stage, patch) => {
+        await resumeProcessingService.advance(resumeId, user.id, stage, patch);
+      },
     });
 
     return NextResponse.json({

@@ -2,8 +2,11 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import {
   ResumeProcessing,
   ResumeProcessingDecision,
+  ResumeProcessingPatch,
   ResumeProcessingStage,
 } from "../types/resume-processing.types";
+
+export type { ResumeProcessingPatch };
 
 export interface ResumeProcessingDbRow {
   resume_id: string;
@@ -21,19 +24,6 @@ export interface ResumeProcessingDbRow {
   raw_content_deleted_at: string | null;
   created_at: string;
   updated_at: string;
-}
-
-export interface ResumeProcessingPatch {
-  documentType?: string | null;
-  isResume?: boolean | null;
-  classificationConfidence?: number | null;
-  classificationReason?: string | null;
-  heuristicScore?: number | null;
-  decision?: ResumeProcessingDecision | null;
-  overriddenByUser?: boolean;
-  errorCode?: string | null;
-  errorMessage?: string | null;
-  rawContentDeletedAt?: string | null;
 }
 
 function toNullableNumber(value: number | string | null): number | null {
