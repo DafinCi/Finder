@@ -453,10 +453,19 @@ export async function POST(req: NextRequest) {
       );
     } else {
       try {
+        const canonicalWorkModes = Array.isArray(
+          candidateProfile?.preferences?.work_modes,
+        )
+          ? (candidateProfile.preferences.work_modes as string[])
+          : [];
+
         const recall = await careerMemoryService.getDurableContext(
           user.id,
           5,
           cleanContent,
+          canonicalWorkModes.length > 0
+            ? { workModes: canonicalWorkModes }
+            : undefined,
         );
         memoryContext = recall.context;
         memoryRecall = {

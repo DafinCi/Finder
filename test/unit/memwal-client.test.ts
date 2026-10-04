@@ -157,6 +157,51 @@ describe("MemWalClient & CareerMemoryService Semantic Integration", () => {
     expect(recall.memories[0].content).toContain("Go");
   });
 
+  it("should drop memories that conflict with the canonical work modes", async () => {
+    mockDbRows.push({
+      id: "m-remote-conflict",
+      profile_id: TEST_PROFILE_ID,
+      category: "work_preference",
+      content: "Prefers remote jobs based in America",
+      status: "active",
+      walrus_status: "stored",
+      walrus_blob_id: "blob-remote-conflict",
+    });
+
+    const recall = await service.getDurableContext(
+      TEST_PROFILE_ID,
+      3,
+      "Which work mode?",
+      { workModes: ["onsite"] },
+    );
+
+    expect(recall.source).toBe("none");
+    expect(recall.memories).toHaveLength(0);
+    expect(recall.context).toBe("");
+  });
+
+  it("should keep memories compatible with the canonical work modes", async () => {
+    mockDbRows.push({
+      id: "m-remote-ok",
+      profile_id: TEST_PROFILE_ID,
+      category: "work_preference",
+      content: "Prefers remote jobs",
+      status: "active",
+      walrus_status: "stored",
+      walrus_blob_id: "blob-remote-ok",
+    });
+
+    const recall = await service.getDurableContext(
+      TEST_PROFILE_ID,
+      3,
+      "Which work mode?",
+      { workModes: ["remote"] },
+    );
+
+    expect(recall.source).toBe("cache");
+    expect(recall.memories).toHaveLength(1);
+  });
+
   describe("Zombie Memory Elimination & Lifecycle Authority", () => {
     it("should normalize memory content by stripping candidate prefixes and punctuation", () => {
       const norm1 = normalizeMemoryContent("Candidate [WORK_PREFERENCE]: 100% Remote Only!");

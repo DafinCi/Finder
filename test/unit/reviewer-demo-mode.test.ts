@@ -222,6 +222,7 @@ describe("Reviewer Demo / Amnesia Mode Simulation", () => {
         sampleUser.id,
         5,
         "What are my career preferences?",
+        undefined,
       );
 
       // Verify simulation_mode event is NOT emitted

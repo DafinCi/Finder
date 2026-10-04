@@ -17,6 +17,7 @@ import {
 import { memwalClient, MemWalClient } from "@/lib/walrus/memwal-client";
 import type { RecallMemory } from "@mysten-incubation/memwal";
 import { emitAiEvent } from "@/lib/observability/ai-events";
+import { detectMemoryWorkModeConflict } from "../utils/memory-conflict";
 
 /**
  * Normalizes memory text for comparison by removing category prefixes, punctuation, and extra whitespace.
@@ -44,6 +45,14 @@ export interface DurableMemoryRecall {
   source: MemoryRecallSource;
   memories: DurableMemoryItem[];
   context: string;
+}
+
+export interface MemoryRecallFilter {
+  /**
+   * Canonical work modes from the current career profile. Memories that
+   * contradict them are dropped from the prompt context.
+   */
+  workModes?: string[] | null;
 }
 
 /**
@@ -308,11 +317,34 @@ export class CareerMemoryService {
     profileId: string,
     limit: number = 5,
     query?: string,
+    filter?: MemoryRecallFilter,
   ): Promise<DurableMemoryRecall> {
     // 1. If query is provided, attempt active semantic recall from Walrus Memory (MemWal)
     if (query && query.trim().length > 0) {
       try {
-        const recalled = await this.recallActiveFromWalrus(profileId, query, limit);
+        let recalled = await this.recallActiveFromWalrus(
+          profileId,
+          query,
+          limit,
+        );
+
+        if (filter?.workModes?.length) {
+          recalled = recalled.filter((item) => {
+            const parsed = parseMemoryText(item.text);
+            const category = parsed.category ?? "";
+            if (
+              category !== "work_preference" &&
+              category !== "constraint_avoid"
+            ) {
+              return true;
+            }
+            return !detectMemoryWorkModeConflict(
+              parsed.content,
+              filter.workModes,
+            );
+          });
+        }
+
         if (recalled.length > 0) {
           const lines = recalled.map((m) => `- ${m.text}`);
           return {
@@ -341,7 +373,20 @@ ${lines.join("\n")}
     }
 
     // 2. Fallback to active memories from database cache
-    const memories = await this.repository.getActiveMemories(profileId, limit);
+    let memories = await this.repository.getActiveMemories(profileId, limit);
+
+    if (filter?.workModes?.length) {
+      memories = memories.filter((memory) => {
+        if (
+          memory.category !== "work_preference" &&
+          memory.category !== "constraint_avoid"
+        ) {
+          return true;
+        }
+        return !detectMemoryWorkModeConflict(memory.content, filter.workModes);
+      });
+    }
+
     if (memories.length === 0) {
       return { source: "none", memories: [], context: "" };
     }
