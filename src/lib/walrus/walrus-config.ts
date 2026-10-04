@@ -11,8 +11,9 @@ export interface WalrusNetworkConfig {
 
 export const WALRUS_MAINNET_CONFIG: WalrusNetworkConfig = {
   network: "mainnet",
-  publisherUrl:
-    process.env.WALRUS_PUBLISHER_URL || "https://publisher.walrus.space",
+  // There is no public unauthenticated Mainnet publisher. Mainnet writes
+  // therefore require an explicit publisher or relay URL from the operator.
+  publisherUrl: process.env.WALRUS_PUBLISHER_URL || "",
   aggregatorUrl:
     process.env.NEXT_PUBLIC_WALRUS_AGGREGATOR_URL ||
     "https://aggregator.walrus-mainnet.walrus.space",
@@ -45,3 +46,11 @@ const targetNetwork = (process.env.NEXT_PUBLIC_WALRUS_NETWORK || "mainnet").toLo
 
 export const WALRUS_CONFIG: WalrusNetworkConfig =
   targetNetwork === "testnet" ? WALRUS_TESTNET_CONFIG : WALRUS_MAINNET_CONFIG;
+
+/**
+ * True only when a publisher URL is configured for the active network.
+ * Mainnet has no default because no public publisher exists.
+ */
+export function isWalrusWriteConfigured(): boolean {
+  return Boolean(WALRUS_CONFIG.publisherUrl);
+}

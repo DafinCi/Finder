@@ -179,7 +179,7 @@ export default function ProfileOverviewView() {
                 className="min-h-[44px] h-11 px-3.5 rounded-sm border border-border/70 bg-secondary/50 hover:bg-secondary text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-2 whitespace-nowrap transition-colors"
               >
                 <FileText className="w-3.5 h-3.5 text-muted-foreground" />
-                <span>Resume & Walrus</span>
+                <span>Resume</span>
               </a>
               <a
                 href="#section-skills"

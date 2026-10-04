@@ -188,7 +188,7 @@ export async function POST(req: NextRequest) {
         storage_path: storagePath,
         raw_text: null,
         status: "uploaded",
-        walrus_status: "pending",
+        walrus_status: null,
       })
       .select("id")
       .single();
@@ -277,10 +277,8 @@ export async function POST(req: NextRequest) {
 
     await safeAdvanceProcessingStage(resumeRecord.id, userId, "stored");
 
-    // Walrus sync intentionally does NOT run here. Per Walrus policy, blobs are
-    // public and deletion is limited, so non-resume content must never reach
-    // Walrus. Sync happens in /api/analyze only after document classification
-    // confirms the file is a resume.
+    // Resumes are never published to Walrus: blobs are public by default and
+    // deletion is not guaranteed, so the document stays private in storage.
 
     const sessionId = formData.get("sessionId") as string | null;
     const prompt = (formData.get("prompt") as string | null) || "";

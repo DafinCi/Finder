@@ -3,9 +3,13 @@
 // Module: @/features/walrus/services/career-snapshot.service
 //
 // Purpose:
-// Packages the user's confirmed career profile, verified skills, and background
-// into a standardized sovereign Career Passport document and permanently anchors
-// it to the decentralized Walrus network (epochs=50 on Testnet).
+// Builds a minimized public profile subset and publishes it to Walrus when the
+// user explicitly asks for it.
+//
+// Privacy rules:
+// - No identifiers (user id, wallet address, contact details).
+// - No education, employer names, salary, location, or negative preferences.
+// - Only skills, target roles, employment types, and career level.
 // ==============================================================================
 
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -15,23 +19,11 @@ import { careerProfileService } from "@/features/profile/services/career-profile
 export interface CareerPassportSnapshot {
   schema: "finder-career-passport/v1";
   exported_at: string;
-  user_id: string;
   profile_version: number;
-  sui_address: string | null;
-  career_intent: unknown;
-  preferences: unknown;
-  constraints: unknown;
-  skills: {
-    skill: string;
-    category: string;
-    confirmation_state: string;
-  }[];
-  background: {
-    education: unknown[];
-    experience: unknown[];
-    projects: unknown[];
-  };
-  resume_walrus_blob_id: string | null;
+  career_level: string | null;
+  target_roles: Array<{ role: string; priority: string }>;
+  employment_types: string[];
+  skills: Array<{ skill: string; category: string }>;
 }
 
 export interface PublishSnapshotResult {
@@ -42,69 +34,50 @@ export interface PublishSnapshotResult {
   snapshot: CareerPassportSnapshot;
 }
 
+/**
+ * Builds the public subset of a profile. Exported so the UI can preview exactly
+ * what would be published before the user confirms.
+ */
+export function buildPublicSnapshot(
+  profile: Awaited<ReturnType<typeof careerProfileService.getProfile>>,
+): CareerPassportSnapshot {
+  if (!profile) {
+    throw new Error("No career profile found for this user.");
+  }
+
+  return {
+    schema: "finder-career-passport/v1",
+    exported_at: new Date().toISOString(),
+    profile_version: profile.profileVersion,
+    career_level: profile.careerIntent?.target_level ?? null,
+    target_roles: (profile.careerIntent?.target_roles || []).map((role) => ({
+      role: role.role,
+      priority: role.priority,
+    })),
+    employment_types: profile.careerIntent?.employment_types || [],
+    skills: (profile.capabilities?.skills || []).map((item) => ({
+      skill: item.skill,
+      category: item.category,
+    })),
+  };
+}
+
 export class CareerSnapshotService {
   /**
-   * Generates and publishes the canonical Career Passport to Walrus.
+   * Publishes the minimized public passport to Walrus. The route enforces the
+   * user's explicit confirmation before this runs.
    */
   async generateAndPublish(userId: string): Promise<PublishSnapshotResult> {
     const profile = await careerProfileService.getProfile(userId);
-    if (!profile) {
-      throw new Error("No career profile found for this user.");
-    }
+    const snapshot = buildPublicSnapshot(profile);
 
-    // 1. Fetch user Sui address from public.profiles
-    const { data: profileRow } = await supabaseAdmin
-      .from("profiles")
-      .select("sui_address")
-      .eq("id", userId)
-      .maybeSingle();
+    const buffer = Buffer.from(JSON.stringify(snapshot, null, 2), "utf-8");
 
-    // 2. Fetch active resume Walrus blob ID if available
-    let resumeBlobId: string | null = null;
-    if (profile.resumeId) {
-      const { data: resumeRow } = await supabaseAdmin
-        .from("resumes")
-        .select("walrus_blob_id")
-        .eq("id", profile.resumeId)
-        .maybeSingle();
-      resumeBlobId = resumeRow?.walrus_blob_id || null;
-    }
-
-    // 3. Package clean, portable Career Passport snapshot
-    const skills = (profile.capabilities?.skills || []).map((s) => ({
-      skill: s.skill,
-      category: s.category,
-      confirmation_state: s.confirmation_state,
-    }));
-
-    const snapshot: CareerPassportSnapshot = {
-      schema: "finder-career-passport/v1",
-      exported_at: new Date().toISOString(),
-      user_id: userId,
-      profile_version: profile.profileVersion,
-      sui_address: profileRow?.sui_address || null,
-      career_intent: profile.careerIntent || null,
-      preferences: profile.preferences || null,
-      constraints: profile.constraints || null,
-      skills,
-      background: {
-        education: profile.background?.education || [],
-        experience: profile.background?.experience || [],
-        projects: profile.background?.projects || [],
-      },
-      resume_walrus_blob_id: resumeBlobId,
-    };
-
-    const jsonString = JSON.stringify(snapshot, null, 2);
-    const buffer = Buffer.from(jsonString, "utf-8");
-
-    // 4. Store on Walrus Testnet (epochs=50 for ~50 days lifetime)
     const walrusResult = await walrusClient.storeBlob(buffer, {
       epochs: 50,
       deletable: true,
     });
 
-    // 5. Update user metadata with snapshot reference
     await supabaseAdmin.auth.admin.updateUserById(userId, {
       user_metadata: {
         career_snapshot_blob_id: walrusResult.blobId,

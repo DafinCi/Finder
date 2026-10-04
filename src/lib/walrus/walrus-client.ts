@@ -60,6 +60,13 @@ export class WalrusClient {
       );
     }
 
+    if (!this.publisherUrl) {
+      throw new WalrusClientError(
+        "Walrus publisher is not configured for this network. No blob was written.",
+        503,
+      );
+    }
+
     const controller = new AbortController();
     const timeout = setTimeout(
       () => controller.abort(),

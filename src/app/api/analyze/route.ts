@@ -6,7 +6,6 @@ import { normalizeGroqError } from "@/lib/groq/client";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { classifyDocument } from "@/lib/groq/document-classifier";
 import { resumeProcessingService } from "@/features/ai-analysis/services/resume-processing.service";
-import { walrusClient } from "@/lib/walrus/walrus-client";
 import type {
   ResumeProcessingPatch,
   ResumeProcessingStage,
@@ -65,49 +64,6 @@ async function deleteResumeContent(
   }
 
   return deletedAt;
-}
-
-async function syncResumeToWalrus(
-  resumeId: string,
-  userId: string,
-  storagePath: string | null | undefined,
-) {
-  if (!storagePath || !supabaseAdmin.storage) return;
-
-  try {
-    const { data: fileData, error } = await supabaseAdmin.storage
-      .from("resumes")
-      .download(storagePath);
-    if (error || !fileData) {
-      throw error || new Error("Resume file not found in storage.");
-    }
-
-    const buffer = Buffer.from(await fileData.arrayBuffer());
-    const walrusResult = await walrusClient.storeBlob(buffer, {
-      epochs: 50,
-      deletable: true,
-    });
-
-    await supabaseAdmin
-      .from("resumes")
-      .update({
-        walrus_blob_id: walrusResult.blobId,
-        walrus_status: "stored",
-      })
-      .eq("id", resumeId)
-      .eq("profile_id", userId);
-  } catch (walrusErr) {
-    console.warn(`[WALRUS] Resume ${resumeId} sync failed:`, walrusErr);
-    try {
-      await supabaseAdmin
-        .from("resumes")
-        .update({ walrus_status: "failed" })
-        .eq("id", resumeId)
-        .eq("profile_id", userId);
-    } catch (updateErr) {
-      console.error("[WALRUS] Failed to mark resume sync failure:", updateErr);
-    }
-  }
 }
 
 export async function POST(req: NextRequest) {
@@ -318,9 +274,6 @@ export async function POST(req: NextRequest) {
         decision: "overridden",
         overriddenByUser: true,
       });
-    } else if (isConfidentResume) {
-      // Walrus policy: publish only confirmed resumes, never non-resume content.
-      void syncResumeToWalrus(resumeId, user.id, resumeRecord.storage_path);
     }
 
     // 2. Delegate execution to domain orchestrator service.
