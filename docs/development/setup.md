@@ -53,7 +53,7 @@ SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 # Groq AI Configuration (Active models: https://console.groq.com/docs/models)
 GROQ_API_KEY=gsk_your_actual_groq_api_key
-GROQ_MODEL=openai/gpt-oss-120b
+GROQ_MODEL=qwen/qwen3.8-27b
 GROQ_FALLBACK_MODEL=openai/gpt-oss-20b
 GROQ_MAX_TOKENS=2500
 
@@ -61,7 +61,7 @@ GROQ_MAX_TOKENS=2500
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
 # Sui Web3 Configuration
-NEXT_PUBLIC_SUI_NETWORK=testnet
+NEXT_PUBLIC_SUI_NETWORK=mainnet
 
 # Cron Sync Secret (optional in development; allows bypass when unset)
 CRON_SECRET=dev_secret_12345
@@ -75,7 +75,8 @@ CRON_SECRET=dev_secret_12345
    - Navigate to the **SQL Editor**.
 2. Run the consolidated schema script:
    - Copy the entire contents of [`src/database/schema_v2.sql`](../../src/database/schema_v2.sql) and execute it.
-   - This script creates all tables, indexes, constraints, RLS policies, and seed companies/jobs.
+   - This script creates all tables, indexes, constraints, and RLS policies.
+   - Optional, for local demos only: run [`src/database/seed-demo.sql`](../../src/database/seed-demo.sql) to add clearly marked sample companies and jobs. Skip this on production.
 3. Run the Auth Trigger script:
    - Copy the contents of [`src/database/triggerAuth.sql`](../../src/database/triggerAuth.sql) and execute it.
    - This ensures the `on_auth_user_created` trigger automatically provisions profiles for new users.
@@ -130,4 +131,4 @@ _(In development mode, requests succeed even without the `CRON_SECRET` header)._
 ### 4. Sui Wallet Connection Fails or Rejected
 
 - **Cause**: Wallet extension set to a different network than configured in `.env.local`.
-- **Solution**: Ensure your browser wallet (e.g., Sui Wallet) is switched to **Testnet**, matching `NEXT_PUBLIC_SUI_NETWORK=testnet`.
+- **Solution**: Ensure your browser wallet (e.g., Sui Wallet) is switched to the network in `NEXT_PUBLIC_SUI_NETWORK` (mainnet by default), and that the value matches the deployment.

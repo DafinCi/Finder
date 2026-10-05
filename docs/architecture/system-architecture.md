@@ -25,7 +25,7 @@ flowchart TD
 
     subgraph ExternalServices ["External Cloud Services"]
         Supabase["Supabase Cloud<br>(PostgreSQL 15+, Auth, RLS, Storage Bucket)"]
-        Groq["Groq Cloud API<br>(openai/gpt-oss-120b / openai/gpt-oss-20b)"]
+        Groq["Groq Cloud API<br>(qwen/qwen3.8-27b / openai/gpt-oss-20b)"]
         Remotive["Remotive Jobs API<br>(Remote Tech Jobs Feed)"]
         SuiNetwork["Sui Network<br>(Testnet / Mainnet Cryptographic Verification)"]
     end
@@ -101,7 +101,7 @@ flowchart TD
 ### 6. AI & LLM Acceleration Layer (Groq)
 
 - **Provider**: Groq Cloud API using `groq-sdk`.
-- **Primary Model**: `openai/gpt-oss-120b` (configurable via `GROQ_MODEL`).
+- **Primary Model**: `qwen/qwen3.8-27b` (configurable via `GROQ_MODEL`).
 - **Fallback Model**: `openai/gpt-oss-20b` (configurable via `GROQ_FALLBACK_MODEL`).
 - **Active Model Reference**: For the list of supported and active Groq models, refer to [Groq Supported Models](https://console.groq.com/docs/models).
 - **Resilience Engine** (`src/lib/groq/client.ts`): Automatically catches HTTP 429 (rate limit) and HTTP 503 (service unavailable) errors, transparently executing fallback to the secondary model with structured telemetry logging.

@@ -1103,7 +1103,7 @@ Finder treats the AI agent with the approachable familiarity of a friend on What
 
 ### 2. Right-Hand Agent Info Drawer
 - Clicking the contact header opens a right slide-in drawer (`AgentInfoDrawer`).
-- Displays generous 72px `BotAvatar`, inline nickname editor with instant persistence to `localStorage` (`finder_agent_nickname`), and technical LLM runtime card (`openai/gpt-oss-120b` via Groq Cloud).
+- Displays generous 72px `BotAvatar`, inline nickname editor with instant persistence to `localStorage` (`finder_agent_nickname`), and technical LLM runtime card (`qwen/qwen3.8-27b` via Groq Cloud).
 - Clean scope boundaries:
   - Do not implement custom avatar photo upload (keep lightweight deterministic SVG).
   - Do not implement tone/personality selector dials.

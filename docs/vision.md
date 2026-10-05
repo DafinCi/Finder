@@ -42,7 +42,7 @@ Careers are nuanced and dynamic. Rather than rigid form wizards, Finder provides
 
 ### III. Extreme AI Resilience & Predictability
 
-Production AI applications must not fail abruptly when LLM providers experience rate limits (HTTP 429) or service degradation (HTTP 503). Finder pairs active Groq models (`openai/gpt-oss-120b` and fallback `openai/gpt-oss-20b`) with deterministic algorithmic fallbacks (`55 + overlapRatio * 35`) to ensure candidates never encounter broken states.
+Production AI applications must not fail abruptly when LLM providers experience rate limits (HTTP 429) or service degradation (HTTP 503). Finder pairs active Groq models (`qwen/qwen3.8-27b` and fallback `openai/gpt-oss-20b`) with deterministic algorithmic fallbacks (`55 + overlapRatio * 35`) to ensure candidates never encounter broken states.
 
 ### IV. Dual Identity & Web3 Sovereignty
 
