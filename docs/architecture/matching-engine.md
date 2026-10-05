@@ -41,7 +41,7 @@ flowchart TD
 ### Stage 1: Candidate Profile Extraction
 
 - **Service**: `src/lib/groq/profile-extractor.ts`
-- **Model**: `openai/gpt-oss-120b` (or `GROQ_MODEL`, fallback `openai/gpt-oss-20b`). See [Groq Supported Models](https://console.groq.com/docs/models) for active models.
+- **Model**: `qwen/qwen3.8-27b` (or `GROQ_MODEL`, fallback `openai/gpt-oss-20b`). See [Groq Supported Models](https://console.groq.com/docs/models) for active models.
 - **Prompt Version**: `2.1.0` (`src/lib/groq/prompts/profile-extractor.prompt.ts`)
 - **Process**:
   1. The raw text extracted from the PDF (up to 15,000 characters) is passed to the LLM with a strict system prompt instructing structured extraction.

@@ -142,7 +142,7 @@ Stores metadata and parsed text for uploaded resume documents.
 Stores structured candidate intelligence extracted by Groq LLM.
 - `id` (UUID, PK): Default `uuid_generate_v4()`.
 - `resume_id` (UUID, FK): References `public.resumes(id)` ON DELETE CASCADE.
-- `model_version` (TEXT): Name of LLM model used (e.g., `openai/gpt-oss-120b`).
+- `model_version` (TEXT): Name of LLM model used (e.g., `qwen/qwen3.8-27b`).
 - `prompt_version` (TEXT): Prompt template version (e.g., `2.1.0`).
 - `candidate_data` (JSONB, NOT NULL): Structured JSON profile containing candidate summary, experience array, education array, and strengths.
 - `extracted_skills` (TEXT[]): Normalized array of candidate skill strings.
