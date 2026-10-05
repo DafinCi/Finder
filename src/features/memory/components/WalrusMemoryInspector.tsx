@@ -39,14 +39,18 @@ export default function WalrusMemoryInspector() {
   const [isLoading, setIsLoading] = useState(true);
   const [isCopied, setIsCopied] = useState(false);
 
-  const fetchMemories = useCallback(async () => {
+  const loadMemories = useCallback(async () => {
+    const res = await fetch("/api/memory");
+    if (!res.ok) {
+      throw new Error("Failed to fetch memories");
+    }
+    return await res.json();
+  }, []);
+
+  const fetchMemories = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/memory");
-      if (!res.ok) {
-        throw new Error("Failed to fetch memories");
-      }
-      const data = await res.json();
+      const data = await loadMemories();
       setMemories(data.memories || []);
       if (data.walrus) {
         setWalrusMeta(data.walrus);
@@ -57,11 +61,31 @@ export default function WalrusMemoryInspector() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
-    fetchMemories();
-  }, [fetchMemories]);
+    let cancelled = false;
+    loadMemories()
+      .then((data) => {
+        if (cancelled) return;
+        setMemories(data.memories || []);
+        if (data.walrus) {
+          setWalrusMeta(data.walrus);
+        }
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          console.error("[WalrusMemoryInspector] Error:", err);
+          toast.error("Could not load Walrus memory list");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [loadMemories]);
 
   const handleCopyAgentId = () => {
     if (!walrusMeta?.agentId) return;
@@ -270,7 +294,7 @@ export default function WalrusMemoryInspector() {
                 className="w-full text-left p-2 rounded-sm bg-card hover:bg-card/80 border border-border/80 text-[11px] text-foreground flex items-center justify-between gap-2 transition-colors cursor-pointer group min-h-[36px]"
                 title="Click to copy benchmark prompt"
               >
-                <span className="truncate">"{promptText}"</span>
+                <span className="truncate">&quot;{promptText}&quot;</span>
                 <Copy className="w-3 h-3 text-muted-foreground group-hover:text-primary shrink-0" />
               </button>
             ))}

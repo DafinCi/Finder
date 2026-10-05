@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import {
   User,
@@ -62,31 +62,46 @@ export const SETTINGS_TABS: TabConfig[] = [
   },
 ];
 
+const TAB_PARAM_EVENT = "finder:settings-tab-changed";
+
+function subscribeToTabParam(onStoreChange: () => void) {
+  window.addEventListener("popstate", onStoreChange);
+  window.addEventListener(TAB_PARAM_EVENT, onStoreChange);
+  return () => {
+    window.removeEventListener("popstate", onStoreChange);
+    window.removeEventListener(TAB_PARAM_EVENT, onStoreChange);
+  };
+}
+
+function readTabFromUrl(): SettingsTab {
+  const paramTab = new URLSearchParams(window.location.search).get(
+    "tab",
+  ) as SettingsTab | null;
+  return paramTab && SETTINGS_TABS.some((tab) => tab.id === paramTab)
+    ? paramTab
+    : "account";
+}
+
 export default function SettingsPage() {
   const { user, loading: loadingAuth, handleLogout } = useAuth();
   const { profile, primaryRole } = useCareerProfile();
 
-  const [activeTab, setActiveTab] = useState<SettingsTab>("account");
   const [copiedId, setCopiedId] = useState(false);
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const paramTab = new URLSearchParams(window.location.search).get(
-        "tab",
-      ) as SettingsTab;
-      if (paramTab && SETTINGS_TABS.some((tab) => tab.id === paramTab)) {
-        setActiveTab(paramTab);
-      }
-    }
-  }, []);
+  // The URL is the source of truth for the active tab, which keeps deep links
+  // working without a mount effect and avoids a hydration mismatch.
+  const activeTab = useSyncExternalStore(
+    subscribeToTabParam,
+    readTabFromUrl,
+    () => "account",
+  );
 
   const handleSelectTab = (tab: SettingsTab) => {
-    setActiveTab(tab);
-    if (typeof window !== "undefined") {
-      const url = new URL(window.location.href);
-      url.searchParams.set("tab", tab);
-      window.history.replaceState(null, "", url.toString());
-    }
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", tab);
+    window.history.replaceState(null, "", url.toString());
+    window.dispatchEvent(new Event(TAB_PARAM_EVENT));
   };
 
   const userName =

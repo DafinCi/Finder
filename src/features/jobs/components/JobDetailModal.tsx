@@ -43,21 +43,22 @@ export default function JobDetailModal({
   onAskAboutJob,
 }: JobDetailModalProps) {
   const [detail, setDetail] = useState<JobDetail | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(Boolean(jobId));
   const [notFound, setNotFound] = useState(false);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
 
+  const [prevJobId, setPrevJobId] = useState(jobId);
+  if (jobId !== prevJobId) {
+    setPrevJobId(jobId);
+    setDetail(null);
+    setNotFound(false);
+    setIsLoading(Boolean(jobId));
+  }
+
   useEffect(() => {
-    if (!jobId) {
-      setDetail(null);
-      setNotFound(false);
-      return;
-    }
+    if (!jobId) return;
 
     let cancelled = false;
-    setIsLoading(true);
-    setNotFound(false);
-    setDetail(null);
 
     jobsApi
       .getJobDetail(jobId)

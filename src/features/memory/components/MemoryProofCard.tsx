@@ -27,12 +27,16 @@ export function MemoryProofCard() {
   const [isLoading, setIsLoading] = useState(true);
   const [isCopied, setIsCopied] = useState(false);
 
-  const fetchProof = useCallback(async () => {
+  const loadProof = useCallback(async () => {
+    const res = await fetch("/api/memory");
+    if (!res.ok) throw new Error("Failed to load memory proof.");
+    return await res.json();
+  }, []);
+
+  const fetchProof = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/memory");
-      if (!res.ok) throw new Error("Failed to load memory proof.");
-      const data = await res.json();
+      const data = await loadProof();
       setStats(data.stats || null);
       setWalrusMeta(data.walrus || null);
     } catch (err) {
@@ -40,11 +44,28 @@ export function MemoryProofCard() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
-    void fetchProof();
-  }, [fetchProof]);
+    let cancelled = false;
+    loadProof()
+      .then((data) => {
+        if (cancelled) return;
+        setStats(data.stats || null);
+        setWalrusMeta(data.walrus || null);
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          toast.error((err as Error).message || "Could not load memory proof.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [loadProof]);
 
   const handleCopy = () => {
     const lines = [

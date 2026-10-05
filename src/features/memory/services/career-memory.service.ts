@@ -14,7 +14,7 @@ import {
   MemoryCategory,
   MemoryConfidence,
 } from "../types/memory.types";
-import { memwalClient, MemWalClient } from "@/lib/walrus/memwal-client";
+import { getMemwalClient, MemWalClient } from "@/lib/walrus/memwal-client";
 import type { RecallMemory } from "@mysten-incubation/memwal";
 import { emitAiEvent } from "@/lib/observability/ai-events";
 import { detectMemoryWorkModeConflict } from "../utils/memory-conflict";
@@ -123,7 +123,7 @@ export function isRecalledMemoryZombie(
 
 export class CareerMemoryService {
   private readonly repository: CareerMemoryRepository;
-  private readonly memwal: MemWalClient;
+  private readonly injectedMemwal?: MemWalClient;
 
   constructor(
     repository: CareerMemoryRepository = careerMemoryRepository,
@@ -132,12 +132,18 @@ export class CareerMemoryService {
   ) {
     this.repository = repository;
     if (memwalArg) {
-      this.memwal = memwalArg;
+      this.injectedMemwal = memwalArg;
     } else if (memwalOrWalrus && typeof memwalOrWalrus.rememberAndWait === "function") {
-      this.memwal = memwalOrWalrus;
-    } else {
-      this.memwal = memwalClient;
+      this.injectedMemwal = memwalOrWalrus;
     }
+  }
+
+  /**
+   * Resolved on first access so importing this service never requires MemWal
+   * credentials, which keeps `next build` independent from runtime secrets.
+   */
+  private get memwal(): MemWalClient {
+    return this.injectedMemwal ?? getMemwalClient();
   }
 
   /**

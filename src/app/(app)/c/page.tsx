@@ -21,24 +21,21 @@ function AppChatHomeContent() {
   const { isAmnesiaMode } = useAgent();
   const [isLoading, setIsLoading] = useState(false);
   const [statusText, setStatusText] = useState("");
-  const [activeJobContext, setActiveJobContext] = useState<{
+  const [jobContextDetail, setJobContextDetail] = useState<{
     id: string;
     title: string;
     companyName: string;
   } | null>(null);
 
   useEffect(() => {
-    if (!paramJobId) {
-      setActiveJobContext(null);
-      return;
-    }
+    if (!paramJobId) return;
 
     let cancelled = false;
     jobsApi
       .getJobDetail(paramJobId)
       .then((detail) => {
         if (!cancelled && detail) {
-          setActiveJobContext({
+          setJobContextDetail({
             id: detail.id,
             title: detail.title,
             companyName: detail.company_name,
@@ -53,6 +50,12 @@ function AppChatHomeContent() {
       cancelled = true;
     };
   }, [paramJobId]);
+
+  // Derived so a missing or changed param never leaves a stale job context.
+  const activeJobContext =
+    paramJobId && jobContextDetail?.id === paramJobId
+      ? jobContextDetail
+      : null;
 
   const handleSubmit = async (prompt: string, file?: File | null) => {
     try {
@@ -168,7 +171,7 @@ function AppChatHomeContent() {
             <button
               type="button"
               onClick={() => {
-                setActiveJobContext(null);
+                setJobContextDetail(null);
                 router.replace("/c");
               }}
               className="text-muted-foreground hover:text-foreground ml-1 cursor-pointer"

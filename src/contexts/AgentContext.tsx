@@ -58,6 +58,8 @@ export function AgentProvider({ children }: { children: ReactNode }) {
       if (savedSessions) {
         const parsed = JSON.parse(savedSessions);
         if (parsed && typeof parsed === "object") {
+          // Browser-only storage: syncing after mount keeps SSR markup stable.
+          // eslint-disable-next-line react-hooks/set-state-in-effect
           setSessionNicknames(parsed);
         }
       }

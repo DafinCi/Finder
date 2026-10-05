@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Brain,
   ExternalLink,
@@ -32,15 +32,19 @@ export function MemoryManagementCard() {
   );
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  const loadMemories = useCallback(async (): Promise<CareerMemory[]> => {
+    const res = await fetch("/api/memory");
+    if (!res.ok) {
+      throw new Error("Failed to load career memories.");
+    }
+    const data = await res.json();
+    return (data.memories || []) as CareerMemory[];
+  }, []);
+
   const fetchMemories = async () => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      const res = await fetch("/api/memory");
-      if (!res.ok) {
-        throw new Error("Failed to load career memories.");
-      }
-      const data = await res.json();
-      setMemories(data.memories || []);
+      setMemories(await loadMemories());
     } catch (err) {
       toast.error((err as Error).message || "Could not load memories.");
     } finally {
@@ -49,8 +53,23 @@ export function MemoryManagementCard() {
   };
 
   useEffect(() => {
-    void fetchMemories();
-  }, []);
+    let cancelled = false;
+    loadMemories()
+      .then((items) => {
+        if (!cancelled) setMemories(items);
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          toast.error((err as Error).message || "Could not load memories.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [loadMemories]);
 
   const handleForget = async (id: string) => {
     try {

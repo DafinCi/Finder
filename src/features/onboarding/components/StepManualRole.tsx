@@ -48,11 +48,11 @@ export function StepManualRole({
 
   const [roleInput, setRoleInput] = useState(primaryRole);
 
-  useEffect(() => {
-    if (primaryRole && primaryRole !== roleInput) {
-      setRoleInput(primaryRole);
-    }
-  }, [primaryRole]);
+  const [prevPrimaryRole, setPrevPrimaryRole] = useState(primaryRole);
+  if (primaryRole && primaryRole !== prevPrimaryRole) {
+    setPrevPrimaryRole(primaryRole);
+    setRoleInput(primaryRole);
+  }
 
   const handleRoleSelect = (role: string) => {
     setRoleInput(role);

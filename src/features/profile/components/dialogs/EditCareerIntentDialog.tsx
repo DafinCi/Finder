@@ -44,8 +44,11 @@ export function EditCareerIntentDialog({
   const modalRef = useRef<HTMLDivElement | null>(null);
   const triggerElementRef = useRef<HTMLElement | null>(null);
 
-  // Sync state when dialog opens or careerIntent changes
-  useEffect(() => {
+  // Sync state on open. Keyed on the prop identity so a re-render with the same
+  // profile does not clobber in-progress edits.
+  const [syncState, setSyncState] = useState({ isOpen, careerIntent });
+  if (isOpen !== syncState.isOpen || careerIntent !== syncState.careerIntent) {
+    setSyncState({ isOpen, careerIntent });
     if (isOpen) {
       const primary =
         careerIntent?.target_roles.find((r) => r.priority === "primary")
@@ -66,7 +69,7 @@ export function EditCareerIntentDialog({
       );
       setCustomRoleInput("");
     }
-  }, [isOpen, careerIntent]);
+  }
 
   // Focus trap, autofocus, and ESC key
   useEffect(() => {

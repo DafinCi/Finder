@@ -37,12 +37,13 @@ export default function AgentInfoDrawer({
 
   // Resilient tab state: syncs with AgentContext, with local state fallback to prevent HMR desync
   const [localTab, setLocalTab] = useState<DrawerTabType>("info");
-
-  useEffect(() => {
+  const [prevDrawerTab, setPrevDrawerTab] = useState(agentCtx.drawerTab);
+  if (agentCtx.drawerTab !== prevDrawerTab) {
+    setPrevDrawerTab(agentCtx.drawerTab);
     if (agentCtx.drawerTab) {
       setLocalTab(agentCtx.drawerTab);
     }
-  }, [agentCtx.drawerTab]);
+  }
 
   const activeTab = agentCtx.drawerTab || localTab;
 
@@ -54,15 +55,24 @@ export default function AgentInfoDrawer({
   };
 
   // Synchronize local input whenever currentAgentName changes
-  useEffect(() => {
+  const [prevAgentName, setPrevAgentName] = useState(currentAgentName);
+  if (currentAgentName !== prevAgentName) {
+    setPrevAgentName(currentAgentName);
     setNameInput(currentAgentName);
-  }, [currentAgentName]);
+  }
+
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
+    if (isOpen) {
+      setIsStatusLoading(true);
+    }
+  }
 
   useEffect(() => {
     if (!isOpen) return;
 
     let cancelled = false;
-    setIsStatusLoading(true);
 
     fetch("/api/agent/status")
       .then((res) => res.json())

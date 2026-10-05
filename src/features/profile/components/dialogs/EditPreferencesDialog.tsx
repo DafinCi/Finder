@@ -68,8 +68,15 @@ export function EditPreferencesDialog({
   const modalRef = useRef<HTMLDivElement | null>(null);
   const triggerElementRef = useRef<HTMLElement | null>(null);
 
-  // Sync state on open
-  useEffect(() => {
+  // Sync state on open. Keyed on the prop identity so a re-render with the same
+  // profile does not clobber in-progress edits.
+  const [syncState, setSyncState] = useState({ isOpen, preferences, constraints });
+  if (
+    isOpen !== syncState.isOpen ||
+    preferences !== syncState.preferences ||
+    constraints !== syncState.constraints
+  ) {
+    setSyncState({ isOpen, preferences, constraints });
     if (isOpen) {
       setWorkModes(
         preferences?.work_modes && preferences.work_modes.length > 0
@@ -101,7 +108,7 @@ export function EditPreferencesDialog({
       setNewLocationInput("");
       setCustomNegativeToken("");
     }
-  }, [isOpen, preferences, constraints]);
+  }
 
   // Focus trap, autofocus, and ESC key
   useEffect(() => {

@@ -77,20 +77,16 @@ export default function JobsView() {
 
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [directJob, setDirectJob] = useState<FormattedJobMatch | null>(null);
-  const consumedJobParamRef = useRef<string | null>(null);
+  const [consumedJobParam, setConsumedJobParam] = useState<string | null>(null);
+
+  if (paramJobId && paramJobId !== consumedJobParam) {
+    setConsumedJobParam(paramJobId);
+    setSelectedJobId(paramJobId);
+  }
 
   useEffect(() => {
-    if (paramJobId && consumedJobParamRef.current !== paramJobId) {
-      consumedJobParamRef.current = paramJobId;
-      setSelectedJobId(paramJobId);
-    }
-  }, [paramJobId]);
+    if (!selectedJobId) return;
 
-  useEffect(() => {
-    if (!selectedJobId) {
-      setDirectJob(null);
-      return;
-    }
     const foundInPool = allMatches.find((j) => j.jobId === selectedJobId);
     if (foundInPool) {
       return;
@@ -274,7 +270,7 @@ export default function JobsView() {
     drawerViewStartTime.current = null;
     setSelectedJobId(null);
     if (paramJobId) {
-      consumedJobParamRef.current = paramJobId;
+      setConsumedJobParam(paramJobId);
       router.replace("/jobs");
     }
     requestAnimationFrame(() => {

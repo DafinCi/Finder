@@ -56,35 +56,43 @@ export function useChat(sessionId?: string) {
     { enabled: Boolean(session?.resume_id) },
   );
 
-  useEffect(() => {
-    if (!session?.resume_id || !resumeProcessing) return;
+  // Sync the review card from polling status. Keyed on a primitive so repeated
+  // polls with the same stage do not re-run this adjustment.
+  const reviewSyncKey =
+    session?.resume_id && resumeProcessing
+      ? `${session.resume_id}:${resumeProcessing.stage}`
+      : null;
+  const [prevReviewSyncKey, setPrevReviewSyncKey] = useState<string | null>(
+    null,
+  );
 
-    if (resumeProcessing.stage === "needs_review") {
-      setResumeReview({
-        resumeId: session.resume_id,
-        fileName: session.title,
-        classification: resumeProcessing.documentType
-          ? {
-              documentType: resumeProcessing.documentType,
-              confidence: resumeProcessing.classificationConfidence ?? 0,
-              reason: resumeProcessing.classificationReason ?? "",
-            }
-          : null,
-        message:
-          resumeProcessing.classificationReason ||
-          "This document doesn't look like a resume.",
-      });
-      return;
+  if (reviewSyncKey !== prevReviewSyncKey) {
+    setPrevReviewSyncKey(reviewSyncKey);
+    if (session?.resume_id && resumeProcessing) {
+      if (resumeProcessing.stage === "needs_review") {
+        setResumeReview({
+          resumeId: session.resume_id,
+          fileName: session.title,
+          classification: resumeProcessing.documentType
+            ? {
+                documentType: resumeProcessing.documentType,
+                confidence: resumeProcessing.classificationConfidence ?? 0,
+                reason: resumeProcessing.classificationReason ?? "",
+              }
+            : null,
+          message:
+            resumeProcessing.classificationReason ||
+            "This document doesn't look like a resume.",
+        });
+      } else if (
+        resumeProcessing.stage === "completed" ||
+        resumeProcessing.stage === "rejected" ||
+        resumeProcessing.stage === "failed"
+      ) {
+        setResumeReview(null);
+      }
     }
-
-    if (
-      resumeProcessing.stage === "completed" ||
-      resumeProcessing.stage === "rejected" ||
-      resumeProcessing.stage === "failed"
-    ) {
-      setResumeReview(null);
-    }
-  }, [resumeProcessing, session?.resume_id, session?.title]);
+  }
 
   const fetchSessionData = useCallback(async () => {
     if (!sessionId) return;

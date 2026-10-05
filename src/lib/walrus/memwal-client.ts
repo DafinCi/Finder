@@ -142,4 +142,18 @@ export class MemWalClient {
   }
 }
 
-export const memwalClient = new MemWalClient();
+let cachedMemwalClient: MemWalClient | null = null;
+
+/**
+ * Returns the shared MemWal client, creating it on first use.
+ *
+ * Importing this module never constructs the client, so `next build` can run
+ * without runtime credentials. Missing credentials still fail loudly on the
+ * first real memory operation.
+ */
+export function getMemwalClient(): MemWalClient {
+  if (!cachedMemwalClient) {
+    cachedMemwalClient = new MemWalClient();
+  }
+  return cachedMemwalClient;
+}

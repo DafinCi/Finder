@@ -101,8 +101,11 @@ export function EditBackgroundDialog({
     setEditingProjId(null);
   };
 
-  // Sync state on open
-  useEffect(() => {
+  // Sync state on open. Keyed on the prop identity so a re-render with the same
+  // profile does not clobber in-progress edits.
+  const [syncState, setSyncState] = useState({ isOpen, background });
+  if (isOpen !== syncState.isOpen || background !== syncState.background) {
+    setSyncState({ isOpen, background });
     if (isOpen) {
       setExperienceList(background?.experience || []);
       setEducationList(background?.education || []);
@@ -112,7 +115,7 @@ export function EditBackgroundDialog({
       resetEduForm();
       resetProjForm();
     }
-  }, [isOpen, background]);
+  }
 
   // Focus trap, autofocus, and ESC key
   useEffect(() => {
