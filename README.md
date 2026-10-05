@@ -1,6 +1,19 @@
-# Finder
+<p align="center">
+  <img src="public/brand/finder-logo.png" alt="Finder logo" width="120" />
+</p>
 
-> **AI-Powered Career Intelligence Platform & Job Portal**
+<h1 align="center">Finder</h1>
+
+<p align="center"><strong>AI-Powered Career Intelligence Platform & Job Portal</strong></p>
+
+<p align="center">
+  <a href="https://groq.com" target="_blank" rel="noopener noreferrer">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://console.groq.com/powered-by-groq-dark.svg" />
+      <img alt="Powered by Groq for fast inference" src="https://console.groq.com/powered-by-groq-light.svg" height="28" />
+    </picture>
+  </a>
+</p>
 
 Finder is an open-source platform that analyzes candidate resumes, extracts structured career profiles, and recommends matching job opportunities through an interactive, chat-first workspace.
 
