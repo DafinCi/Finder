@@ -1,134 +1,82 @@
-# Local Development Setup
-
-This guide provides step-by-step instructions to configure and run Finder on your local workstation.
-
----
+# Local Setup
 
 ## Prerequisites
 
-Before starting, verify you have the following installed:
+- Node.js 22 or newer. The project relies on native WebSocket in Node 22, and the
+  CI uses Node 22.
+- npm.
+- A Supabase project. A free project is enough for development.
+- A Groq API key.
+- A MemWal account and delegate key if you want memory to work against a real
+  relayer.
 
-- **Node.js**: Version `22.x` or later (tested on Node 22). Check with:
-  ```bash
-  node -v
-  ```
-- **npm**: Version `10.x` or later. Check with:
-  ```bash
-  npm -v
-  ```
-- **Git**: Installed and configured.
-- **Supabase Account**: A Supabase project (cloud or local Supabase CLI).
-- **Groq API Key**: An API key from [Groq Console](https://console.groq.com) (free tier supported).
-- **Sui Wallet (Optional for Web3 testing)**: Sui Wallet or Slush browser extension connected to `testnet`.
-
----
-
-## Step 1: Clone Repository & Install Dependencies
+## 1. Install dependencies
 
 ```bash
-git clone https://github.com/DafinCi/Finder.git
-cd Finder
-
-# Install project dependencies using npm
 npm install
 ```
 
----
+## 2. Configure environment
 
-## Step 2: Configure Environment Variables
+Copy `.env.example` to `.env.local` and fill in the values. `.env.local` is
+gitignored and must never be committed.
 
-Copy `.env.example` to `.env.local`:
+Required for the app to run:
 
-```bash
-cp .env.example .env.local
-```
+| Variable | Scope | Notes |
+| --- | --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | Browser and server | Project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser and server | Public key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server only | Never expose to the browser |
+| `GROQ_API_KEY` | Server only | Provider credential |
 
-Edit `.env.local` with your credentials:
+Required for memory to work:
 
-```env
-# Supabase Configuration
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+| Variable | Scope |
+| --- | --- |
+| `MEMWAL_ACCOUNT_ID` | Server only |
+| `MEMWAL_DELEGATE_PRIVATE_KEY` | Server only |
 
-# Groq AI Configuration (Active models: https://console.groq.com/docs/models)
-GROQ_API_KEY=gsk_your_actual_groq_api_key
-GROQ_MODEL=qwen/qwen3.8-27b
-GROQ_FALLBACK_MODEL=openai/gpt-oss-20b
-GROQ_MAX_TOKENS=2500
+Common optional variables: `GROQ_MODEL`, `GROQ_FALLBACK_MODEL`,
+`GROQ_AGENT_MODEL`, `GROQ_MAX_TOKENS`, `MEMWAL_SERVER_URL`,
+`NEXT_PUBLIC_WALRUS_NETWORK`, `NEXT_PUBLIC_SUI_NETWORK`, `CRON_SECRET`,
+`NEXT_PUBLIC_SITE_URL`, and `WALRUS_PUBLISHER_URL`.
 
-# Application Base URL
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
+## 3. Set up the database and storage
 
-# Sui Web3 Configuration
-NEXT_PUBLIC_SUI_NETWORK=mainnet
+Run these in the Supabase SQL editor, in order:
 
-# Cron Sync Secret (optional in development; allows bypass when unset)
-CRON_SECRET=dev_secret_12345
-```
+1. `src/database/schema_v2.sql` creates the tables, indexes, constraints, and RLS
+   policies.
+2. `src/database/triggerAuth.sql` creates the profile provisioning trigger.
+3. Optional, for local demos only: `src/database/seed-demo.sql` inserts clearly
+   marked sample companies and jobs. Skip this on production.
 
----
+Then create a private Storage bucket named `resumes`.
 
-## Step 3: Database & Storage Setup
-
-1. Open your Supabase Dashboard:
-   - Navigate to the **SQL Editor**.
-2. Run the consolidated schema script:
-   - Copy the entire contents of [`src/database/schema_v2.sql`](../../src/database/schema_v2.sql) and execute it.
-   - This script creates all tables, indexes, constraints, and RLS policies.
-   - Optional, for local demos only: run [`src/database/seed-demo.sql`](../../src/database/seed-demo.sql) to add clearly marked sample companies and jobs. Skip this on production.
-3. Run the Auth Trigger script:
-   - Copy the contents of [`src/database/triggerAuth.sql`](../../src/database/triggerAuth.sql) and execute it.
-   - This ensures the `on_auth_user_created` trigger automatically provisions profiles for new users.
-4. Create the Storage Bucket:
-   - Navigate to **Storage** in the Supabase Dashboard.
-   - Create a new bucket named **`resumes`**.
-   - Set the bucket to **Private** (authenticated RLS will control access).
-
----
-
-## Step 4: Run the Development Server
-
-Start the Next.js development server:
+## 4. Run the app
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open `http://localhost:3000`.
 
----
-
-## Step 5: Seed Jobs (Optional)
-
-To ingest live tech jobs from the Remotive API into your local database:
+## 5. Verify quality gates
 
 ```bash
-curl -X POST http://localhost:3000/api/jobs/sync
+npm run lint
+npx tsc --noEmit
+npm run test:unit
+npm run test:integration:mocked
+npm run build
 ```
 
-_(In development mode, requests succeed even without the `CRON_SECRET` header)._
+## Notes
 
----
+- `NEXT_PUBLIC_*` values are baked at build time, so changing one requires a
+  restart of the dev server and a rebuild for production.
+- Missing MemWal credentials fail loudly at first use instead of falling back to a
+  mock. That is intentional.
 
-## Troubleshooting Common Setup Issues
-
-### 1. `Node.js detected but native WebSocket not found`
-
-- **Cause**: Running on an older Node version (< 22) where Supabase Realtime fails to find native global `WebSocket`.
-- **Solution**: Upgrade to Node.js 22+. Verify with `node -v`.
-
-### 2. `Database error while checking wallet identity`
-
-- **Cause**: Missing database schema, missing tables, or incorrect `SUPABASE_SERVICE_ROLE_KEY`.
-- **Solution**: Ensure you ran `schema_v2.sql` in the Supabase SQL editor and that `SUPABASE_SERVICE_ROLE_KEY` in `.env.local` is the service-role secret (not the anon key).
-
-### 3. Groq `429 Too Many Requests`
-
-- **Cause**: Groq free tier TPM (tokens per minute) limit reached.
-- **Solution**: Finder automatically attempts fallback to `openai/gpt-oss-20b`. You can also configure an active alternative model from [Groq Supported Models](https://console.groq.com/docs/models) or check usage in the Groq console.
-
-### 4. Sui Wallet Connection Fails or Rejected
-
-- **Cause**: Wallet extension set to a different network than configured in `.env.local`.
-- **Solution**: Ensure your browser wallet (e.g., Sui Wallet) is switched to the network in `NEXT_PUBLIC_SUI_NETWORK` (mainnet by default), and that the value matches the deployment.
+See [troubleshooting.md](troubleshooting.md) if something does not start.
