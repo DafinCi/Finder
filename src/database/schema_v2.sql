@@ -337,34 +337,3 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- ==============================================================================
--- 11. SEED DATA DUMMY LOWONGAN KERJA (UNTUK TESTING & HACKATHON DEMO)
--- ==============================================================================
-DO $$
-DECLARE
-    v_comp1_id UUID;
-    v_comp2_id UUID;
-    v_comp3_id UUID;
-BEGIN
-    -- Masukkan dummy companies jika belum ada
-    IF NOT EXISTS (SELECT 1 FROM public.companies WHERE name = 'Mysten Labs Ecosystem') THEN
-        INSERT INTO public.companies (name, logo_url, description, website)
-        VALUES ('Mysten Labs Ecosystem', 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100&auto=format&fit=crop&q=60', 'Leading decentralized infrastructure and Move ecosystem developers', 'https://mystenlabs.com')
-        RETURNING id INTO v_comp1_id;
-
-        INSERT INTO public.companies (name, logo_url, description, website)
-        VALUES ('Walrus Data Guild', 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100&auto=format&fit=crop&q=60', 'Decentralized blob storage network and AI memory protocols', 'https://walrus.xyz')
-        RETURNING id INTO v_comp2_id;
-
-        INSERT INTO public.companies (name, logo_url, description, website)
-        VALUES ('Nexus Web3 AI Labs', 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=100&auto=format&fit=crop&q=60', 'Building autonomous AI agents with decentralized memory on Sui', 'https://nexus.ai')
-        RETURNING id INTO v_comp3_id;
-
-        -- Lowongan Kerja Terkait
-        INSERT INTO public.jobs (company_id, title, description, requirements, location, job_type, salary_range, experience_level)
-        VALUES 
-        (v_comp1_id, 'Senior Frontend Engineer (React/Next.js)', 'Membangun antarmuka dApp web3 dengan performa tinggi menggunakan Next.js App Router dan Tailwind CSS.', ARRAY['React', 'Next.js', 'TypeScript', 'Tailwind CSS', 'Web3 / Sui SDK'], 'Remote', 'full-time', '$4,000 - $7,000 / bln', 'Senior'),
-        (v_comp2_id, 'Fullstack Web3 & AI Developer', 'Integrasi protokol penyimpanan Walrus dan Walrus Memory ke dalam aplikasi AI generasi berikutnya.', ARRAY['TypeScript', 'Node.js', 'Next.js', 'Walrus SDK', 'Vector Databases', 'Groq / OpenAI API'], 'Hybrid - Jakarta / Remote', 'full-time', '$3,500 - $6,000 / bln', 'Mid-Level'),
-        (v_comp3_id, 'AI Agent Systems Architect', 'Merancang arsitektur memory agent mandiri menggunakan Walrus Memory dan LLM reasoning.', ARRAY['Python', 'TypeScript', 'LangChain', 'Sui Move', 'pgvector', 'Prompt Engineering'], 'Remote', 'full-time', '$5,000 - $9,000 / bln', 'Lead / Staff');
-    END IF;
-END $$;

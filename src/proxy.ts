@@ -37,7 +37,13 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isProtected = ["/c", "/jobs", "/settings", "/onboarding"].some((p) =>
+  const isProtected = [
+    "/c",
+    "/jobs",
+    "/profile",
+    "/settings",
+    "/onboarding",
+  ].some((p) =>
     request.nextUrl.pathname.startsWith(p),
   );
 

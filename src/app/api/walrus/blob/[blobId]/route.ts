@@ -67,10 +67,7 @@ export async function GET(
   } catch (err: unknown) {
     console.error("[API:Walrus:Proxy:Error]", err);
     return NextResponse.json(
-      {
-        error: "Unable to retrieve decentralized blob from Walrus network.",
-        details: err instanceof Error ? err.message : String(err),
-      },
+      { error: "Unable to retrieve decentralized blob from Walrus network." },
       { status: 502 },
     );
   }

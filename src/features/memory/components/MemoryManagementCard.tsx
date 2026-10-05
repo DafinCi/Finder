@@ -112,6 +112,10 @@ export function MemoryManagementCard() {
             <p className="text-xs text-muted-foreground">
               Durable preferences and career facts remembered by Finder
             </p>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Forget removes a memory from chat recall. The encrypted copy
+              already written to Walrus is not deleted.
+            </p>
           </div>
         </div>
 

@@ -107,10 +107,7 @@ export async function POST(req: NextRequest) {
   } catch (err: unknown) {
     console.error("[API:CareerSnapshot:POST]", err);
     return NextResponse.json(
-      {
-        error: "Failed to generate sovereign snapshot on Walrus.",
-        details: err instanceof Error ? err.message : String(err),
-      },
+      { error: "Failed to generate sovereign snapshot on Walrus." },
       { status: 500 },
     );
   }
