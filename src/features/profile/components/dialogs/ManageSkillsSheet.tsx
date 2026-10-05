@@ -196,7 +196,7 @@ export function ManageSkillsSheet({
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-border/80 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-sm bg-primary/10 text-primary border border-primary/20">
+            <div className="p-2 rounded-sm bg-secondary text-muted-foreground border border-border">
               <Code className="w-4 h-4" />
             </div>
             <div>
@@ -217,7 +217,7 @@ export function ManageSkillsSheet({
             onClick={onClose}
             disabled={isMutating}
             aria-label="Close skills dialog"
-            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-sm text-muted-foreground hover:text-foreground hover:bg-secondary focus-visible:ring-2 focus-visible:ring-primary transition-colors cursor-pointer"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-sm text-muted-foreground hover:text-foreground hover:bg-secondary focus-visible:ring-2 focus-visible:ring-muted-foreground transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -232,7 +232,7 @@ export function ManageSkillsSheet({
               value={newSkillName}
               onChange={(e) => setNewSkillName(e.target.value)}
               placeholder="+ Add new skill..."
-              className="flex-1 bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="flex-1 bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground"
             />
 
             <select
@@ -240,7 +240,7 @@ export function ManageSkillsSheet({
               onChange={(e) =>
                 setNewSkillCategory(e.target.value as SkillCategory)
               }
-              className="bg-card border border-border rounded-sm px-2 py-2 text-xs text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="bg-card border border-border rounded-sm px-2 py-2 text-xs text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground"
             >
               <option value="core">Core</option>
               <option value="supporting">Supporting</option>
@@ -266,7 +266,7 @@ export function ManageSkillsSheet({
                 onClick={() => setActiveTab("all")}
                 className={`px-2.5 py-1 rounded-sm text-xs font-semibold whitespace-nowrap cursor-pointer ${
                   activeTab === "all"
-                    ? "bg-primary text-primary-foreground"
+                    ? "bg-secondary text-foreground font-semibold border border-border-strong"
                     : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                 }`}
               >
@@ -277,7 +277,7 @@ export function ManageSkillsSheet({
                 onClick={() => setActiveTab("core")}
                 className={`px-2.5 py-1 rounded-sm text-xs font-semibold whitespace-nowrap cursor-pointer ${
                   activeTab === "core"
-                    ? "bg-primary text-primary-foreground"
+                    ? "bg-secondary text-foreground font-semibold border border-border-strong"
                     : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                 }`}
               >
@@ -288,7 +288,7 @@ export function ManageSkillsSheet({
                 onClick={() => setActiveTab("supporting")}
                 className={`px-2.5 py-1 rounded-sm text-xs font-semibold whitespace-nowrap cursor-pointer ${
                   activeTab === "supporting"
-                    ? "bg-primary text-primary-foreground"
+                    ? "bg-secondary text-foreground font-semibold border border-border-strong"
                     : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                 }`}
               >
@@ -300,7 +300,7 @@ export function ManageSkillsSheet({
                 onClick={() => setActiveTab("tool")}
                 className={`px-2.5 py-1 rounded-sm text-xs font-semibold whitespace-nowrap cursor-pointer ${
                   activeTab === "tool"
-                    ? "bg-primary text-primary-foreground"
+                    ? "bg-secondary text-foreground font-semibold border border-border-strong"
                     : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                 }`}
               >
@@ -327,7 +327,7 @@ export function ManageSkillsSheet({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search skills..."
-                className="w-full bg-card border border-border rounded-sm pl-8 pr-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="w-full bg-card border border-border rounded-sm pl-8 pr-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground"
               />
             </div>
           </div>
@@ -386,7 +386,7 @@ export function ManageSkillsSheet({
                     variant="outline"
                     onClick={() => onRestoreSkill(item.skill)}
                     disabled={isMutating}
-                    className="text-xs min-h-[44px] sm:min-h-[36px] h-9 px-3 gap-1 text-primary hover:bg-primary/10 cursor-pointer rounded-sm"
+                    className="text-xs min-h-[44px] sm:min-h-[36px] h-9 px-3 gap-1 text-foreground hover:bg-secondary cursor-pointer rounded-sm"
                   >
                     <RotateCcw className="w-3 h-3" />
                     <span>Restore</span>
@@ -455,7 +455,7 @@ export function ManageSkillsSheet({
                       }
                       disabled={isMutating}
                       aria-label={`Category for ${item.skill}`}
-                      className="text-[11px] bg-secondary border border-border rounded-sm px-2 py-1.5 text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      className="text-[11px] bg-secondary border border-border rounded-sm px-2 py-1.5 text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground"
                     >
                       <option value="core">Core</option>
                       <option value="supporting">Supporting</option>
@@ -473,7 +473,7 @@ export function ManageSkillsSheet({
                       }
                       disabled={isMutating}
                       aria-label={`Proficiency claim for ${item.skill}`}
-                      className="text-[11px] bg-secondary border border-border rounded-sm px-2 py-1.5 text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      className="text-[11px] bg-secondary border border-border rounded-sm px-2 py-1.5 text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground"
                     >
                       <option value="foundational">Foundational</option>
                       <option value="competent">Competent</option>

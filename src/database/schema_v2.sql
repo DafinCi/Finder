@@ -180,7 +180,7 @@ CREATE INDEX IF NOT EXISTS idx_job_matches_job_id ON public.job_matches(job_id);
 CREATE TABLE IF NOT EXISTS public.chat_sessions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
-    title TEXT NOT NULL DEFAULT 'Obrolan Karir Baru',
+    title TEXT NOT NULL DEFAULT 'New Career Chat',
     resume_id UUID REFERENCES public.resumes(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now())

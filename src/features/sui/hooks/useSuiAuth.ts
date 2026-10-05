@@ -8,6 +8,7 @@ import {
   useDAppKit,
 } from "@mysten/dapp-kit-react";
 import { buildSiwsMessage } from "@/lib/sui/siws-message";
+import { getConfiguredSuiNetwork } from "@/lib/sui/network";
 import {
   fetchSiwsNonce,
   verifySiwsLogin,
@@ -74,8 +75,9 @@ export function useSuiAuth(): UseSuiAuthReturn {
       return false;
     }
 
-    // 2. Validate explicit network policy (Finder runs on Sui Testnet)
-    if (currentNetwork && currentNetwork !== "testnet") {
+    // 2. Validate the wallet network against the configured Sui network
+    const expectedNetwork = getConfiguredSuiNetwork();
+    if (currentNetwork && currentNetwork !== expectedNetwork) {
       setError(SUI_ERROR_MESSAGES.NETWORK_MISMATCH);
       setErrorCode("NETWORK_MISMATCH");
       setStatus("error");
@@ -104,7 +106,7 @@ export function useSuiAuth(): UseSuiAuthReturn {
         uri,
         nonce: nonceData.nonce,
         purpose: "SIWS_LOGIN",
-        network: "testnet",
+        network: expectedNetwork,
       });
 
       // 5. Request cryptographic personal message signature from connected wallet
@@ -176,7 +178,8 @@ export function useSuiAuth(): UseSuiAuthReturn {
       return false;
     }
 
-    if (currentNetwork && currentNetwork !== "testnet") {
+    const expectedNetwork = getConfiguredSuiNetwork();
+    if (currentNetwork && currentNetwork !== expectedNetwork) {
       setError(SUI_ERROR_MESSAGES.NETWORK_MISMATCH);
       setErrorCode("NETWORK_MISMATCH");
       setStatus("error");
@@ -203,7 +206,7 @@ export function useSuiAuth(): UseSuiAuthReturn {
         uri,
         nonce: nonceData.nonce,
         purpose: "SIWS_LINK",
-        network: "testnet",
+        network: expectedNetwork,
       });
 
       setStatus("waiting_signature");

@@ -1,13 +1,22 @@
 "use client";
 
 import React, { useState } from "react";
-import { FileText, Copy, Check, Brain, ThumbsUp, ThumbsDown } from "lucide-react";
+import {
+  FileText,
+  Copy,
+  Check,
+  Brain,
+  ThumbsUp,
+  ThumbsDown,
+} from "lucide-react";
 import { toast } from "sonner";
 import { ChatMessage } from "@/types/chat";
+import { Button } from "@/components/ui/button";
 import CandidateSummaryCard from "@/features/ai-analysis/components/CandidateSummaryCard";
 import JobMatchCarousel from "@/features/ai-analysis/components/JobMatchCarousel";
 import ChatMarkdown from "./ChatMarkdown";
 import ActionProposalCard from "./ActionProposalCard";
+import MemoryRecallChip from "./MemoryRecallChip";
 
 interface ChatMessageItemProps {
   message: ChatMessage;
@@ -32,6 +41,9 @@ export default function ChatMessageItem({
     (message.metadata?.feedback as "helpful" | "unhelpful") || null,
   );
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+  const [showCorrection, setShowCorrection] = useState(false);
+  const [correctionText, setCorrectionText] = useState("");
+  const [isSavingCorrection, setIsSavingCorrection] = useState(false);
 
   const handleCopy = async () => {
     if (!message.content) return;
@@ -45,8 +57,75 @@ export default function ChatMessageItem({
     }
   };
 
+  const reinforceUsedMemories = async () => {
+    const memories = message.metadata?.memory_recall?.memories ?? [];
+    if (memories.length === 0) return;
+
+    try {
+      const res = await fetch("/api/memory/reinforce", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          memories: memories.map((memory) => ({
+            id: memory.id ?? null,
+            content: memory.content,
+          })),
+        }),
+      });
+      if (!res.ok) return;
+
+      const data = await res.json().catch(() => ({}));
+      if (data?.reinforced > 0) {
+        toast.success("Thanks. Finder will weigh this context more strongly.");
+      }
+    } catch {
+      // Reinforcement is best-effort and must never affect the answer itself.
+    }
+  };
+
+  const handleSaveCorrection = async () => {
+    const content = correctionText.trim();
+    if (content.length < 3) {
+      toast.error("Tell Finder what to remember, in a few words.");
+      return;
+    }
+
+    setIsSavingCorrection(true);
+    try {
+      const res = await fetch("/api/memory", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          category: "user_correction",
+          content,
+          confidence: "high",
+          source: "user_correction",
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to save the correction.");
+      }
+
+      toast.success("Correction saved to your career memory", {
+        description: "Future answers will use it.",
+      });
+      setShowCorrection(false);
+      setCorrectionText("");
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setIsSavingCorrection(false);
+    }
+  };
+
   const handleFeedback = async (type: "helpful" | "unhelpful") => {
-    if (isStreaming || message.id.startsWith("stream-") || isSubmittingFeedback) {
+    if (
+      isStreaming ||
+      message.id.startsWith("stream-") ||
+      isSubmittingFeedback
+    ) {
       return;
     }
 
@@ -68,6 +147,12 @@ export default function ChatMessageItem({
         const errorData = await res.json().catch(() => ({}));
         throw new Error(errorData.error || "Failed to update feedback");
       }
+
+      if (nextFeedback === "unhelpful") {
+        setShowCorrection(true);
+      } else if (nextFeedback === "helpful") {
+        void reinforceUsedMemories();
+      }
     } catch {
       // Rollback to previous state on failure
       setFeedback(previousFeedback);
@@ -84,7 +169,7 @@ export default function ChatMessageItem({
           isFirstInGroup ? "mt-4 sm:mt-5" : "mt-1.5"
         }`}
       >
-        <div className="flex flex-col items-end max-w-xl space-y-1.5">
+        <div className="flex flex-col items-end max-w-[85%] sm:max-w-2xl space-y-1.5">
           {/* Attachment Preview Badge */}
           {attachment && (
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-sm bg-secondary/80 border border-border text-xs text-foreground font-medium shadow-2xs">
@@ -93,9 +178,9 @@ export default function ChatMessageItem({
             </div>
           )}
 
-          {/* User message text bubble: Slush-violet identity surface */}
+          {/* User message text bubble: Slush-violet primary surface with newline preservation */}
           {message.content && (
-            <div className="px-4 py-2.5 rounded-sm bg-primary text-primary-foreground text-sm font-sans leading-relaxed shadow-2xs">
+            <div className="px-4 py-2.5 rounded-sm bg-primary text-primary-foreground text-sm sm:text-[15px] font-sans leading-relaxed whitespace-pre-wrap break-words shadow-2xs">
               {message.content}
             </div>
           )}
@@ -139,12 +224,21 @@ export default function ChatMessageItem({
           />
         )}
 
-        {/* Sovereign Memory Updated Badge */}
+        {/* Memory recall trace: shows which memories shaped this answer */}
+        {message.metadata?.memory_recall &&
+          (message.metadata.memory_recall.count > 0 ||
+            message.metadata.memory_recall.stateless) && (
+            <div className="flex items-center gap-1.5 py-1">
+              <MemoryRecallChip recall={message.metadata.memory_recall} />
+            </div>
+          )}
+
+        {/* Career Memory Saved Badge */}
         {message.metadata?.memory_updated && (
           <div className="flex items-center gap-1.5 py-1 text-[11px]">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm bg-secondary border border-border text-secondary-foreground font-medium text-[11px]">
               <Brain className="w-3.5 h-3.5 text-muted-foreground" />
-              Sovereign Career Memory Updated
+              Saved to your career memory
             </span>
           </div>
         )}
@@ -205,6 +299,49 @@ export default function ChatMessageItem({
             >
               <ThumbsDown className="w-3.5 h-3.5" />
             </button>
+          </div>
+        )}
+
+        {showCorrection && (
+          <div className="rounded-sm border border-border bg-secondary/30 p-3 space-y-2">
+            <label
+              htmlFor={`correction-${message.id}`}
+              className="block text-xs font-medium text-foreground"
+            >
+              What should Finder remember instead?
+            </label>
+            <textarea
+              id={`correction-${message.id}`}
+              value={correctionText}
+              onChange={(e) => setCorrectionText(e.target.value)}
+              rows={2}
+              maxLength={500}
+              placeholder="Example: I prefer hybrid roles in Jakarta, not remote."
+              className="w-full resize-none rounded-sm border border-border bg-card px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            />
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={handleSaveCorrection}
+                disabled={isSavingCorrection}
+              >
+                {isSavingCorrection ? "Saving" : "Save correction"}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setShowCorrection(false);
+                  setCorrectionText("");
+                }}
+                disabled={isSavingCorrection}
+              >
+                Skip
+              </Button>
+            </div>
           </div>
         )}
       </div>

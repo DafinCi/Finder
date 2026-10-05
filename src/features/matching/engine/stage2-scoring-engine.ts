@@ -11,12 +11,21 @@ import {
 import { MatchScoreBreakdown } from "../types/matching.types";
 import { MATCHING_WEIGHTS } from "../constants/matching-weights";
 import { matchesSkill } from "../utils/skill-normalizer";
-import { parseSalaryRange, convertSalary } from "../utils/salary-parser";
+import {
+  parseSalaryRange,
+  convertSalary,
+  normalizeSalaryToAnnual,
+  resolveSalaryPeriod,
+} from "../utils/salary-parser";
 import { evaluateLocationCompatibility } from "../utils/location-matcher";
 import {
   JobMatchCandidate,
   resolveJobWorkMode,
 } from "./stage1-constraint-filter";
+import {
+  getPriorityMatchTerms,
+  getNegativePreferenceMatchTerms,
+} from "../constants/preference-vocabularies";
 
 export interface DeterministicScoreResult {
   score: number; // Final deterministic compatibility score [0, 100]
@@ -216,10 +225,16 @@ export function computePreferenceScore(
     preferences.priorities && preferences.priorities.length > 0;
   let prioScore = 70; // default neutral
   if (hasPriorities) {
-    const desc = (job.description || "").toLowerCase();
-    const matchedCount = preferences.priorities.filter((p) =>
-      desc.includes(p.toLowerCase().trim()),
-    ).length;
+    const textToMatch =
+      `${job.title || ""} ${job.description || ""}`.toLowerCase();
+    const cleanReqs = (job.requirements || []).map((r) => r.toLowerCase());
+    const matchedCount = preferences.priorities.filter((p) => {
+      const terms = getPriorityMatchTerms(p);
+      return terms.some(
+        (term) =>
+          textToMatch.includes(term) || cleanReqs.some((r) => r.includes(term)),
+      );
+    }).length;
 
     prioScore = Math.round(
       30 + 70 * (matchedCount / preferences.priorities.length),
@@ -232,8 +247,17 @@ export function computePreferenceScore(
   if (hasSalary) {
     const candidateMin = preferences.salary!.min_amount!;
     const candidateCurrency = preferences.salary!.currency || "USD";
+    const candidatePeriod = resolveSalaryPeriod(
+      preferences.salary!.period,
+      candidateCurrency,
+    );
+    const candidateAnnualMin = normalizeSalaryToAnnual(
+      candidateMin,
+      candidatePeriod,
+    );
     let jobMax: number | null = job.salary_max ?? null;
     let jobCurrency = job.salary_currency || "USD";
+    let jobPeriod = job.salary_period ?? null;
 
     if (jobMax === null && job.salary_range) {
       const parsed = parseSalaryRange(job.salary_range);
@@ -241,6 +265,7 @@ export function computePreferenceScore(
       if (parsed.currency) {
         jobCurrency = parsed.currency;
       }
+      jobPeriod = parsed.period;
     }
 
     if (jobMax !== null) {
@@ -249,7 +274,11 @@ export function computePreferenceScore(
         jobCurrency,
         candidateCurrency,
       );
-      salScore = normalizedJobMax >= candidateMin ? 100 : 0;
+      const normalizedJobAnnualMax = normalizeSalaryToAnnual(
+        normalizedJobMax,
+        resolveSalaryPeriod(jobPeriod, jobCurrency),
+      );
+      salScore = normalizedJobAnnualMax >= candidateAnnualMin ? 100 : 0;
     } else {
       salScore = 70; // Neutral if job did not state salary
     }
@@ -308,18 +337,30 @@ export function computeNegativePreferencePenalty(
   let totalPenalty = 0;
 
   for (const neg of negativePreferences) {
-    const token = neg.token.toLowerCase().trim();
-    if (!token) continue;
+    const rawToken = neg.token ? neg.token.toLowerCase().trim() : "";
+    if (!rawToken) continue;
 
+    const terms = getNegativePreferenceMatchTerms(rawToken);
     const penaltyWeight = neg.penalty_weight ?? 1.0;
     let severity = 0;
 
-    if (cleanTitle.includes(token)) {
-      severity = MATCHING_WEIGHTS.SEVERITY_PRIMARY_REQUIRED; // 1.0
-    } else if (cleanReqs.some((r) => r.includes(token))) {
-      severity = MATCHING_WEIGHTS.SEVERITY_SECONDARY_REQUIRED; // 0.5
-    } else if (cleanDesc.includes(token)) {
-      severity = MATCHING_WEIGHTS.SEVERITY_OPTIONAL_MENTION; // 0.2
+    for (const term of terms) {
+      if (cleanTitle.includes(term)) {
+        severity = Math.max(
+          severity,
+          MATCHING_WEIGHTS.SEVERITY_PRIMARY_REQUIRED,
+        ); // 1.0
+      } else if (cleanReqs.some((r) => r.includes(term))) {
+        severity = Math.max(
+          severity,
+          MATCHING_WEIGHTS.SEVERITY_SECONDARY_REQUIRED,
+        ); // 0.5
+      } else if (cleanDesc.includes(term)) {
+        severity = Math.max(
+          severity,
+          MATCHING_WEIGHTS.SEVERITY_OPTIONAL_MENTION,
+        ); // 0.2
+      }
     }
 
     if (severity > 0) {

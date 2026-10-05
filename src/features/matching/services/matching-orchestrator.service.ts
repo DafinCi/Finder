@@ -13,6 +13,11 @@ import {
   feedbackRepository,
 } from "@/features/feedback/repositories/feedback.repository";
 import {
+  CareerMemoryService,
+  careerMemoryService,
+} from "@/features/memory/services/career-memory.service";
+import { CareerMemory } from "@/features/memory/types/memory.types";
+import {
   JobMatchCandidate,
   filterConstraintCompliantJobs,
   resolveJobWorkMode,
@@ -20,6 +25,8 @@ import {
 import { scoreJobOpportunity } from "../engine/stage2-scoring-engine";
 import { RecommendedJobOpportunity } from "../types/matching.types";
 import { MATCHING_WEIGHTS } from "../constants/matching-weights";
+import { parseSalaryRange } from "../utils/salary-parser";
+import type { SalaryPeriod } from "@/features/profile/types/career-profile.types";
 
 export interface MatchQueryOptions {
   limit?: number;
@@ -32,20 +39,130 @@ export interface MatchQueryOptions {
   };
 }
 
+/**
+ * Extracts negative keywords and blacklist terms from constraint_avoid memories.
+ */
+export function extractExclusionKeywordsFromMemories(
+  memories: CareerMemory[],
+): string[] {
+  const keywords: Set<string> = new Set();
+  const avoidMemories = memories.filter(
+    (m) => m.category === "constraint_avoid" && m.status === "active",
+  );
+
+  for (const m of avoidMemories) {
+    const text = m.content.toLowerCase();
+
+    // Check common high-priority exclusion patterns
+    const commonExclusionTerms = [
+      "gambling",
+      "casino",
+      "betting",
+      "poker",
+      "php",
+      "wordpress",
+      "drupal",
+      "magento",
+      "jquery",
+      "crypto casino",
+      "hft",
+      "legacy",
+    ];
+
+    for (const term of commonExclusionTerms) {
+      if (text.includes(term)) {
+        keywords.add(term);
+      }
+    }
+
+    // Capture explicit "avoid X", "reject X", "no X" patterns
+    const regex = /(?:avoid|reject|no|exclude|without)\s+([a-zA-Z0-9+#]+)/gi;
+    let match;
+    while ((match = regex.exec(text)) !== null) {
+      const captured = match[1]?.trim().toLowerCase();
+      if (
+        captured &&
+        captured.length > 2 &&
+        !["the", "and", "for", "with", "any", "roles"].includes(captured)
+      ) {
+        keywords.add(captured);
+      }
+    }
+  }
+
+  return Array.from(keywords);
+}
+
+export interface MemorySalaryFloor {
+  amount: number;
+  currency: string;
+  period: SalaryPeriod;
+}
+
+/**
+ * Extracts minimum salary requirement (with currency and period) from memory text.
+ */
+export function extractMinSalaryFromMemories(
+  memories: CareerMemory[],
+): MemorySalaryFloor | null {
+  const relevant = memories.filter(
+    (m) =>
+      (m.category === "constraint_avoid" || m.category === "work_preference") &&
+      m.status === "active",
+  );
+
+  for (const m of relevant) {
+    const parsed = parseSalaryRange(m.content);
+    if (parsed.min !== null && parsed.min > 0) {
+      return {
+        amount: parsed.min,
+        currency: parsed.currency,
+        period: parsed.period,
+      };
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Checks if candidate memories enforce remote-only constraint.
+ */
+export function isRemoteOnlyFromMemories(memories: CareerMemory[]): boolean {
+  const relevant = memories.filter(
+    (m) =>
+      (m.category === "work_preference" || m.category === "constraint_avoid") &&
+      m.status === "active",
+  );
+
+  return relevant.some((m) => {
+    const text = m.content.toLowerCase();
+    return (
+      text.includes("remote only") ||
+      text.includes("100% remote") ||
+      text.includes("strictly remote") ||
+      text.includes("no onsite") ||
+      text.includes("refuses onsite")
+    );
+  });
+}
+
 export class MatchingOrchestratorService {
   constructor(
     private readonly profileService: CareerProfileService = careerProfileService,
     private readonly feedbackRepo: FeedbackRepository = feedbackRepository,
     private readonly client: any = supabaseAdmin,
+    private readonly memoryService: CareerMemoryService = careerMemoryService,
   ) {}
 
   /**
    * Orchestrates complete matching pipeline for a user:
    * 1. Fetches canonical CareerProfile.
    * 2. Fetches excluded rejected jobs from feedback events.
-   * 3. Stage 1: Filters constraint-compliant candidate jobs.
-   * 4. Stage 2: Deterministically scores and ranks candidates.
-   * 5. Returns top opportunities with breakdown and missing skills.
+   * 3. Fetches active Walrus Career Memories (constraints, exclusions, salary).
+   * 4. Stage 1: Filters constraint-compliant candidate jobs.
+   * 5. Stage 2: Deterministically scores and ranks candidates.
+   * 6. Returns top opportunities with breakdown and missing skills.
    */
   async matchJobsForProfile(
     profileId: string,
@@ -53,6 +170,17 @@ export class MatchingOrchestratorService {
   ): Promise<RecommendedJobOpportunity[]> {
     const profile = await this.profileService.requireProfile(profileId);
     const excludedJobIds = await this.feedbackRepo.getExcludedJobIds(profileId);
+
+    // Fetch active decentralized memories for profile
+    let activeMemories: CareerMemory[] = [];
+    try {
+      activeMemories = await this.memoryService.getActiveMemories(profileId, 20);
+    } catch (err) {
+      console.warn(
+        `[MatchingOrchestrator] Unable to load active memories for ${profileId}:`,
+        (err as Error).message,
+      );
+    }
 
     const limit = options?.limit || MATCHING_WEIGHTS.STAGE3_AI_ANALYSIS_LIMIT; // default 5
 
@@ -87,6 +215,7 @@ export class MatchingOrchestratorService {
         job_type: (j.job_type as string) || null,
         salary_range: (j.salary_range as string) || null,
         salary_currency: (j.salary_currency as string) || null,
+        salary_period: (j.salary_period as SalaryPeriod) || null,
         experience_level: (j.experience_level as string) || null,
         is_active: j.is_active as boolean,
         apply_url: (j.apply_url as string) || null,
@@ -97,44 +226,102 @@ export class MatchingOrchestratorService {
     );
 
     let effectiveProfile = profile;
+
+    // Apply Walrus Memory constraints only if not explicitly configured in CareerProfile
+    // Rule F-08: Current confirmed CareerProfile preference takes precedence over historical memory.
+    const memoryWorkModes = isRemoteOnlyFromMemories(activeMemories)
+      ? (["remote"] as ("remote" | "hybrid" | "onsite")[])
+      : undefined;
+
+    const memoryMinSalary = extractMinSalaryFromMemories(activeMemories);
+
+    const hasExplicitProfileWorkModes =
+      Array.isArray(profile.preferences.work_modes) &&
+      profile.preferences.work_modes.length > 0;
+
+    const effectiveWorkModes = hasExplicitProfileWorkModes
+      ? profile.preferences.work_modes
+      : memoryWorkModes || profile.preferences.work_modes;
+
+    const effectiveWorkModeStrict = hasExplicitProfileWorkModes
+      ? profile.constraints.work_mode_strict
+      : memoryWorkModes
+        ? true
+        : profile.constraints.work_mode_strict;
+
+    const hasExplicitProfileSalary = Boolean(
+      profile.preferences.salary?.min_amount,
+    );
+
+    const effectiveSalary = hasExplicitProfileSalary
+      ? profile.preferences.salary
+      : memoryMinSalary
+        ? {
+            min_amount: memoryMinSalary.amount,
+            currency:
+              memoryMinSalary.currency ||
+              profile.preferences.salary?.currency ||
+              "USD",
+            period: memoryMinSalary.period,
+          }
+        : profile.preferences.salary;
+
+    effectiveProfile = {
+      ...effectiveProfile,
+      preferences: {
+        ...effectiveProfile.preferences,
+        work_modes: effectiveWorkModes,
+        salary: effectiveSalary,
+      },
+      constraints: {
+        ...effectiveProfile.constraints,
+        work_mode_strict: effectiveWorkModeStrict,
+      },
+    };
+
+    // Apply explicit ad-hoc parameter overrides if provided
     if (options?.overrideFilters) {
       const overrides = options.overrideFilters;
       effectiveProfile = {
-        ...profile,
+        ...effectiveProfile,
         preferences: {
-          ...profile.preferences,
+          ...effectiveProfile.preferences,
           work_modes:
             overrides.workMode && overrides.workMode.length > 0
               ? overrides.workMode
-              : profile.preferences.work_modes,
+              : effectiveProfile.preferences.work_modes,
           salary: overrides.minSalary
             ? {
                 min_amount: overrides.minSalary,
-                currency: profile.preferences.salary?.currency || "USD",
+                currency: effectiveProfile.preferences.salary?.currency || "USD",
+                period: effectiveProfile.preferences.salary?.period || "year",
               }
-            : profile.preferences.salary,
+            : effectiveProfile.preferences.salary,
         },
         careerIntent: {
-          ...profile.careerIntent,
+          ...effectiveProfile.careerIntent,
           target_roles:
             overrides.targetRoles && overrides.targetRoles.length > 0
               ? overrides.targetRoles.map((r, idx) => ({
                   role: r,
                   priority: idx === 0 ? "primary" : "secondary",
                 }))
-              : profile.careerIntent.target_roles,
+              : effectiveProfile.careerIntent.target_roles,
         },
       };
     }
 
-    // Apply ad-hoc technology exclusions if requested
-    if (
-      options?.overrideFilters?.excludeTechnologies &&
-      options.overrideFilters.excludeTechnologies.length > 0
-    ) {
-      const excludes = options.overrideFilters.excludeTechnologies.map((t) =>
+    // Combine explicit technology exclusions with Walrus memory blacklist exclusions
+    const memoryExclusions = extractExclusionKeywordsFromMemories(activeMemories);
+    const combinedExclusions = new Set<string>([
+      ...(options?.overrideFilters?.excludeTechnologies || []).map((t) =>
         t.toLowerCase().trim(),
-      );
+      ),
+      ...memoryExclusions,
+    ]);
+
+    if (combinedExclusions.size > 0) {
+      const excludeList = Array.from(combinedExclusions);
       candidateJobs = candidateJobs.filter((job) => {
         const text = (
           job.title +
@@ -143,7 +330,7 @@ export class MatchingOrchestratorService {
           " " +
           job.requirements.join(" ")
         ).toLowerCase();
-        return !excludes.some((tech) => text.includes(tech));
+        return !excludeList.some((tech) => text.includes(tech));
       });
     }
 
@@ -170,9 +357,16 @@ export class MatchingOrchestratorService {
     // Take top results
     const topOpportunities = scoredList.slice(0, limit);
 
+    const hasActiveMemoryConstraints =
+      activeMemories.length > 0 &&
+      (Boolean(memoryWorkModes) ||
+        Boolean(memoryMinSalary) ||
+        memoryExclusions.length > 0);
+
     return topOpportunities.map(({ job, scoring }) => {
       const fitRationale = this.generateDeterministicRationale(
         scoring.breakdown,
+        hasActiveMemoryConstraints,
       );
 
       return {
@@ -205,6 +399,7 @@ export class MatchingOrchestratorService {
    */
   private generateDeterministicRationale(
     breakdown: RecommendedJobOpportunity["score_breakdown"],
+    memoryApplied: boolean = false,
   ): string {
     const parts: string[] = [];
 
@@ -226,6 +421,10 @@ export class MatchingOrchestratorService {
       parts.push(
         `Note: Includes ${breakdown.negative_penalty} penalty points from identified preference conflicts.`,
       );
+    }
+
+    if (memoryApplied) {
+      parts.push("Tailored with persistent Walrus career memory constraints.");
     }
 
     return parts.join(" ");

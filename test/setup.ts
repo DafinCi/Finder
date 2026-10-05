@@ -44,7 +44,7 @@ process.env.SUPABASE_SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY || "mock-service-role-key-test-123456";
 process.env.GROQ_API_KEY =
   process.env.GROQ_API_KEY || "gsk_mock_test_api_key_1234567890";
-process.env.GROQ_MODEL = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
+process.env.GROQ_MODEL = process.env.GROQ_MODEL || "qwen/qwen3.8-27b";
 process.env.GROQ_FALLBACK_MODEL =
   process.env.GROQ_FALLBACK_MODEL || "openai/gpt-oss-20b";
 process.env.GROQ_MAX_TOKENS = process.env.GROQ_MAX_TOKENS || "2500";

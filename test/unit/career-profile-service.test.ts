@@ -432,7 +432,7 @@ describe("Unit: CareerProfileService", () => {
         locations: ["Singapore", "Tokyo"],
         work_modes: ["remote" as const],
         priorities: ["compensation", "mentorship"],
-        salary: { min_amount: 8000, currency: "USD" },
+        salary: { min_amount: 8000, currency: "USD", period: "year" },
         negative_preferences: [],
       };
       const constraintsInput = {

@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { runResumeAnalysisWorkflow } from "@/features/ai-analysis/services/analysis-orchestrator.service";
 import { extractCandidateProfile } from "@/lib/groq/profile-extractor";
 import { analyzeJobMatches } from "@/lib/groq/job-matcher";
+import { matchingOrchestratorService } from "@/features/matching/services/matching-orchestrator.service";
+import { careerProfileService } from "@/features/profile/services/career-profile.service";
 
 vi.mock("@/lib/groq/profile-extractor", () => ({
   extractCandidateProfile: vi.fn(),
@@ -141,6 +143,9 @@ vi.mock("@/lib/supabase/admin", () => ({
             }
             return { error: null };
           }),
+          delete: vi.fn(() => ({
+            eq: vi.fn(async () => ({ error: null })),
+          })),
         };
       }
 
@@ -148,9 +153,21 @@ vi.mock("@/lib/supabase/admin", () => ({
         return {
           select: vi.fn(() => ({
             eq: vi.fn(() => ({
-              filter: vi.fn(() => ({
-                limit: vi.fn(async () => ({ data: mockJobs, error: null })),
-              })),
+              filter: vi.fn((_col: string, _op: string, value: string) => {
+                const skills = (value || "")
+                  .replace(/[{}]/g, "")
+                  .split(",")
+                  .map((s) => s.trim().toLowerCase())
+                  .filter(Boolean);
+                const filtered = mockJobs.filter((j) =>
+                  (j.requirements || []).some((r: string) =>
+                    skills.includes(r.toLowerCase()),
+                  ),
+                );
+                return {
+                  limit: vi.fn(async () => ({ data: filtered, error: null })),
+                };
+              }),
               limit: vi.fn(async () => ({ data: mockJobs, error: null })),
             })),
           })),
@@ -162,7 +179,7 @@ vi.mock("@/lib/supabase/admin", () => ({
           select: vi.fn(() => ({
             eq: vi.fn(() => ({
               single: vi.fn(async () => ({
-                data: { title: "Obrolan Karir Baru" },
+                data: { title: "New Career Chat" },
                 error: null,
               })),
             })),
@@ -259,18 +276,35 @@ describe("Integration (Mock-Based): Analysis Orchestrator Service", () => {
       },
     ]);
 
+    const onStage = vi.fn();
     const result = await runResumeAnalysisWorkflow({
       userId: "user-1",
       resumeId: "res-pending-1",
       rawText:
         "Budi Santoso - Senior Frontend Developer with 4 years experience in React.",
       sessionId: "session-1",
+      onStage,
     });
 
     expect(result.analysis.candidate.name).toBe("Budi Santoso");
     expect(result.jobMatches).toHaveLength(1);
     expect(result.jobMatches[0].job_id).toBe("job-101");
-    expect(result.jobMatches[0].match_score).toBe(92);
+    // Numerical score must be deterministic (skill alignment), not the LLM's 92.
+    expect(result.jobMatches[0].match_score).toBe(87);
+    expect(result.jobMatches[0].reason).toContain(
+      "Strong React & TypeScript skills match perfectly.",
+    );
+
+    const reportedStages = onStage.mock.calls.map((call) => call[0]);
+    expect(reportedStages).toEqual(
+      expect.arrayContaining([
+        "extracting",
+        "extracted",
+        "matching",
+        "persisting",
+        "completed",
+      ]),
+    );
 
     // Verify resume status transitioned to completed
     const updatedResume = mockResumes.get("res-pending-1");
@@ -319,7 +353,7 @@ describe("Integration (Mock-Based): Analysis Orchestrator Service", () => {
     // Workflow must not throw; it must degrade gracefully and compute deterministic score
     expect(result.jobMatches.length).toBeGreaterThan(0);
     expect(result.jobMatches[0].reason).toContain(
-      "Kecocokan dihitung berdasarkan keselarasan keahlian",
+      "Match score computed from skill alignment",
     );
 
     const updatedResume = mockResumes.get("res-degraded-1");
@@ -348,5 +382,86 @@ describe("Integration (Mock-Based): Analysis Orchestrator Service", () => {
     // Status in DB must be updated to 'failed'
     const updatedResume = mockResumes.get("res-fail-1");
     expect(updatedResume.status).toBe("failed");
+  });
+
+  it("should prefer the Stage 2 deterministic engine when a career profile exists", async () => {
+    mockResumes.set("res-stage2-1", { id: "res-stage2-1", status: "pending" });
+
+    vi.mocked(extractCandidateProfile).mockResolvedValueOnce({
+      json_profile: {
+        candidate: {
+          name: "Stage Two",
+          title: "Frontend Engineer",
+          years_of_experience: 5,
+          summary: "Frontend engineer",
+          skills: { core: ["React"], supporting: [] },
+          experience: [],
+          education: [],
+        },
+        career: {
+          recommended_roles: ["Frontend Engineer"],
+          career_level: "Senior",
+          strengths: [],
+          weaknesses: [],
+        },
+      },
+      extracted_skills: ["React"],
+      _modelUsed: "openai/gpt-oss-120b",
+    });
+
+    const stage2Spy = vi
+      .spyOn(matchingOrchestratorService, "matchJobsForProfile")
+      .mockResolvedValueOnce([
+        {
+          job_id: "job-101",
+          title: "Senior React Engineer",
+          company_name: "TechCorp",
+          company_logo: null,
+          location: "Remote",
+          work_mode: "remote",
+          salary_range: "$120,000",
+          match_score: 88,
+          score_breakdown: {
+            final_score: 88,
+            role_score: 90,
+            capability_score: 85,
+            preference_score: 90,
+            negative_penalty: 0,
+          },
+          qualitative: {
+            fit_rationale: "Stage 2 deterministic rationale",
+            missing_skills: ["GraphQL"],
+          },
+          apply_url: null,
+          posted_at: new Date().toISOString(),
+        },
+      ]);
+
+    const profileSpy = vi
+      .spyOn(careerProfileService, "getProfile")
+      .mockResolvedValueOnce({
+        capabilities: { skills: [{ skill: "React" }] },
+        careerIntent: { target_roles: [{ role: "Frontend Engineer" }] },
+        preferences: { work_modes: ["remote"] },
+      } as any);
+
+    try {
+      const result = await runResumeAnalysisWorkflow({
+        userId: "user-stage2",
+        resumeId: "res-stage2-1",
+        rawText: "Stage two resume text",
+      });
+
+      expect(stage2Spy).toHaveBeenCalled();
+      expect(result.jobMatches).toHaveLength(1);
+      expect(result.jobMatches[0].match_score).toBe(88);
+      expect(result.jobMatches[0].reason).toBe(
+        "Stage 2 deterministic rationale",
+      );
+      expect(result.jobMatches[0].missing_skills).toEqual(["GraphQL"]);
+    } finally {
+      stage2Spy.mockRestore();
+      profileSpy.mockRestore();
+    }
   });
 });

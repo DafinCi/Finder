@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { POST } from "@/app/api/chat/message/route";
 import { NextRequest } from "next/server";
 import { agentToolDispatcher } from "@/features/agent/services/agent-tool-dispatcher.service";
+import { careerMemoryService } from "@/features/memory/services/career-memory.service";
 
 const mockAuthUser = vi.fn();
 const mockAdminSingle = vi.fn();
@@ -427,5 +428,426 @@ describe("Phase 5 Integration: Chat Agent Tool Calling & Sovereign Memory E2E Fl
     expect(sseText).toContain('"success":false');
     expect(sseText).toContain("Maaf, detail lowongan tersebut tidak dapat ditemukan");
     expect(sseText).toContain('"done":true');
+  });
+
+  it("6. should NOT emit memory_updated when the model claims success without calling a tool", async () => {
+    async function* makeFabricatedStream() {
+      yield { choices: [{ delta: { content: "I've saved your preference to always use English." } }] };
+      yield { choices: [{ delta: { content: " Done!" } }], usage: { total_tokens: 12 } };
+    }
+    mockGroqCreate.mockResolvedValueOnce(makeFabricatedStream());
+
+    const req = new NextRequest("http://localhost:3000/api/chat/message", {
+      method: "POST",
+      body: JSON.stringify({
+        session_id: testSession.id,
+        content: "always use English, save it to your memo",
+      }),
+    });
+
+    const res = await POST(req);
+    const sseText = await readSseStream(res);
+
+    expect(sseText).toContain("I've saved your preference");
+    expect(sseText).not.toContain('"type":"memory_updated"');
+    expect(sseText).not.toContain('"memoryUpdated":true');
+    expect(sseText).toContain('"done":true');
+  });
+
+  it("7. should ground the turn-2 fallback in actual tool outcomes instead of claiming success", async () => {
+    vi.spyOn(agentToolDispatcher, "executeTool").mockResolvedValueOnce({
+      success: true,
+      status: "pending",
+      toolName: "remember_fact",
+      memoryUpdated: {
+        id: "mem-uuid-77",
+        category: "work_preference",
+        content: "Remote jobs from America only",
+        walrusStatus: "pending",
+      },
+      data: {
+        success: true,
+        memoryId: "mem-uuid-77",
+        walrusStatus: "pending",
+      },
+    });
+
+    async function* makeTurn1() {
+      yield {
+        choices: [
+          {
+            delta: {
+              tool_calls: [
+                {
+                  index: 0,
+                  id: "call_mem_t2",
+                  type: "function" as const,
+                  function: {
+                    name: "remember_fact",
+                    arguments: JSON.stringify({
+                      category: "work_preference",
+                      content: "Remote jobs from America only",
+                    }),
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      };
+    }
+
+    mockGroqCreate.mockResolvedValueOnce(makeTurn1());
+    mockGroqCreate.mockRejectedValueOnce(new Error("Turn 2 stream failed"));
+
+    const req = new NextRequest("http://localhost:3000/api/chat/message", {
+      method: "POST",
+      body: JSON.stringify({
+        session_id: testSession.id,
+        content: "Remember I only want remote jobs from America",
+      }),
+    });
+
+    const res = await POST(req);
+    const sseText = await readSseStream(res);
+
+    expect(sseText).toContain("Tool outcome:");
+    expect(sseText).toContain("remember_fact: succeeded");
+    expect(sseText).not.toContain("Action processed successfully by the system");
+    expect(sseText).toContain('"type":"memory_updated"');
+  });
+
+  it("8. should support a bounded multi-turn tool chain before producing the final answer", async () => {
+    const dispatchSpy = vi
+      .spyOn(agentToolDispatcher, "executeTool")
+      .mockResolvedValueOnce({
+        success: true,
+        status: "success",
+        toolName: "get_career_recommendations",
+        data: {
+          totalFound: 1,
+          recommendations: [
+            {
+              id: "job-uuid-chain",
+              title: "Staff AI Engineer",
+              company: "Nexus Web3 AI Labs",
+              matchScore: 88,
+            },
+          ],
+        },
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        status: "success",
+        toolName: "inspect_job_details",
+        data: {
+          id: "job-uuid-chain",
+          title: "Staff AI Engineer",
+          companyName: "Nexus Web3 AI Labs",
+          requirements: ["Python", "Sui Move"],
+        },
+      });
+
+    async function* makeRecommendationTurn() {
+      yield {
+        choices: [
+          {
+            delta: {
+              tool_calls: [
+                {
+                  index: 0,
+                  id: "call_chain_1",
+                  type: "function" as const,
+                  function: {
+                    name: "get_career_recommendations",
+                    arguments: JSON.stringify({ workMode: ["remote"] }),
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      };
+    }
+
+    async function* makeInspectTurn() {
+      yield {
+        choices: [
+          {
+            delta: {
+              tool_calls: [
+                {
+                  index: 0,
+                  id: "call_chain_2",
+                  type: "function" as const,
+                  function: {
+                    name: "inspect_job_details",
+                    arguments: JSON.stringify({ jobId: "job-uuid-chain" }),
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      };
+    }
+
+    async function* makeFinalTurn() {
+      yield {
+        choices: [
+          {
+            delta: {
+              content:
+                "The top role is Staff AI Engineer at Nexus Web3 AI Labs.",
+            },
+          },
+        ],
+      };
+    }
+
+    mockGroqCreate
+      .mockResolvedValueOnce(makeRecommendationTurn())
+      .mockResolvedValueOnce(makeInspectTurn())
+      .mockResolvedValueOnce(makeFinalTurn());
+
+    const req = new NextRequest("http://localhost:3000/api/chat/message", {
+      method: "POST",
+      body: JSON.stringify({
+        session_id: testSession.id,
+        content: "Recommend a remote role then inspect it",
+      }),
+    });
+
+    const res = await POST(req);
+    const sseText = await readSseStream(res);
+
+    expect(dispatchSpy).toHaveBeenCalledTimes(2);
+    expect(sseText).toContain('"tool":"get_career_recommendations"');
+    expect(sseText).toContain('"tool":"inspect_job_details"');
+    expect(sseText).toContain(
+      "The top role is Staff AI Engineer at Nexus Web3 AI Labs.",
+    );
+    expect(sseText).toContain('"done":true');
+  });
+
+  it("9. should surface malformed tool arguments as a structured failure without executing the tool", async () => {
+    const dispatchSpy = vi.spyOn(agentToolDispatcher, "executeTool");
+
+    async function* makeMalformedTurn() {
+      yield {
+        choices: [
+          {
+            delta: {
+              tool_calls: [
+                {
+                  index: 0,
+                  id: "call_malformed",
+                  type: "function" as const,
+                  function: {
+                    name: "remember_fact",
+                    arguments: "{not-valid-json",
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      };
+    }
+
+    async function* makeRecoveryTurn() {
+      yield {
+        choices: [
+          {
+            delta: {
+              content: "I could not save that because the arguments were invalid.",
+            },
+          },
+        ],
+      };
+    }
+
+    mockGroqCreate
+      .mockResolvedValueOnce(makeMalformedTurn())
+      .mockResolvedValueOnce(makeRecoveryTurn());
+
+    const req = new NextRequest("http://localhost:3000/api/chat/message", {
+      method: "POST",
+      body: JSON.stringify({
+        session_id: testSession.id,
+        content: "Save a memory",
+      }),
+    });
+
+    const res = await POST(req);
+    const sseText = await readSseStream(res);
+
+    expect(dispatchSpy).not.toHaveBeenCalled();
+    expect(sseText).toContain('"type":"tool_end"');
+    expect(sseText).toContain('"success":false');
+
+    // The malformed-argument error must be delivered to the model as a structured tool result.
+    const secondCallArgs = mockGroqCreate.mock.calls[1][0] as any;
+    const lastMessage = secondCallArgs.messages[
+      secondCallArgs.messages.length - 1
+    ] as { role: string; content: string };
+    expect(lastMessage.role).toBe("tool");
+    expect(lastMessage.content).toContain('"success":false');
+    expect(lastMessage.content).toContain(
+      "Invalid tool arguments for remember_fact",
+    );
+  });
+
+  it("10. should execute independent tools in a single round concurrently", async () => {
+    const dispatchSpy = vi
+      .spyOn(agentToolDispatcher, "executeTool")
+      .mockResolvedValueOnce({
+        success: true,
+        status: "success",
+        toolName: "get_career_recommendations",
+        data: {
+          totalFound: 1,
+          recommendations: [
+            {
+              id: "job-uuid-par-1",
+              title: "Remote Frontend Engineer",
+              company: "Acme",
+              matchScore: 90,
+            },
+          ],
+        },
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        status: "success",
+        toolName: "inspect_job_details",
+        data: {
+          id: "job-uuid-par-1",
+          title: "Remote Frontend Engineer",
+          companyName: "Acme",
+          requirements: ["React", "TypeScript"],
+        },
+      });
+
+    async function* makeParallelToolsTurn() {
+      yield {
+        choices: [
+          {
+            delta: {
+              tool_calls: [
+                {
+                  index: 0,
+                  id: "call_par_1",
+                  type: "function" as const,
+                  function: {
+                    name: "get_career_recommendations",
+                    arguments: JSON.stringify({ workMode: ["remote"] }),
+                  },
+                },
+                {
+                  index: 1,
+                  id: "call_par_2",
+                  type: "function" as const,
+                  function: {
+                    name: "inspect_job_details",
+                    arguments: JSON.stringify({ jobId: "job-uuid-par-1" }),
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      };
+    }
+
+    async function* makeFinalAnswerTurn() {
+      yield {
+        choices: [
+          {
+            delta: {
+              content:
+                "Here is a remote frontend role at Acme matching your stack.",
+            },
+          },
+        ],
+      };
+    }
+
+    mockGroqCreate
+      .mockResolvedValueOnce(makeParallelToolsTurn())
+      .mockResolvedValueOnce(makeFinalAnswerTurn());
+
+    const req = new NextRequest("http://localhost:3000/api/chat/message", {
+      method: "POST",
+      body: JSON.stringify({
+        session_id: testSession.id,
+        content: "Find and inspect a remote frontend role",
+      }),
+    });
+
+    const res = await POST(req);
+    const sseText = await readSseStream(res);
+
+    expect(dispatchSpy).toHaveBeenCalledTimes(2);
+    expect(sseText).toContain('"tool":"get_career_recommendations"');
+    expect(sseText).toContain('"tool":"inspect_job_details"');
+    expect(sseText.match(/"type":"tool_start"/g) || []).toHaveLength(2);
+    expect(sseText.match(/"type":"tool_end"/g) || []).toHaveLength(2);
+    expect(sseText).toContain(
+      "Here is a remote frontend role at Acme matching your stack.",
+    );
+  });
+
+  it("11. should emit a memory_recall event when memories shaped the answer", async () => {
+    const recallSpy = vi
+      .spyOn(careerMemoryService, "getDurableContext")
+      .mockResolvedValueOnce({
+        source: "walrus",
+        memories: [
+          {
+            id: null,
+            content: "Prefers remote roles based in America",
+            category: "work_preference",
+            blobId: "blob-recall-1",
+            source: "walrus",
+          },
+        ],
+        context: "\n\n[RECALLED FROM WALRUS MEMORY]: remote",
+      });
+
+    async function* makeRecallStream() {
+      yield {
+        choices: [
+          {
+            delta: {
+              content:
+                "Since you prefer remote roles based in America, here are options.",
+            },
+          },
+        ],
+      };
+    }
+    mockGroqCreate.mockResolvedValueOnce(makeRecallStream());
+
+    const req = new NextRequest("http://localhost:3000/api/chat/message", {
+      method: "POST",
+      body: JSON.stringify({
+        session_id: testSession.id,
+        content: "What do you remember about me?",
+      }),
+    });
+
+    const res = await POST(req);
+    const sseText = await readSseStream(res);
+
+    try {
+      expect(recallSpy).toHaveBeenCalled();
+      expect(sseText).toContain('"type":"memory_recall"');
+      expect(sseText).toContain('"source":"walrus"');
+      expect(sseText).toContain("Prefers remote roles based in America");
+      expect(sseText).toContain('"memoryRecall"');
+    } finally {
+      recallSpy.mockRestore();
+    }
   });
 });

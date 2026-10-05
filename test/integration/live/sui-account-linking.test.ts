@@ -5,6 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { nonceManager } from "@/lib/sui/nonce-manager";
 import { buildSiwsMessage } from "@/lib/sui/siws-message";
+import { getConfiguredSuiNetwork } from "@/lib/sui/network";
 import { resolveSuiWalletIdentity } from "@/lib/sui/identity-resolver";
 import { POST as linkRoute } from "@/app/api/auth/sui/link/route";
 import { POST as unlinkRoute } from "@/app/api/auth/sui/unlink/route";
@@ -136,7 +137,7 @@ describe(
       } = {},
     ) {
       const purpose = options.purpose || "SIWS_LINK";
-      const network = options.network || "testnet";
+      const network = options.network || getConfiguredSuiNetwork();
       const domain = options.domain || "localhost:3000";
 
       const { nonce } = nonceManager.generateNonce(purpose, network);
@@ -245,7 +246,10 @@ describe(
       const keypair = new Ed25519Keypair();
 
       // Generate nonce and artificially backdate its creation and expiration
-      const record = nonceManager.generateNonce("SIWS_LINK", "testnet");
+      const record = nonceManager.generateNonce(
+        "SIWS_LINK",
+        getConfiguredSuiNetwork(),
+      );
       (record as any).expiresAt = Date.now() - 1000; // expired 1s ago
 
       const messageText = buildSiwsMessage({
@@ -254,7 +258,7 @@ describe(
         uri: "http://localhost:3000/settings",
         nonce: record.nonce,
         purpose: "SIWS_LINK",
-        network: "testnet",
+        network: getConfiguredSuiNetwork(),
       });
 
       const { signature } = await keypair.signPersonalMessage(
@@ -306,8 +310,10 @@ describe(
       const user = await createAuthenticatedEmailUser("net_mismatch");
       const keypair = new Ed25519Keypair();
 
+      const configured = getConfiguredSuiNetwork();
+      const wrongNetwork = configured === "mainnet" ? "testnet" : "mainnet";
       const payload = await createSignedLinkPayload(keypair, {
-        network: "mainnet", // Server is configured for testnet
+        network: wrongNetwork,
       });
 
       const req = buildLinkReq(

@@ -1,7 +1,6 @@
 "use client";
 
-import React from "react";
-import Link from "next/link";
+import React, { useState } from "react";
 import {
   Briefcase,
   MapPin,
@@ -12,6 +11,7 @@ import {
 } from "lucide-react";
 import CompanyLogo from "@/components/common/CompanyLogo";
 import { MatchedJobItem } from "@/types/chat";
+import JobDetailModal from "@/features/jobs/components/JobDetailModal";
 
 interface JobMatchCarouselProps {
   jobs: MatchedJobItem[];
@@ -63,6 +63,8 @@ export default function JobMatchCarousel({
   jobs,
   onAskAboutJob,
 }: JobMatchCarouselProps) {
+  const [selectedJob, setSelectedJob] = useState<MatchedJobItem | null>(null);
+
   if (!jobs || jobs.length === 0) return null;
 
   const topJob = jobs[0];
@@ -83,7 +85,7 @@ export default function JobMatchCarousel({
 
       {/* 1. Hero Card: Top Recommended Match */}
       {topJob && (
-        <div className="rounded-xl border border-primary/25 bg-card/60 p-4 sm:p-5 space-y-3.5 shadow-2xs">
+        <div className="rounded-sm border border-primary/25 bg-card/60 p-4 sm:p-5 space-y-3.5 shadow-2xs">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
             <div className="flex items-start gap-3 min-w-0">
@@ -128,9 +130,9 @@ export default function JobMatchCarousel({
             )}
           </div>
 
-          {/* AI Match Reason: Full Natural Auto-Height */}
+          {/* AI Match Reason: Refined accent surface */}
           {topJob.reason && (
-            <div className="p-3 bg-secondary/35 border border-border/50 rounded-xl space-y-1">
+            <div className="border-l-2 border-primary/60 pl-3 py-1.5 space-y-1 bg-secondary/20 rounded-r-xs">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Match Assessment
               </span>
@@ -154,13 +156,14 @@ export default function JobMatchCarousel({
               <span>Ask Finder about this role</span>
             </button>
 
-            <Link
-              href="/jobs"
-              className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+            <button
+              type="button"
+              onClick={() => setSelectedJob(topJob)}
+              className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline cursor-pointer"
             >
               <span>View Details</span>
               <ArrowRight className="w-3 h-3" />
-            </Link>
+            </button>
           </div>
         </div>
       )}
@@ -173,8 +176,9 @@ export default function JobMatchCarousel({
               <Layers className="w-3.5 h-3.5 text-muted-foreground" />
               <span>Other Relevant Positions ({otherJobs.length})</span>
             </span>
-            <span className="text-[10px] text-muted-foreground/70 hidden sm:inline">
-              Scroll horizontally to explore →
+            <span className="text-[10px] text-muted-foreground/70 inline-flex items-center gap-1">
+              <span>Swipe or scroll to explore</span>
+              <span aria-hidden="true">&rarr;</span>
             </span>
           </div>
 
@@ -183,7 +187,7 @@ export default function JobMatchCarousel({
             {otherJobs.map((job) => (
               <div
                 key={job.id || job.job_id}
-                className="w-[285px] sm:w-[315px] shrink-0 snap-start flex flex-col justify-between p-3.5 rounded-xl border border-border/80 bg-card/40 hover:bg-card/70 hover:border-border transition-all duration-200 shadow-2xs"
+                className="w-[285px] sm:w-[315px] shrink-0 snap-start flex flex-col justify-between p-3.5 rounded-sm border border-border/80 bg-card/40 hover:bg-card/70 hover:border-border transition-all duration-200 shadow-2xs"
               >
                 <div className="space-y-2.5">
                   {/* Header */}
@@ -226,7 +230,7 @@ export default function JobMatchCarousel({
 
                   {/* AI Reason (Auto-Height, No Clamping) */}
                   {job.reason && (
-                    <p className="text-xs text-muted-foreground leading-relaxed bg-secondary/30 p-2.5 rounded-xl font-sans">
+                    <p className="text-xs text-muted-foreground leading-relaxed bg-secondary/30 p-2.5 rounded-sm font-sans">
                       {job.reason}
                     </p>
                   )}
@@ -246,19 +250,27 @@ export default function JobMatchCarousel({
                     <span>Ask Finder</span>
                   </button>
 
-                  <Link
-                    href="/jobs"
-                    className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+                  <button
+                    type="button"
+                    onClick={() => setSelectedJob(job)}
+                    className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline cursor-pointer"
                   >
                     <span>View Details</span>
                     <ArrowRight className="w-3 h-3" />
-                  </Link>
+                  </button>
                 </div>
               </div>
             ))}
           </div>
         </div>
       )}
+
+      <JobDetailModal
+        jobId={selectedJob?.job_id || selectedJob?.id || null}
+        summary={selectedJob}
+        onClose={() => setSelectedJob(null)}
+        onAskAboutJob={onAskAboutJob}
+      />
     </div>
   );
 }

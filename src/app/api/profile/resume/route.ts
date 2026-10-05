@@ -208,6 +208,9 @@ export async function POST(req: NextRequest) {
       },
     };
 
+    // The user confirmed they want this resume applied, so create a draft
+    // profile when none exists yet (for users who started in chat).
+    await careerProfileService.getOrCreateDraft(user.id, "web");
     const currentProfile = await careerProfileService.requireProfile(user.id);
     const versionToUse =
       typeof expected_version === "number"

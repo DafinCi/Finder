@@ -1,7 +1,14 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+} from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useJobs } from "../hooks/useJobs";
 import JobSummary from "../components/JobSummary";
 import JobCard from "../components/JobCard";
@@ -19,15 +26,17 @@ import {
   RotateCcw,
   Bookmark,
   ThumbsDown,
-  Sparkles,
   ArrowRight,
+  ArrowLeft,
   Laptop,
   Brain,
   DollarSign,
+  Check,
 } from "lucide-react";
 import { toast } from "sonner";
-import { FormattedJobMatch } from "../services/jobs.api";
+import { jobsApi, FormattedJobMatch } from "../services/jobs.api";
 import CompanyLogo from "@/components/common/CompanyLogo";
+import { useSidebar } from "@/contexts/SidebarContext";
 
 export default function JobsView() {
   const {
@@ -60,27 +69,110 @@ export default function JobsView() {
     recordTelemetry,
   } = useJobs();
 
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const paramJobId = searchParams
+    ? searchParams.get("jobId") || searchParams.get("job")
+    : null;
+
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
-  const selectedJob = useMemo(
-    () =>
-      selectedJobId
-        ? allMatches.find((j) => j.jobId === selectedJobId) ?? null
-        : null,
-    [allMatches, selectedJobId],
-  );
+  const [directJob, setDirectJob] = useState<FormattedJobMatch | null>(null);
+  const [consumedJobParam, setConsumedJobParam] = useState<string | null>(null);
+
+  if (paramJobId && paramJobId !== consumedJobParam) {
+    setConsumedJobParam(paramJobId);
+    setSelectedJobId(paramJobId);
+  }
+
+  useEffect(() => {
+    if (!selectedJobId) return;
+
+    const foundInPool = allMatches.find((j) => j.jobId === selectedJobId);
+    if (foundInPool) {
+      return;
+    }
+
+    let cancelled = false;
+    jobsApi
+      .getJobDetail(selectedJobId)
+      .then((detail) => {
+        if (cancelled || !detail) return;
+        const formatted: FormattedJobMatch = {
+          matchId: detail.id,
+          jobId: detail.id,
+          matchScore: 0,
+          reason: "Directly viewed job opportunity.",
+          missingSkills: [],
+          title: detail.title,
+          description: detail.description || "",
+          requirements: Array.isArray(detail.requirements)
+            ? detail.requirements
+            : [],
+          location: detail.location || "Location not specified",
+          workMode: detail.location?.toLowerCase().includes("remote")
+            ? "remote"
+            : "unknown",
+          experienceLevel: detail.experience_level || "Not specified",
+          salaryRange: (detail as any).salary_range || null,
+          companyName: detail.company_name,
+          companyLogo: detail.company_logo,
+          companyWebsite: (detail as any).company_website || null,
+          applyUrl: detail.apply_url || null,
+          sourceUrl: detail.source_url || null,
+          source: detail.source || "manual",
+          isSaved: false,
+          postedAt: (detail as any).posted_at || null,
+        };
+        setDirectJob(formatted);
+      })
+      .catch((err) => {
+        console.warn("Direct job fetch failed for ID:", selectedJobId, err);
+        if (!cancelled) {
+          toast.error("This job is no longer available", {
+            description:
+              "It may have been closed or removed. Try another role.",
+          });
+          setSelectedJobId(null);
+          if (paramJobId) {
+            router.replace("/jobs");
+          }
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedJobId, allMatches, paramJobId, router]);
+
+  const selectedJob = useMemo(() => {
+    if (!selectedJobId) return null;
+    const found = allMatches.find((j) => j.jobId === selectedJobId);
+    if (found) return found;
+    if (directJob && directJob.jobId === selectedJobId) return directJob;
+    return null;
+  }, [allMatches, selectedJobId, directJob]);
   const [rejectingJob, setRejectingJob] = useState<FormattedJobMatch | null>(
     null,
   );
-  const [showMoreFilters, setShowMoreFilters] = useState(false);
+  const { collapsed } = useSidebar();
+  const [showFiltersModal, setShowFiltersModal] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
-  const moreFiltersCount = useMemo(() => {
+  const activeFilterCount = useMemo(() => {
     let count = 0;
     if (selectedExperience !== "all") count += 1;
     if (selectedLocation !== "all") count += 1;
-    if (selectedMatchLevel !== "all" && selectedMatchLevel !== "strong") count += 1;
-    if (selectedWorkMode !== "all" && selectedWorkMode !== "remote") count += 1;
+    if (selectedMatchLevel !== "all") count += 1;
+    if (selectedWorkMode !== "all") count += 1;
+    if (showSavedOnly) count += 1;
     return count;
-  }, [selectedExperience, selectedLocation, selectedMatchLevel, selectedWorkMode]);
+  }, [
+    selectedExperience,
+    selectedLocation,
+    selectedMatchLevel,
+    selectedWorkMode,
+    showSavedOnly,
+  ]);
 
   const activeChips = useMemo(() => {
     const chips: { id: string; label: string; onRemove: () => void }[] = [];
@@ -177,10 +269,14 @@ export default function JobsView() {
     }
     drawerViewStartTime.current = null;
     setSelectedJobId(null);
+    if (paramJobId) {
+      setConsumedJobParam(paramJobId);
+      router.replace("/jobs");
+    }
     requestAnimationFrame(() => {
       triggerElementRef.current?.focus();
     });
-  }, [selectedJob, recordTelemetry]);
+  }, [selectedJob, recordTelemetry, paramJobId, router]);
 
   useEffect(() => {
     if (!selectedJob) return;
@@ -290,7 +386,7 @@ export default function JobsView() {
     }
     if (mode === "hybrid") {
       return (
-        <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-primary/15 text-slush-lavender border border-primary/30 font-medium">
+        <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-secondary text-muted-foreground border border-border/80 font-medium">
           Hybrid
         </span>
       );
@@ -307,321 +403,209 @@ export default function JobsView() {
   }
 
   return (
-    <div className="flex-1 min-h-0 w-full h-full overflow-y-auto custom-scrollbar">
-      <div className="p-6 md:p-10 max-w-6xl mx-auto space-y-8 animate-in fade-in duration-300">
-        {/* Page Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/60 pb-6">
-          <div className="space-y-1">
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight font-heading text-foreground">
-              Job Recommendations
-            </h1>
-            <p className="text-xs md:text-sm text-muted-foreground">
-              Curated opportunities matched to your target role, verified skills, and confirmed preferences.
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
+    <div className="flex-1 min-h-0 w-full h-full flex flex-col overflow-hidden">
+      {/* Top Single-Row Compact Header */}
+      <header
+        className={`h-16 border-b border-border/80 bg-sidebar flex items-center justify-between shrink-0 select-none z-20 px-4 md:px-6 transition-colors ${
+          collapsed ? "pl-14 md:pl-6" : ""
+        }`}
+      >
+        {isMobileSearchOpen ? (
+          <div className="flex items-center gap-2 w-full animate-in fade-in duration-150">
             <button
               type="button"
-              disabled={isRefreshing}
-              onClick={() => refresh()}
-              aria-label="Refresh job recommendations feed"
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-sm bg-secondary border border-border text-xs font-medium text-foreground hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              onClick={() => setIsMobileSearchOpen(false)}
+              aria-label="Close search"
+              className="p-1.5 rounded-sm text-muted-foreground hover:text-foreground hover:bg-secondary cursor-pointer"
             >
-              <RotateCcw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
-              <span>{isRefreshing ? "Refreshing..." : "Refresh Feed"}</span>
+              <ArrowLeft className="w-4 h-4" />
             </button>
-          </div>
-        </div>
-
-        {/* Onboarding Call-to-Action Banner */}
-        {requiresOnboarding && (
-          <div className="border border-primary/30 bg-primary/5 rounded-sm p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm">
-            <div className="space-y-2 max-w-xl">
-              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-sm bg-primary/10 border border-primary/20 text-primary text-xs font-semibold">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Profile Setup Required</span>
-              </div>
-              <h3 className="text-lg md:text-xl font-bold font-heading text-foreground">
-                Personalize Your Recommendation Feed
-              </h3>
-              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                Finder matches opportunities against your active Career
-                Profile. Complete your setup to establish your target
-                role, skills, and work preferences.
-              </p>
-            </div>
-            <Link
-              href="/onboarding"
-              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-sm bg-primary text-primary-foreground text-xs sm:text-sm font-semibold hover:opacity-90 shadow-sm transition-all whitespace-nowrap cursor-pointer"
-            >
-              <span>Start Onboarding</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        )}
-
-        {/* Error state on refresh (when existing items are present) */}
-        {error && allMatches.length > 0 && !requiresOnboarding && (
-          <div className="p-4 rounded-sm border border-destructive/20 bg-destructive/10 text-destructive text-sm flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{error}</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => refresh()}
-              className="text-xs font-semibold underline hover:no-underline cursor-pointer"
-            >
-              Retry
-            </button>
-          </div>
-        )}
-
-        {/* Summary KPI Cards */}
-        {!requiresOnboarding && <JobSummary stats={stats} />}
-
-        {/* Main Workspace Feed */}
-        <div className="space-y-5">
-          {/* Search & WhatsApp-Style Filter Section */}
-          <div className="p-3.5 sm:p-4 border border-border/80 bg-card rounded-sm space-y-3 shadow-2xs">
-            {/* Search Input */}
-            <div className="relative">
-              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <div className="relative flex-1">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
               <input
                 type="text"
+                autoFocus
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by job title or company name..."
-                aria-label="Search jobs by title or company name"
-                className="w-full pl-9.5 pr-9 py-2.5 bg-secondary/50 border border-border/80 rounded-sm text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all"
+                placeholder="Search jobs or company..."
+                aria-label="Search jobs"
+                className="w-full pl-9 pr-8 py-1.5 bg-secondary/80 border border-border/80 rounded-sm text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-muted-foreground/40 focus:border-border-strong"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
-                  aria-label="Clear search query"
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1 cursor-pointer"
+                  aria-label="Clear search"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 cursor-pointer"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-2.5 min-w-0">
+              <h1 className="text-sm sm:text-base font-semibold text-foreground truncate leading-tight">
+                Jobs
+              </h1>
+            </div>
 
-            {/* WhatsApp-Style Quick Filter Pills Row */}
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
-              {/* 1. All */}
+            <div className="flex items-center gap-2 sm:gap-2.5 ml-auto">
+              {/* Desktop Search */}
+              <div className="relative hidden md:block w-44 lg:w-60">
+                <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search jobs..."
+                  aria-label="Search jobs"
+                  className="w-full pl-8 pr-7 py-1.5 bg-secondary/60 border border-border/80 rounded-sm text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-muted-foreground/40 focus:border-border-strong transition-all"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    aria-label="Clear search"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Mobile Search Button */}
               <button
                 type="button"
-                onClick={() => {
-                  setShowSavedOnly(false);
-                  setSelectedMatchLevel("all");
-                  setSelectedWorkMode("all");
-                  setSelectedExperience("all");
-                  setSelectedLocation("all");
-                }}
-                className={`h-8 px-3.5 rounded-sm text-xs font-medium whitespace-nowrap transition-colors cursor-pointer border ${
-                  !showSavedOnly &&
-                  selectedMatchLevel === "all" &&
-                  selectedWorkMode === "all" &&
-                  selectedExperience === "all" &&
-                  selectedLocation === "all"
-                    ? "bg-primary text-primary-foreground border-primary font-semibold"
-                    : "bg-secondary/60 text-muted-foreground border-border/80 hover:text-foreground hover:bg-secondary"
-                }`}
+                onClick={() => setIsMobileSearchOpen(true)}
+                aria-label="Open search"
+                className="md:hidden p-2 rounded-sm text-muted-foreground hover:text-foreground hover:bg-secondary/70 transition-colors cursor-pointer"
               >
-                All
+                <Search className="w-4 h-4" />
               </button>
 
-              {/* 2. Saved */}
+              {/* Filter Button */}
               <button
                 type="button"
-                aria-pressed={showSavedOnly}
-                onClick={() => setShowSavedOnly((prev) => !prev)}
-                className={`h-8 px-3 rounded-sm text-xs font-medium whitespace-nowrap transition-colors cursor-pointer border flex items-center gap-1.5 ${
-                  showSavedOnly
-                    ? "bg-primary text-primary-foreground border-primary font-semibold"
-                    : "bg-secondary/60 text-muted-foreground border-border/80 hover:text-foreground hover:bg-secondary"
-                }`}
-              >
-                <Bookmark className={`w-3.5 h-3.5 ${showSavedOnly ? "fill-current" : ""}`} />
-                <span>Saved</span>
-              </button>
-
-              {/* 3. Top Matches (75%+) */}
-              <button
-                type="button"
-                aria-pressed={selectedMatchLevel === "strong" || selectedMatchLevel === "excellent"}
-                onClick={() => {
-                  setSelectedMatchLevel((prev) =>
-                    prev === "strong" || prev === "excellent" ? "all" : "strong"
-                  );
-                }}
-                className={`h-8 px-3 rounded-sm text-xs font-medium whitespace-nowrap transition-colors cursor-pointer border flex items-center gap-1.5 ${
-                  selectedMatchLevel === "strong" || selectedMatchLevel === "excellent"
-                    ? "bg-primary text-primary-foreground border-primary font-semibold"
-                    : "bg-secondary/60 text-muted-foreground border-border/80 hover:text-foreground hover:bg-secondary"
-                }`}
-              >
-                <Sparkles className="w-3.5 h-3.5 text-slush-mint" />
-                <span>Top Match (75%+)</span>
-              </button>
-
-              {/* 4. Remote */}
-              <button
-                type="button"
-                aria-pressed={selectedWorkMode === "remote"}
-                onClick={() => {
-                  setSelectedWorkMode((prev) => (prev === "remote" ? "all" : "remote"));
-                }}
-                className={`h-8 px-3 rounded-sm text-xs font-medium whitespace-nowrap transition-colors cursor-pointer border flex items-center gap-1.5 ${
-                  selectedWorkMode === "remote"
-                    ? "bg-primary text-primary-foreground border-primary font-semibold"
-                    : "bg-secondary/60 text-muted-foreground border-border/80 hover:text-foreground hover:bg-secondary"
-                }`}
-              >
-                <Laptop className="w-3.5 h-3.5" />
-                <span>Remote</span>
-              </button>
-
-              {/* 5. More Filters Toggle */}
-              <button
-                type="button"
-                onClick={() => setShowMoreFilters((prev) => !prev)}
-                aria-expanded={showMoreFilters}
-                className={`h-8 px-3 rounded-sm text-xs font-medium whitespace-nowrap transition-colors cursor-pointer border flex items-center gap-1.5 ${
-                  showMoreFilters || moreFiltersCount > 0
-                    ? "bg-secondary text-foreground border-primary/60 font-semibold"
+                onClick={() => setShowFiltersModal(true)}
+                aria-label="Filter jobs"
+                className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-sm text-xs font-medium transition-colors cursor-pointer border ${
+                  hasActiveFilters
+                    ? "bg-secondary text-foreground border-border-strong font-semibold"
                     : "bg-secondary/60 text-muted-foreground border-border/80 hover:text-foreground hover:bg-secondary"
                 }`}
               >
                 <SlidersHorizontal className="w-3.5 h-3.5" />
-                <span>Filters</span>
-                {moreFiltersCount > 0 && (
-                  <span className="w-4 h-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
-                    {moreFiltersCount}
+                <span className="hidden sm:inline">Filters</span>
+                {activeFilterCount > 0 && (
+                  <span className="w-4 h-4 rounded-full bg-foreground text-background text-[10px] font-bold flex items-center justify-center">
+                    {activeFilterCount}
                   </span>
                 )}
               </button>
 
-              {hasActiveFilters && (
-                <button
-                  type="button"
-                  onClick={resetFilters}
-                  aria-label="Reset all active filters"
-                  className="h-8 px-2.5 text-xs text-primary hover:underline font-medium whitespace-nowrap ml-auto cursor-pointer flex items-center gap-1"
-                >
-                  <X className="w-3 h-3" />
-                  <span>Reset</span>
-                </button>
-              )}
+              {/* Refresh Feed Button */}
+              <button
+                type="button"
+                disabled={isRefreshing}
+                onClick={() => refresh()}
+                aria-label="Refresh feed"
+                title="Refresh feed"
+                className="flex p-2 sm:px-2.5 sm:py-1.5 rounded-sm bg-secondary/60 border border-border/80 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors cursor-pointer disabled:opacity-50"
+              >
+                <RotateCcw
+                  className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`}
+                />
+                <span className="hidden lg:inline ml-1.5">
+                  {isRefreshing ? "Refreshing..." : "Refresh"}
+                </span>
+              </button>
             </div>
+          </>
+        )}
+      </header>
 
-            {/* Expandable Advanced Filters Panel */}
-            {showMoreFilters && (
-              <div className="pt-3 border-t border-border/60 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 animate-in fade-in duration-200">
-                {/* Match Level */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Match Score
-                  </label>
-                  <select
-                    value={selectedMatchLevel}
-                    onChange={(e) => setSelectedMatchLevel(e.target.value)}
-                    aria-label="Filter by match level"
-                    className="w-full bg-secondary/50 border border-border/80 rounded-sm px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
-                  >
-                    <option value="all">All Match Levels</option>
-                    <option value="excellent">Excellent (90-100)</option>
-                    <option value="strong">Strong (75-89)</option>
-                    <option value="good">Good (60-74)</option>
-                    <option value="potential">Potential (&lt;60)</option>
-                  </select>
+      {/* Main Scrollable Body */}
+      <div className="flex-1 min-h-0 w-full overflow-y-auto custom-scrollbar">
+        <div className="p-4 sm:p-6 md:p-8 max-w-6xl mx-auto space-y-6 animate-in fade-in duration-200">
+          {/* Onboarding Call-to-Action Banner */}
+          {requiresOnboarding && (
+            <div className="border border-border bg-secondary/30 rounded-sm p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm">
+              <div className="space-y-2 max-w-xl">
+                <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-sm bg-secondary border border-border text-muted-foreground text-xs font-semibold">
+                  <span>Profile Setup Required</span>
                 </div>
-
-                {/* Work Mode */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Work Mode
-                  </label>
-                  <select
-                    value={selectedWorkMode}
-                    onChange={(e) => setSelectedWorkMode(e.target.value)}
-                    aria-label="Filter by work mode"
-                    className="w-full bg-secondary/50 border border-border/80 rounded-sm px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
-                  >
-                    <option value="all">All Work Modes</option>
-                    <option value="remote">Remote Only</option>
-                    <option value="hybrid">Hybrid</option>
-                    <option value="onsite">Onsite</option>
-                  </select>
-                </div>
-
-                {/* Experience Level */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Experience Level
-                  </label>
-                  <select
-                    value={selectedExperience}
-                    onChange={(e) => setSelectedExperience(e.target.value)}
-                    aria-label="Filter by experience level"
-                    className="w-full bg-secondary/50 border border-border/80 rounded-sm px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
-                  >
-                    <option value="all">All Experience Levels</option>
-                    <option value="junior">Junior / Entry Level</option>
-                    <option value="mid">Mid Level</option>
-                    <option value="senior">Senior / Lead</option>
-                    <option value="unspecified">Level not specified</option>
-                  </select>
-                </div>
-
-                {/* Location */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Location
-                  </label>
-                  <select
-                    value={selectedLocation}
-                    onChange={(e) => setSelectedLocation(e.target.value)}
-                    aria-label="Filter by location"
-                    className="w-full bg-secondary/50 border border-border/80 rounded-sm px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer truncate"
-                  >
-                    <option value="all">All Locations</option>
-                    {uniqueLocations
-                      .filter((loc) => loc !== "all")
-                      .map((loc) => (
-                        <option key={loc} value={loc}>
-                          {loc}
-                        </option>
-                      ))}
-                  </select>
-                </div>
+                <h3 className="text-lg md:text-xl font-bold font-heading text-foreground">
+                  Personalize Your Recommendation Feed
+                </h3>
+                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                  Finder matches opportunities against your active Career
+                  Profile. Complete your setup to establish your target role,
+                  skills, and work preferences.
+                </p>
               </div>
-            )}
+              <Link
+                href="/onboarding"
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-sm bg-primary text-primary-foreground text-xs sm:text-sm font-semibold hover:opacity-90 shadow-sm transition-all whitespace-nowrap cursor-pointer"
+              >
+                <span>Start Onboarding</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          )}
 
-            {/* Active Filters Dismissible Chips */}
-            {activeChips.length > 0 && (
-              <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                <span className="text-[11px] text-muted-foreground mr-1 font-medium">Active:</span>
-                {activeChips.map((chip) => (
-                  <span
-                    key={chip.id}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-sm bg-secondary/90 border border-border/80 text-[11px] text-foreground font-medium"
-                  >
-                    <span>{chip.label}</span>
-                    <button
-                      type="button"
-                      onClick={chip.onRemove}
-                      aria-label={`Remove filter ${chip.label}`}
-                      className="text-muted-foreground hover:text-foreground ml-0.5 cursor-pointer"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
-                ))}
+          {/* Error state on refresh (when existing items are present) */}
+          {error && allMatches.length > 0 && !requiresOnboarding && (
+            <div className="p-4 rounded-sm border border-destructive/20 bg-destructive/10 text-destructive text-sm flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{error}</span>
               </div>
-            )}
-          </div>
+              <button
+                type="button"
+                onClick={() => refresh()}
+                className="text-xs font-semibold underline hover:no-underline cursor-pointer"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
+          {/* Summary KPI Cards */}
+          {!requiresOnboarding && <JobSummary stats={stats} />}
+
+          {/* Active Filters Dismissible Chips */}
+          {activeChips.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <span className="text-[11px] text-muted-foreground mr-1 font-medium">
+                Active filters:
+              </span>
+              {activeChips.map((chip) => (
+                <span
+                  key={chip.id}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-sm bg-secondary border border-border/80 text-[11px] text-foreground font-medium"
+                >
+                  <span>{chip.label}</span>
+                  <button
+                    type="button"
+                    onClick={chip.onRemove}
+                    aria-label={`Remove filter ${chip.label}`}
+                    className="text-muted-foreground hover:text-foreground ml-0.5 cursor-pointer"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="text-xs text-muted-foreground hover:text-foreground underline font-medium ml-1 cursor-pointer"
+              >
+                Reset all
+              </button>
+            </div>
+          )}
 
           {/* Job Cards Stream */}
           <div className="space-y-4">
@@ -648,7 +632,7 @@ export default function JobsView() {
                   type="button"
                   onClick={resetFilters}
                   aria-label="Reset all filters"
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-sm bg-secondary text-foreground border border-border text-xs font-medium hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors cursor-pointer mx-auto"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-sm bg-secondary text-foreground border border-border text-xs font-medium hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground transition-colors cursor-pointer mx-auto"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>Reset all filters</span>
@@ -684,7 +668,7 @@ export default function JobsView() {
                   receiving matched opportunities.
                 </p>
                 <Link
-                  href="/"
+                  href="/c"
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-sm bg-primary text-primary-foreground text-xs font-semibold shadow-xs hover:opacity-90 transition-opacity"
                 >
                   <MessageSquare className="w-3.5 h-3.5" />
@@ -735,7 +719,7 @@ export default function JobsView() {
             >
               {/* Drawer Header */}
               <div className="flex items-center justify-between border-b border-border/80 pb-4">
-                <div className="flex items-center gap-2 text-primary font-semibold text-xs tracking-tight">
+                <div className="flex items-center gap-2 text-muted-foreground font-semibold text-xs tracking-tight">
                   <span>Recommendation Details</span>
                 </div>
                 <div className="flex items-center gap-1">
@@ -746,7 +730,7 @@ export default function JobsView() {
                     aria-label={selectedJob.isSaved ? "Saved" : "Save job"}
                     className={`p-2 rounded-sm border transition-colors cursor-pointer ${
                       selectedJob.isSaved
-                        ? "bg-primary/10 border-primary text-primary"
+                        ? "bg-secondary border-border-strong text-foreground"
                         : "border-border/80 text-muted-foreground hover:text-foreground hover:bg-secondary"
                     }`}
                   >
@@ -769,7 +753,7 @@ export default function JobsView() {
                     type="button"
                     onClick={handleCloseDrawer}
                     aria-label="Close job details"
-                    className="w-10 h-10 flex items-center justify-center rounded-sm hover:bg-secondary text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors cursor-pointer ml-1"
+                    className="w-10 h-10 flex items-center justify-center rounded-sm hover:bg-secondary text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground transition-colors cursor-pointer ml-1"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -788,9 +772,15 @@ export default function JobsView() {
                     <div className="flex-1 space-y-1 min-w-0">
                       <div className="flex flex-col gap-1.5">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs font-bold text-primary bg-primary/10 border border-primary/25 px-2.5 py-0.5 rounded-sm shrink-0">
-                            {selectedJob.matchScore} / 100 Match Score
-                          </span>
+                          {selectedJob.matchScore > 0 ? (
+                            <span className="text-xs font-bold text-foreground bg-secondary border border-border-strong px-2.5 py-0.5 rounded-sm shrink-0">
+                              {selectedJob.matchScore} / 100 Match Score
+                            </span>
+                          ) : (
+                            <span className="text-xs font-medium text-muted-foreground bg-secondary border border-border px-2.5 py-0.5 rounded-sm shrink-0">
+                              Not scored for you yet
+                            </span>
+                          )}
                           {renderWorkModeBadge(selectedJob.workMode)}
                         </div>
                         <h2
@@ -812,11 +802,15 @@ export default function JobsView() {
                   <div className="flex flex-wrap gap-3 text-xs text-muted-foreground pt-1">
                     <span className="flex items-center gap-1">
                       <MapPin className="w-3.5 h-3.5" />
-                      <span>{selectedJob.location || "Location not specified"}</span>
+                      <span>
+                        {selectedJob.location || "Location not specified"}
+                      </span>
                     </span>
                     <span className="flex items-center gap-1">
                       <Briefcase className="w-3.5 h-3.5" />
-                      <span>{selectedJob.experienceLevel || "Level not specified"}</span>
+                      <span>
+                        {selectedJob.experienceLevel || "Level not specified"}
+                      </span>
                     </span>
                     {selectedJob.salaryRange && (
                       <span className="flex items-center gap-1 text-slush-mint font-medium">
@@ -899,7 +893,7 @@ export default function JobsView() {
                 {/* Fit Rationale Box */}
                 <div className="border border-border/80 bg-secondary/30 rounded-sm p-4 space-y-2">
                   <h4 className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                    <Brain className="w-3.5 h-3.5 text-primary" />
+                    <Brain className="w-3.5 h-3.5 text-muted-foreground" />
                     <span>Why this job fits</span>
                   </h4>
                   <p className="text-xs leading-relaxed text-muted-foreground font-sans">
@@ -939,10 +933,10 @@ export default function JobsView() {
                     </p>
                   </div>
                   <Link
-                    href={`/?job=${selectedJob.jobId}`}
+                    href={`/c?job=${selectedJob.jobId}`}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-card border border-border hover:bg-secondary text-foreground font-medium text-xs whitespace-nowrap shadow-2xs"
                   >
-                    <MessageSquare className="w-3.5 h-3.5 text-primary" />
+                    <MessageSquare className="w-3.5 h-3.5 text-muted-foreground" />
                     <span>Ask Finder</span>
                   </Link>
                 </div>
@@ -970,7 +964,7 @@ export default function JobsView() {
                             key={idx}
                             className="flex gap-2 text-xs text-muted-foreground leading-relaxed"
                           >
-                            <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground mt-1.5 shrink-0" />
                             <span>{req}</span>
                           </li>
                         ))}
@@ -999,7 +993,7 @@ export default function JobsView() {
                       type="button"
                       disabled={!hasUrl}
                       onClick={() => handleApply(selectedJob)}
-                      className={`flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-sm text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-opacity shadow-xs ${
+                      className={`flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-sm text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-opacity shadow-xs ${
                         hasUrl
                           ? "bg-primary text-primary-foreground hover:opacity-90 cursor-pointer"
                           : "bg-secondary text-muted-foreground border border-border/60 cursor-not-allowed opacity-75"
@@ -1019,9 +1013,219 @@ export default function JobsView() {
                 <button
                   type="button"
                   onClick={handleCloseDrawer}
-                  className="px-4 py-2.5 border border-border/80 bg-secondary/60 rounded-sm text-xs font-medium text-foreground hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors cursor-pointer"
+                  className="px-4 py-2.5 border border-border/80 bg-secondary/60 rounded-sm text-xs font-medium text-foreground hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground transition-colors cursor-pointer"
                 >
                   Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Filter Modal Dialog */}
+        {showFiltersModal && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="filter-dialog-title"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          >
+            <div
+              className="fixed inset-0 bg-background/80 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+              onClick={() => setShowFiltersModal(false)}
+              aria-hidden="true"
+            />
+            <div className="relative w-full max-w-lg bg-card border border-border/80 rounded-sm shadow-2xl p-5 space-y-4 z-50 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto custom-scrollbar">
+              <div className="flex items-center justify-between pb-3 border-b border-border/80">
+                <div className="flex items-center gap-2">
+                  <SlidersHorizontal className="w-4 h-4 text-muted-foreground" />
+                  <h3
+                    id="filter-dialog-title"
+                    className="text-sm font-bold font-heading text-foreground"
+                  >
+                    Filter Jobs
+                  </h3>
+                  {activeFilterCount > 0 && (
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-foreground text-background">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowFiltersModal(false)}
+                  aria-label="Close filter modal"
+                  className="p-1 rounded-sm text-muted-foreground hover:text-foreground hover:bg-secondary cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Quick Filters */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Quick Filters
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    aria-pressed={showSavedOnly}
+                    onClick={() => setShowSavedOnly((prev) => !prev)}
+                    className={`h-8 px-3 rounded-sm text-xs font-medium border flex items-center gap-1.5 transition-colors cursor-pointer ${
+                      showSavedOnly
+                        ? "bg-secondary text-foreground border-border-strong font-semibold"
+                        : "bg-secondary/60 text-muted-foreground border-border/80 hover:text-foreground hover:bg-secondary"
+                    }`}
+                  >
+                    <Bookmark
+                      className={`w-3.5 h-3.5 ${showSavedOnly ? "fill-current" : ""}`}
+                    />
+                    <span>Saved Only</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    aria-pressed={selectedWorkMode === "remote"}
+                    onClick={() =>
+                      setSelectedWorkMode((prev) =>
+                        prev === "remote" ? "all" : "remote",
+                      )
+                    }
+                    className={`h-8 px-3 rounded-sm text-xs font-medium border flex items-center gap-1.5 transition-colors cursor-pointer ${
+                      selectedWorkMode === "remote"
+                        ? "bg-secondary text-foreground border-border-strong font-semibold"
+                        : "bg-secondary/60 text-muted-foreground border-border/80 hover:text-foreground hover:bg-secondary"
+                    }`}
+                  >
+                    <Laptop className="w-3.5 h-3.5" />
+                    <span>Remote Only</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    aria-pressed={
+                      selectedMatchLevel === "strong" ||
+                      selectedMatchLevel === "excellent"
+                    }
+                    onClick={() => {
+                      setSelectedMatchLevel((prev) =>
+                        prev === "strong" || prev === "excellent"
+                          ? "all"
+                          : "strong",
+                      );
+                    }}
+                    className={`h-8 px-3 rounded-sm text-xs font-medium border flex items-center gap-1.5 transition-colors cursor-pointer ${
+                      selectedMatchLevel === "strong" ||
+                      selectedMatchLevel === "excellent"
+                        ? "bg-secondary text-foreground border-border-strong font-semibold"
+                        : "bg-secondary/60 text-muted-foreground border-border/80 hover:text-foreground hover:bg-secondary"
+                    }`}
+                  >
+                    <span>Top Match (75%+)</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Dropdown Filters Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-border/60">
+                {/* Match Level */}
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Match Score
+                  </label>
+                  <select
+                    value={selectedMatchLevel}
+                    onChange={(e) => setSelectedMatchLevel(e.target.value)}
+                    aria-label="Filter by match level"
+                    className="w-full bg-secondary/50 border border-border/80 rounded-sm px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-muted-foreground cursor-pointer"
+                  >
+                    <option value="all">All Match Levels</option>
+                    <option value="excellent">Excellent (90-100)</option>
+                    <option value="strong">Strong (75-89)</option>
+                    <option value="good">Good (60-74)</option>
+                    <option value="potential">Potential (&lt;60)</option>
+                  </select>
+                </div>
+
+                {/* Work Mode */}
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Work Mode
+                  </label>
+                  <select
+                    value={selectedWorkMode}
+                    onChange={(e) => setSelectedWorkMode(e.target.value)}
+                    aria-label="Filter by work mode"
+                    className="w-full bg-secondary/50 border border-border/80 rounded-sm px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-muted-foreground cursor-pointer"
+                  >
+                    <option value="all">All Work Modes</option>
+                    <option value="remote">Remote Only</option>
+                    <option value="hybrid">Hybrid</option>
+                    <option value="onsite">Onsite</option>
+                  </select>
+                </div>
+
+                {/* Experience Level */}
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Experience Level
+                  </label>
+                  <select
+                    value={selectedExperience}
+                    onChange={(e) => setSelectedExperience(e.target.value)}
+                    aria-label="Filter by experience level"
+                    className="w-full bg-secondary/50 border border-border/80 rounded-sm px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-muted-foreground cursor-pointer"
+                  >
+                    <option value="all">All Experience Levels</option>
+                    <option value="junior">Junior / Entry Level</option>
+                    <option value="mid">Mid Level</option>
+                    <option value="senior">Senior / Lead</option>
+                    <option value="unspecified">Level not specified</option>
+                  </select>
+                </div>
+
+                {/* Location */}
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Location
+                  </label>
+                  <select
+                    value={selectedLocation}
+                    onChange={(e) => setSelectedLocation(e.target.value)}
+                    aria-label="Filter by location"
+                    className="w-full bg-secondary/50 border border-border/80 rounded-sm px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-muted-foreground cursor-pointer truncate"
+                  >
+                    <option value="all">All Locations</option>
+                    {uniqueLocations
+                      .filter((loc) => loc !== "all")
+                      .map((loc) => (
+                        <option key={loc} value={loc}>
+                          {loc}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Modal Actions */}
+              <div className="flex items-center justify-between pt-3 border-t border-border/80">
+                {hasActiveFilters ? (
+                  <button
+                    type="button"
+                    onClick={resetFilters}
+                    className="text-xs text-muted-foreground hover:text-foreground underline font-medium cursor-pointer"
+                  >
+                    Reset all filters
+                  </button>
+                ) : (
+                  <div />
+                )}
+                <button
+                  type="button"
+                  onClick={() => setShowFiltersModal(false)}
+                  className="px-4 py-2 rounded-sm bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer"
+                >
+                  View {matches.length} {matches.length === 1 ? "Job" : "Jobs"}
                 </button>
               </div>
             </div>

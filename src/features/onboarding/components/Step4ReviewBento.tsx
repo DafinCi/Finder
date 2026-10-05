@@ -13,7 +13,6 @@ import {
   Plus,
   X,
   RotateCcw,
-  Sparkles,
   ArrowLeft,
   CheckCircle2,
   Loader2,
@@ -97,7 +96,7 @@ export function Step4ReviewBento({
       {/* Bento Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Card 1: Career Intent */}
-        <div className="rounded-xl border border-border/80 bg-card p-4 space-y-3 shadow-2xs">
+        <div className="rounded-sm border border-border/80 bg-card p-4 space-y-3 shadow-2xs">
           <div className="flex items-center justify-between pb-2 border-b border-border/60">
             <h3 className="text-xs font-semibold font-heading text-foreground flex items-center gap-1.5">
               <Briefcase className="w-3.5 h-3.5 text-primary" />
@@ -168,7 +167,7 @@ export function Step4ReviewBento({
         </div>
 
         {/* Card 2: Work Arrangements & Constraints */}
-        <div className="rounded-xl border border-border/80 bg-card p-4 space-y-3 shadow-2xs">
+        <div className="rounded-sm border border-border/80 bg-card p-4 space-y-3 shadow-2xs">
           <div className="flex items-center justify-between pb-2 border-b border-border/60">
             <h3 className="text-xs font-semibold font-heading text-foreground flex items-center gap-1.5">
               <MapPin className="w-3.5 h-3.5 text-primary" />
@@ -251,11 +250,10 @@ export function Step4ReviewBento({
         </div>
 
         {/* Card 3: Skills & Capabilities (Interactive) */}
-        <div className="rounded-xl border border-border/80 bg-card p-4 space-y-3 shadow-2xs md:col-span-2">
+        <div className="rounded-sm border border-border/80 bg-card p-4 space-y-3 shadow-2xs md:col-span-2">
           <div className="flex items-center justify-between pb-2 border-b border-border/60">
             <div>
-              <h3 className="text-xs font-semibold font-heading text-foreground flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-primary" />
+              <h3 className="text-xs font-semibold font-heading text-foreground">
                 Verified Capabilities & Skills
               </h3>
               <p className="text-[11px] text-muted-foreground">
@@ -280,7 +278,7 @@ export function Step4ReviewBento({
                   return (
                     <span
                       key={item.skill}
-                      className={`inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-lg border text-xs font-medium transition-all ${
+                      className={`inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-sm border text-xs font-medium transition-all ${
                         isCore
                           ? "bg-secondary/70 border-border/80 text-foreground"
                           : "bg-secondary/40 border-border/50 text-muted-foreground"
@@ -312,7 +310,7 @@ export function Step4ReviewBento({
 
           {/* Suppressed Skills List (if any) */}
           {state.suppressedSkills.length > 0 && (
-            <div className="p-3 rounded-lg bg-destructive/5 border border-destructive/20 space-y-1.5">
+            <div className="p-3 rounded-sm bg-destructive/5 border border-destructive/20 space-y-1.5">
               <span className="text-[10px] text-destructive font-semibold uppercase tracking-wider flex items-center gap-1">
                 <Lock className="w-3 h-3" />
                 Suppressed Skills ({state.suppressedSkills.length}) &bull; AI
@@ -350,7 +348,7 @@ export function Step4ReviewBento({
               placeholder="Add skill (e.g. React, Docker, Python)..."
               value={newSkillName}
               onChange={(e) => setNewSkillName(e.target.value)}
-              className="flex-1 bg-secondary/40 border border-border/80 rounded-lg px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-sans"
+              className="flex-1 bg-secondary/40 border border-border/80 rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-sans"
             />
             <div className="flex gap-2">
               <select
@@ -358,7 +356,7 @@ export function Step4ReviewBento({
                 onChange={(e) =>
                   setNewSkillCategory(e.target.value as SkillCategory)
                 }
-                className="bg-secondary/40 border border-border/80 rounded-lg px-2.5 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                className="bg-secondary/40 border border-border/80 rounded-sm px-2.5 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               >
                 <option value="core">Core Skill</option>
                 <option value="supporting">Supporting Skill</option>
@@ -381,7 +379,7 @@ export function Step4ReviewBento({
         {/* Card 4: Background Summary (if available) */}
         {(state.background.education.length > 0 ||
           state.background.experience.length > 0) && (
-          <div className="rounded-xl border border-border/80 bg-card p-4 space-y-3 shadow-2xs md:col-span-2">
+          <div className="rounded-sm border border-border/80 bg-card p-4 space-y-3 shadow-2xs md:col-span-2">
             <h3 className="text-xs font-semibold font-heading text-foreground flex items-center gap-1.5 pb-2 border-b border-border/60">
               <GraduationCap className="w-3.5 h-3.5 text-primary" />
               Documented Background Evidence
@@ -398,7 +396,7 @@ export function Step4ReviewBento({
                     {state.background.education.map((edu) => (
                       <div
                         key={edu.id}
-                        className="p-2 rounded-lg bg-secondary/30 border border-border/60"
+                        className="p-2 rounded-sm bg-secondary/30 border border-border/60"
                       >
                         <p className="font-semibold text-foreground">
                           {edu.degree || "Degree"}
@@ -423,7 +421,7 @@ export function Step4ReviewBento({
                     {state.background.experience.slice(0, 3).map((exp) => (
                       <div
                         key={exp.id}
-                        className="p-2 rounded-lg bg-secondary/30 border border-border/60"
+                        className="p-2 rounded-sm bg-secondary/30 border border-border/60"
                       >
                         <p className="font-semibold text-foreground">
                           {exp.role_title}
@@ -443,7 +441,7 @@ export function Step4ReviewBento({
       </div>
 
       {/* Governance & Deterministic Guarantee Box */}
-      <div className="p-3.5 rounded-xl bg-primary/5 border border-primary/20 flex items-start gap-3 text-xs leading-relaxed text-muted-foreground">
+      <div className="p-3.5 rounded-sm bg-primary/5 border border-primary/20 flex items-start gap-3 text-xs leading-relaxed text-muted-foreground">
         <Lock className="w-4 h-4 text-primary shrink-0 mt-0.5" />
         <div>
           <strong className="text-foreground block font-semibold">

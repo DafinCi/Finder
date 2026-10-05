@@ -3,7 +3,6 @@
 import React from "react";
 import Link from "next/link";
 import {
-  Sparkles,
   ArrowRight,
   ShieldCheck,
   CheckCircle2,
@@ -34,7 +33,6 @@ export default function MarketingHero({
         <div className="text-center max-w-3xl mx-auto space-y-6">
           {/* Eyebrow Pill */}
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/25 bg-primary/10 text-primary text-xs font-semibold tracking-wide">
-            <Sparkles className="w-3.5 h-3.5 text-primary animate-pulse" />
             <span>Open Source AI Career Intelligence Platform</span>
           </div>
 
@@ -55,9 +53,19 @@ export default function MarketingHero({
 
           {/* Action CTAs */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-            <Link href={isAuthenticated ? "/c" : "/register"} className="w-full sm:w-auto">
-              <Button size="lg" className="w-full sm:w-auto gap-2 font-semibold px-6 shadow-md hover:shadow-primary/20">
-                <span>{isAuthenticated ? "Open Your Workspace" : "Analyze Your CV Free"}</span>
+            <Link
+              href={isAuthenticated ? "/c" : "/register"}
+              className="w-full sm:w-auto"
+            >
+              <Button
+                size="lg"
+                className="w-full sm:w-auto gap-2 font-semibold px-6 shadow-md hover:shadow-primary/20"
+              >
+                <span>
+                  {isAuthenticated
+                    ? "Open Your Workspace"
+                    : "Analyze Your CV Free"}
+                </span>
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
@@ -117,10 +125,10 @@ export default function MarketingHero({
             {/* Simulated Live Workspace Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 text-left">
               {/* Left Column: Extracted Candidate Intelligence Card */}
-              <div className="lg:col-span-5 rounded-xl border border-border/70 bg-secondary/30 p-4 sm:p-5 space-y-4">
+              <div className="lg:col-span-5 rounded-sm border border-border/70 bg-secondary/30 p-4 sm:p-5 space-y-4">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-primary/15 border border-primary/30 flex items-center justify-center text-primary font-bold text-base">
+                    <div className="w-10 h-10 rounded-sm bg-primary/15 border border-primary/30 flex items-center justify-center text-primary font-bold text-base">
                       A
                     </div>
                     <div>
@@ -142,16 +150,22 @@ export default function MarketingHero({
                     Core Technical Competencies
                   </span>
                   <div className="flex flex-wrap gap-1.5 pt-1">
-                    {["TypeScript", "Next.js 16", "React 19", "PostgreSQL", "Node.js 22", "Tailwind CSS", "REST/GraphQL"].map(
-                      (skill) => (
-                        <span
-                          key={skill}
-                          className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-card border border-border text-foreground"
-                        >
-                          {skill}
-                        </span>
-                      )
-                    )}
+                    {[
+                      "TypeScript",
+                      "Next.js 16",
+                      "React 19",
+                      "PostgreSQL",
+                      "Node.js 22",
+                      "Tailwind CSS",
+                      "REST/GraphQL",
+                    ].map((skill) => (
+                      <span
+                        key={skill}
+                        className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-card border border-border text-foreground"
+                      >
+                        {skill}
+                      </span>
+                    ))}
                   </div>
                 </div>
 
@@ -160,7 +174,8 @@ export default function MarketingHero({
                     Verified Strengths
                   </span>
                   <p className="text-muted-foreground leading-relaxed text-[11px]">
-                    Architectural mastery in Next.js App Router, strict TypeScript type systems, and relational schema optimization.
+                    Architectural mastery in Next.js App Router, strict
+                    TypeScript type systems, and relational schema optimization.
                   </p>
                 </div>
               </div>
@@ -168,7 +183,7 @@ export default function MarketingHero({
               {/* Right Column: Matched Job Card & AI Copilot Response */}
               <div className="lg:col-span-7 space-y-3">
                 {/* Matched Job Preview */}
-                <div className="rounded-xl border border-border/80 bg-card p-4 space-y-3">
+                <div className="rounded-sm border border-border/80 bg-card p-4 space-y-3">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <div className="flex items-center gap-2">
@@ -189,12 +204,18 @@ export default function MarketingHero({
                   </div>
 
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    <strong className="text-foreground font-medium">Why it fits:</strong>{" "}
-                    Direct technical alignment with Next.js 16, TypeScript, and PostgreSQL. Candidate exceeds the 5+ years seniority requirement.
+                    <strong className="text-foreground font-medium">
+                      Why it fits:
+                    </strong>{" "}
+                    Direct technical alignment with Next.js 16, TypeScript, and
+                    PostgreSQL. Candidate exceeds the 5+ years seniority
+                    requirement.
                   </p>
 
                   <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px]">
-                    <span className="text-muted-foreground font-medium">Missing Skills:</span>
+                    <span className="text-muted-foreground font-medium">
+                      Missing Skills:
+                    </span>
                     <span className="px-2 py-0.5 rounded bg-destructive/10 text-destructive border border-destructive/25 font-mono">
                       Docker
                     </span>
@@ -205,8 +226,8 @@ export default function MarketingHero({
                 </div>
 
                 {/* Copilot Chat Bubble Preview */}
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-3.5 flex items-start gap-3">
-                  <div className="p-1.5 rounded-lg bg-primary/20 text-primary shrink-0 mt-0.5">
+                <div className="rounded-sm border border-primary/20 bg-primary/5 p-3.5 flex items-start gap-3">
+                  <div className="p-1.5 rounded-sm bg-primary/20 text-primary shrink-0 mt-0.5">
                     <Bot className="w-4 h-4 text-primary" />
                   </div>
                   <div className="space-y-1 text-xs">
@@ -219,7 +240,11 @@ export default function MarketingHero({
                       </span>
                     </div>
                     <p className="text-muted-foreground leading-relaxed text-[11px]">
-                      &quot;Alex, for the CloudScale role, emphasize your high-throughput PostgreSQL indexing experience to compensate for missing Redis. Would you like me to simulate a 3-question interview on caching strategies?&quot;
+                      &quot;Alex, for the CloudScale role, emphasize your
+                      high-throughput PostgreSQL indexing experience to
+                      compensate for missing Redis. Would you like me to
+                      simulate a 3-question interview on caching
+                      strategies?&quot;
                     </p>
                   </div>
                 </div>

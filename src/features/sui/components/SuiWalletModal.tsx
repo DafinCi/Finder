@@ -49,13 +49,13 @@ export function SuiWalletModal({
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-150"
     >
       <div
-        className="w-full max-w-sm rounded-xl bg-card border border-border p-5 shadow-xl space-y-4 text-foreground relative animate-in zoom-in-95 duration-150"
+        className="w-full max-w-sm rounded-sm bg-card border border-border p-5 shadow-xl space-y-4 text-foreground relative animate-in zoom-in-95 duration-150"
         tabIndex={-1}
       >
         {/* Modal Header */}
         <div className="flex items-center justify-between pb-3 border-b border-border/80">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+            <div className="w-8 h-8 rounded-sm bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
               <Wallet className="w-4 h-4" />
             </div>
             <div>
@@ -83,7 +83,7 @@ export function SuiWalletModal({
         {/* Wallets List */}
         <div className="space-y-2 max-h-[300px] overflow-y-auto no-scrollbar py-1">
           {wallets.length === 0 ? (
-            <div className="py-6 px-4 text-center space-y-2 rounded-lg bg-secondary/30 border border-border/50">
+            <div className="py-6 px-4 text-center space-y-2 rounded-sm bg-secondary/30 border border-border/50">
               <AlertCircle className="w-6 h-6 text-muted-foreground mx-auto" />
               <p className="text-xs font-medium text-foreground">
                 No Sui wallets detected
@@ -101,7 +101,7 @@ export function SuiWalletModal({
                   key={wallet.name}
                   type="button"
                   onClick={() => handleSelectWallet(wallet)}
-                  className={`w-full flex items-center justify-between p-3 rounded-lg border text-left transition-all ${
+                  className={`w-full flex items-center justify-between p-3 rounded-sm border text-left transition-all ${
                     isConnected
                       ? "bg-primary/10 border-primary/40 text-foreground"
                       : "bg-secondary/40 border-border/80 hover:bg-secondary/80 hover:border-primary/30 text-foreground"

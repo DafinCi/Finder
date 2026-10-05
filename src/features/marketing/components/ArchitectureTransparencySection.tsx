@@ -22,7 +22,7 @@ export default function ArchitectureTransparencySection() {
     {
       icon: Cpu,
       title: "AI & LLM Acceleration",
-      technologies: "Groq Cloud API • openai/gpt-oss-120b",
+      technologies: "Groq Cloud API • qwen/qwen3.8-27b",
       description:
         "Ultra-low latency inference using Groq SDK with automatic secondary fallback (openai/gpt-oss-20b) and deterministic mathematical degradation formulas.",
     },
@@ -43,7 +43,10 @@ export default function ArchitectureTransparencySection() {
   ];
 
   return (
-    <section id="architecture" className="py-20 md:py-28 border-b border-border/40 bg-card/20">
+    <section
+      id="architecture"
+      className="py-20 md:py-28 border-b border-border/40 bg-card/20"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto space-y-4 mb-16">
           <h2 className="text-xs font-mono uppercase tracking-widest text-primary font-semibold">
@@ -53,7 +56,8 @@ export default function ArchitectureTransparencySection() {
             Built on proven open-source technologies
           </h3>
           <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-            No proprietary black boxes. Finder is transparent about how your data is processed, stored, and protected.
+            No proprietary black boxes. Finder is transparent about how your
+            data is processed, stored, and protected.
           </p>
         </div>
 
@@ -64,10 +68,10 @@ export default function ArchitectureTransparencySection() {
             return (
               <div
                 key={idx}
-                className="rounded-xl border border-border/80 bg-card/70 p-6 space-y-4 hover:border-border transition-colors"
+                className="rounded-sm border border-border/80 bg-card/70 p-6 space-y-4 hover:border-border transition-colors"
               >
                 <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-secondary text-foreground flex items-center justify-center border border-border shrink-0">
+                  <div className="w-10 h-10 rounded-sm bg-secondary text-foreground flex items-center justify-center border border-border shrink-0">
                     <Icon className="w-5 h-5 text-primary" />
                   </div>
                   <div className="space-y-1">

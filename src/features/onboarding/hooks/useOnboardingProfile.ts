@@ -29,6 +29,18 @@ import {
   NegativePreferenceItem,
 } from "@/features/profile/types/career-profile.types";
 import { matchesSkill } from "@/features/matching/utils/skill-normalizer";
+import { useResumeProcessingStatus } from "@/features/ai-analysis/hooks/useResumeProcessingStatus";
+
+export interface OnboardingResumeReview {
+  resumeId: string;
+  fileName: string;
+  classification: {
+    documentType: string;
+    confidence: number;
+    reason: string;
+  } | null;
+  message: string;
+}
 
 const INITIAL_STATE: OnboardingFormState = {
   flowMode: "choice",
@@ -47,6 +59,7 @@ const INITIAL_STATE: OnboardingFormState = {
   relocationProhibited: false,
   salaryMin: null,
   salaryCurrency: "USD",
+  salaryPeriod: "year",
   priorities: [],
   negativePreferences: [],
   skills: [],
@@ -59,6 +72,18 @@ const INITIAL_STATE: OnboardingFormState = {
 
 export function useOnboardingProfile() {
   const [state, setState] = useState<OnboardingFormState>(INITIAL_STATE);
+  const [resumeReview, setResumeReview] =
+    useState<OnboardingResumeReview | null>(null);
+  const [isResumeActionWorking, setIsResumeActionWorking] = useState(false);
+
+  const { processing: resumeProcessing } = useResumeProcessingStatus(
+    state.resumeId,
+    {
+      enabled:
+        Boolean(state.resumeId) &&
+        (state.isAnalyzingResume || Boolean(resumeReview)),
+    },
+  );
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -108,6 +133,7 @@ export function useOnboardingProfile() {
       relocationProhibited: Boolean(profile.constraints?.relocation_prohibited),
       salaryMin: profile.preferences?.salary?.min_amount ?? null,
       salaryCurrency: profile.preferences?.salary?.currency || "USD",
+      salaryPeriod: profile.preferences?.salary?.period || "year",
       priorities: profile.preferences?.priorities || [],
       negativePreferences: profile.preferences?.negative_preferences || [],
     }));
@@ -186,6 +212,7 @@ export function useOnboardingProfile() {
   // Step 1: Upload & Analyze CV
   const handleUploadAndAnalyzeResume = useCallback(
     async (file: File) => {
+      let uploadedResumeId: string | null = null;
       try {
         setError(null);
         setState((prev) => ({
@@ -196,6 +223,7 @@ export function useOnboardingProfile() {
 
         const uploadRes = await onboardingService.uploadResume(file);
         const resumeId = uploadRes.resumeId;
+        uploadedResumeId = resumeId;
 
         setState((prev) => ({
           ...prev,
@@ -346,6 +374,31 @@ export function useOnboardingProfile() {
       } catch (err) {
         if (err instanceof OnboardingVersionConflictError) {
           await handleVersionConflict(err);
+        } else if (
+          err instanceof OnboardingApiError &&
+          (err.details as { code?: string } | undefined)?.code ===
+            "NEEDS_REVIEW"
+        ) {
+          const details = err.details as {
+            classification?: {
+              documentType?: string;
+              confidence?: number;
+              reason?: string;
+            };
+            message?: string;
+          };
+          setResumeReview({
+            resumeId: uploadedResumeId || "",
+            fileName: file.name,
+            classification: details.classification?.documentType
+              ? {
+                  documentType: details.classification.documentType,
+                  confidence: details.classification.confidence ?? 0,
+                  reason: details.classification.reason ?? "",
+                }
+              : null,
+            message: details.message || err.message,
+          });
         } else {
           const msg =
             err instanceof Error ? err.message : "Failed to analyze resume";
@@ -487,6 +540,7 @@ export function useOnboardingProfile() {
               ? {
                   min_amount: state.salaryMin,
                   currency: state.salaryCurrency,
+                  period: state.salaryPeriod,
                 }
               : null,
           negative_preferences: state.negativePreferences,
@@ -522,6 +576,7 @@ export function useOnboardingProfile() {
     state.priorities,
     state.salaryMin,
     state.salaryCurrency,
+    state.salaryPeriod,
     state.negativePreferences,
     state.workModeStrict,
     state.relocationProhibited,
@@ -616,6 +671,7 @@ export function useOnboardingProfile() {
               ? {
                   min_amount: state.salaryMin,
                   currency: state.salaryCurrency,
+                  period: state.salaryPeriod,
                 }
               : null,
           negative_preferences: state.negativePreferences,
@@ -653,6 +709,7 @@ export function useOnboardingProfile() {
     state.priorities,
     state.salaryMin,
     state.salaryCurrency,
+    state.salaryPeriod,
     state.negativePreferences,
     state.workModeStrict,
     state.relocationProhibited,
@@ -711,6 +768,7 @@ export function useOnboardingProfile() {
                 ? {
                     min_amount: state.salaryMin,
                     currency: state.salaryCurrency,
+                    period: state.salaryPeriod,
                   }
                 : null,
             negative_preferences: state.negativePreferences,
@@ -761,6 +819,7 @@ export function useOnboardingProfile() {
       state.priorities,
       state.salaryMin,
       state.salaryCurrency,
+      state.salaryPeriod,
       state.negativePreferences,
       state.workModeStrict,
       state.relocationProhibited,
@@ -969,6 +1028,7 @@ export function useOnboardingProfile() {
                 ? {
                     min_amount: state.salaryMin,
                     currency: state.salaryCurrency,
+                    period: state.salaryPeriod,
                   }
                 : null,
             negative_preferences: state.negativePreferences,
@@ -1018,6 +1078,7 @@ export function useOnboardingProfile() {
       state.priorities,
       state.salaryMin,
       state.salaryCurrency,
+      state.salaryPeriod,
       state.negativePreferences,
       state.workModeStrict,
       state.relocationProhibited,
@@ -1063,6 +1124,10 @@ export function useOnboardingProfile() {
     setState((prev) => ({ ...prev, salaryCurrency: currency }));
   }, []);
 
+  const setSalaryPeriod = useCallback((period: "year" | "month" | "hour") => {
+    setState((prev) => ({ ...prev, salaryPeriod: period }));
+  }, []);
+
   const setPriorities = useCallback((priorities: string[]) => {
     setState((prev) => ({ ...prev, priorities }));
   }, []);
@@ -1074,11 +1139,78 @@ export function useOnboardingProfile() {
     [],
   );
 
+  const continueWithNonResume = useCallback(async () => {
+    if (!resumeReview?.resumeId) return;
+    setIsResumeActionWorking(true);
+    setError(null);
+    try {
+      await onboardingService.analyzeResume(resumeReview.resumeId, {
+        allowNonResume: true,
+      });
+      const applyRes = await fetch("/api/profile/resume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resumeId: resumeReview.resumeId }),
+      });
+      if (!applyRes.ok) {
+        const errData = await applyRes.json().catch(() => ({}));
+        throw new Error(
+          errData.error || "Failed to update the career profile.",
+        );
+      }
+      setResumeReview(null);
+      setState((prev) => ({
+        ...prev,
+        resumeExtracted: true,
+        flowMode: "cv_magic",
+      }));
+      await reloadProfile();
+      toast.success("Resume parsed. Review your key details below.");
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : "Failed to analyze resume";
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setIsResumeActionWorking(false);
+    }
+  }, [resumeReview, reloadProfile]);
+
+  const rejectResumeDocument = useCallback(async () => {
+    if (!resumeReview?.resumeId) return;
+    setIsResumeActionWorking(true);
+    setError(null);
+    try {
+      await onboardingService.rejectResume(resumeReview.resumeId);
+      setResumeReview(null);
+      setState((prev) => ({
+        ...prev,
+        resumeId: null,
+        resumeFileName: null,
+      }));
+      toast.success(
+        "Document removed. Upload a different file when you're ready.",
+      );
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : "Failed to remove the document";
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setIsResumeActionWorking(false);
+    }
+  }, [resumeReview]);
+
   return {
     state,
     loading,
     isSaving,
     error,
+    resumeReview,
+    resumeProcessing,
+    isResumeActionWorking,
+    continueWithNonResume,
+    rejectResumeDocument,
     goToStep,
     setFlowMode,
     setPrimaryRole,
@@ -1104,6 +1236,7 @@ export function useOnboardingProfile() {
     setRelocationProhibited,
     setSalaryMin,
     setSalaryCurrency,
+    setSalaryPeriod,
     setPriorities,
     setNegativePreferences,
     reloadProfile,

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { use, useEffect } from "react";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Database } from "lucide-react";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { useAgent } from "@/contexts/AgentContext";
 import { useChat } from "@/features/chat/hooks/useChat";
@@ -10,6 +10,9 @@ import OmniPromptInput from "@/features/chat/components/OmniPromptInput";
 import ChatTimelineSkeleton from "@/features/chat/skeletons/ChatTimelineSkeleton";
 import BotAvatar from "@/components/ui/BotAvatar";
 import AgentInfoDrawer from "@/features/chat/components/AgentInfoDrawer";
+import ResumeProcessingTimeline from "@/features/ai-analysis/components/ResumeProcessingTimeline";
+import ResumeReviewCard from "@/features/ai-analysis/components/ResumeReviewCard";
+import ProfileConfirmationCard from "@/features/ai-analysis/components/ProfileConfirmationCard";
 
 export default function ChatSessionPage({
   params,
@@ -23,7 +26,9 @@ export default function ChatSessionPage({
     setActiveSessionId,
     isDrawerOpen,
     openDrawer,
+    openDrawerWithTab,
     closeDrawer,
+    isAmnesiaMode,
   } = useAgent();
 
   // Set active session in agent context
@@ -41,9 +46,24 @@ export default function ChatSessionPage({
     isInitialLoading,
     thinkingStatus,
     error,
+    resumeReview,
+    resumeProcessing,
+    profileConfirmation,
+    isResumeActionWorking,
+    continueWithNonResume,
+    rejectResumeDocument,
+    applyResumeToProfile,
+    dismissProfileConfirmation,
     sendMessage,
     retryLastMessage,
   } = useChat(id);
+
+  const showProcessingTimeline =
+    Boolean(resumeProcessing) &&
+    !resumeReview &&
+    resumeProcessing?.stage !== "completed" &&
+    resumeProcessing?.stage !== "rejected" &&
+    resumeProcessing?.stage !== "failed";
 
   const handleAskAboutJob = (jobTitle: string, company: string) => {
     sendMessage(
@@ -53,67 +73,131 @@ export default function ChatSessionPage({
   };
 
   return (
-    <div className="flex-1 relative h-full w-full overflow-hidden bg-background chat-wallpaper">
-      {/* Full-Height Scrollable Stream */}
-      <div className="h-full w-full overflow-y-auto custom-scrollbar">
-        {/* Session Topbar: Solid background header, full-bar click opens agent info drawer */}
-        <header
-          role="button"
-          tabIndex={0}
-          onClick={openDrawer}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              openDrawer();
-            }
-          }}
-          className={`sticky top-0 z-20 h-16 border-b border-border bg-card flex items-center justify-between shrink-0 select-none group focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary cursor-pointer ${
-            collapsed ? "pl-14 pr-4 md:pr-6" : "px-4 md:px-6"
-          }`}
-          title="Click anywhere for agent details"
-          aria-label="Click anywhere for agent details"
-        >
-          {/* Left: Bot Avatar + Agent Identity */}
-          <div className="flex items-center gap-3 min-w-0">
-            <BotAvatar
-              name={currentAgentName}
-              seed={id}
-              size="md"
-              showStatusIndicator={isLoading}
-              indicatorStatus="typing"
-            />
-            <div className="flex flex-col min-w-0">
-              <span className="text-sm sm:text-base font-semibold text-foreground truncate leading-tight">
-                {currentAgentName}
-              </span>
-              <span className="text-xs sm:text-sm truncate leading-tight mt-0.5">
-                {isLoading ? (
-                  <span className="text-primary font-medium inline-flex items-center gap-1.5">
-                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                    <span>{thinkingStatus || "Thinking..."}</span>
-                  </span>
-                ) : (
-                  <span className="text-muted-foreground">
-                    Click here for agent info
-                  </span>
-                )}
-              </span>
-            </div>
+    <div className="flex-1 relative flex flex-col h-full w-full overflow-hidden bg-background chat-wallpaper">
+      {/* Session Topbar: Placed outside scroll container so scrollbar never cuts through */}
+      <header
+        role="button"
+        tabIndex={0}
+        onClick={() => openDrawer()}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            openDrawer();
+          }
+        }}
+        className={`z-20 h-16 border-b border-border/80 bg-sidebar flex items-center justify-between shrink-0 select-none group focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary cursor-pointer ${
+          collapsed ? "pl-14 pr-4 md:pr-6" : "px-4 md:px-6"
+        }`}
+        title="Click anywhere for agent details"
+        aria-label="Click anywhere for agent details"
+      >
+        {/* Left: Bot Avatar + Agent Identity */}
+        <div className="flex items-center gap-3 min-w-0">
+          <BotAvatar
+            name={currentAgentName}
+            seed={id}
+            size="md"
+            showStatusIndicator={isLoading}
+            indicatorStatus="typing"
+          />
+          <div className="flex flex-col min-w-0">
+            <span className="text-sm sm:text-base font-semibold text-foreground truncate leading-tight">
+              {currentAgentName}
+            </span>
+            <span className="text-xs sm:text-sm truncate leading-tight mt-0.5">
+              {isLoading ? (
+                <span className="text-primary font-medium inline-flex items-center gap-1.5">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                  <span>{thinkingStatus || "Thinking..."}</span>
+                </span>
+              ) : (
+                <span className="text-muted-foreground">
+                  Click here for agent info
+                </span>
+              )}
+            </span>
           </div>
+        </div>
 
-          {/* Right: Subtle Chevron Indicator */}
-          <div className="text-muted-foreground/60 pr-1">
+        {/* Right Actions: Walrus Memory Badge Button + Chevron */}
+        <div className="flex items-center gap-2.5 pr-1">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              openDrawerWithTab("memory");
+            }}
+            title={
+              isAmnesiaMode
+                ? "Amnesia Mode Active (Click to inspect or toggle Walrus Memory)"
+                : "Inspect Walrus Mainnet Memories"
+            }
+            className="min-h-[36px] px-2.5 py-1 rounded-sm bg-secondary hover:bg-secondary/80 text-foreground border border-border inline-flex items-center gap-1.5 transition-colors cursor-pointer text-xs font-medium"
+          >
+            <Database className="w-3.5 h-3.5 text-primary" />
+            <span className="hidden sm:inline">Walrus Memory</span>
+            {isAmnesiaMode ? (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-xs text-[10px] font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                Amnesia Active
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-xs text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Mainnet
+              </span>
+            )}
+          </button>
+
+          <div className="text-muted-foreground/60">
             <ChevronRight className="w-5 h-5 opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
           </div>
-        </header>
+        </div>
+      </header>
 
+      {/* Full-Height Scrollable Stream */}
+      <div className="flex-1 min-h-0 w-full overflow-y-auto custom-scrollbar relative">
         {/* Chat Content Body */}
-        <div className="min-h-[calc(100%-4rem)] flex flex-col justify-between">
+        <div className="min-h-full flex flex-col justify-between">
+          {resumeReview && (
+            <div className="px-4 pt-4">
+              <ResumeReviewCard
+                classification={
+                  resumeReview.classification ?? {
+                    documentType: "unknown",
+                    confidence: 0,
+                    reason: resumeReview.message,
+                  }
+                }
+                onContinue={continueWithNonResume}
+                onReject={rejectResumeDocument}
+                isWorking={isResumeActionWorking}
+              />
+            </div>
+          )}
+
+          {!resumeReview && profileConfirmation && (
+            <div className="px-4 pt-4">
+              <ProfileConfirmationCard
+                fileName={profileConfirmation.fileName}
+                onApply={applyResumeToProfile}
+                onDismiss={dismissProfileConfirmation}
+                isWorking={isResumeActionWorking}
+              />
+            </div>
+          )}
+
+          {showProcessingTimeline && (
+            <div className="px-4 pt-4">
+              <ResumeProcessingTimeline processing={resumeProcessing} />
+            </div>
+          )}
+
           {/* Initial Loading Skeleton */}
           {isInitialLoading ? (
             <ChatTimelineSkeleton />
           ) : messages.length === 0 ? (
-            /* Empty State: Only shown if definitely not loading and no messages */
+            /* Empty State */
             <div className="flex-1 flex flex-col items-center justify-center text-center p-8 my-auto text-muted-foreground space-y-2 min-h-[50vh] animate-in fade-in duration-200">
               <p className="text-sm font-medium text-foreground/80">
                 No messages in this session yet.
@@ -139,7 +223,7 @@ export default function ChatSessionPage({
       </div>
 
       {/* Floating Bottom Prompt Omnibar with Ambient Bottom Fade */}
-      <div className="absolute bottom-14 md:bottom-0 inset-x-0 z-20 pb-3 md:pb-4 pt-6 bg-gradient-to-t from-background via-background/95 to-transparent pointer-events-none pr-3 sm:pr-4">
+      <div className="absolute bottom-0 inset-x-0 z-20 pb-3 md:pb-4 pt-6 bg-gradient-to-t from-background via-background/95 to-transparent pointer-events-none px-3 sm:px-4">
         <div className="pointer-events-auto">
           <OmniPromptInput
             isSticky={true}

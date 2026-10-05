@@ -47,7 +47,7 @@ export function StepManualPreferences({
   const handleToggleWorkMode = (mode: WorkMode) => {
     const exists = state.workModes.includes(mode);
     if (exists) {
-      if (state.workModes.length === 1) return; // Keep at least one
+      if (state.workModes.length === 1) return;
       setWorkModes(state.workModes.filter((m) => m !== mode));
     } else {
       setWorkModes([...state.workModes, mode]);
@@ -73,22 +73,21 @@ export function StepManualPreferences({
   const canContinue = state.workModes.length > 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Title */}
-      <div className="space-y-1.5">
-        <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+      <div className="space-y-1">
+        <h2 className="text-lg sm:text-xl font-bold tracking-tight text-foreground font-heading">
           Where and how do you want to work?
         </h2>
-        <p className="text-xs text-muted-foreground leading-relaxed">
-          Select your preferred work modes and any specific regions you want to
-          focus on.
+        <p className="text-xs sm:text-sm text-muted-foreground">
+          Select preferred work environments and locations.
         </p>
       </div>
 
       {/* Work Modes */}
-      <div className="space-y-2.5">
-        <label className="text-xs font-semibold text-foreground block">
-          Work Environment (Choose at least one)
+      <div className="space-y-2">
+        <label className="text-xs sm:text-sm font-semibold text-foreground block">
+          Work Environment (Select at least one)
         </label>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
           {WORK_MODE_OPTIONS.map((opt) => {
@@ -98,19 +97,19 @@ export function StepManualPreferences({
                 key={opt.value}
                 type="button"
                 onClick={() => handleToggleWorkMode(opt.value)}
-                className={`min-h-[52px] p-3 rounded-xl border text-left transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
+                className={`p-3.5 rounded-sm border text-left transition-all cursor-pointer ${
                   isSelected
                     ? "border-primary bg-primary/10 text-foreground"
-                    : "border-border bg-card/60 text-muted-foreground hover:border-border/80 hover:text-foreground"
+                    : "border-border/70 bg-card/60 text-muted-foreground hover:text-foreground"
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold">{opt.label}</span>
+                  <span className="text-sm font-semibold">{opt.label}</span>
                   {isSelected && (
-                    <Check className="w-3.5 h-3.5 text-primary shrink-0" />
+                    <Check className="w-4 h-4 text-primary shrink-0" />
                   )}
                 </div>
-                <span className="text-[11px] text-muted-foreground block mt-0.5">
+                <span className="text-xs text-muted-foreground block truncate mt-1">
                   {opt.description}
                 </span>
               </button>
@@ -120,32 +119,34 @@ export function StepManualPreferences({
       </div>
 
       {/* Preferred Locations */}
-      <div className="space-y-2.5">
-        <label
-          htmlFor="location-input"
-          className="text-xs font-semibold text-foreground block"
-        >
-          Preferred Locations (Optional)
-        </label>
-        <p className="text-[11px] text-muted-foreground">
-          Leave blank if you are open to opportunities anywhere.
-        </p>
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <label
+            htmlFor="location-input"
+            className="text-xs sm:text-sm font-semibold text-foreground block"
+          >
+            Preferred Locations (Optional)
+          </label>
+          <span className="text-xs text-muted-foreground">
+            Leave blank if open anywhere
+          </span>
+        </div>
 
         {/* Selected Locations Chips */}
         {state.locations.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 p-2 rounded-lg bg-secondary/30 border border-border">
+          <div className="flex flex-wrap gap-1.5 p-2 rounded-sm bg-secondary/30 border border-border/70 max-h-[70px] overflow-y-auto custom-scrollbar">
             {state.locations.map((loc) => (
               <span
                 key={loc}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-card border border-border text-foreground"
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium bg-card border border-border text-foreground"
               >
-                <MapPin className="w-3 h-3 text-primary" />
+                <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
                 <span>{loc}</span>
                 <button
                   type="button"
                   onClick={() => handleRemoveLocation(loc)}
                   aria-label={`Remove ${loc}`}
-                  className="text-muted-foreground hover:text-destructive cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none rounded-xs p-0.5"
+                  className="text-muted-foreground hover:text-destructive cursor-pointer p-0.5"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -154,38 +155,10 @@ export function StepManualPreferences({
           </div>
         )}
 
-        {/* Custom Location Input */}
-        <div className="flex gap-2">
-          <input
-            id="location-input"
-            type="text"
-            value={customLocation}
-            onChange={(e) => setCustomLocation(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                handleAddLocation(customLocation);
-              }
-            }}
-            placeholder="Type a city or country and press Add..."
-            className="flex-1 min-h-[44px] px-3.5 text-xs rounded-lg bg-background border border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
-          />
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => handleAddLocation(customLocation)}
-            disabled={!customLocation.trim()}
-            className="min-h-[44px] px-4 text-xs font-semibold"
-          >
-            <Plus className="w-3.5 h-3.5 mr-1" />
-            Add
-          </Button>
-        </div>
-
-        {/* Quick Add Suggestions */}
-        <div className="flex flex-wrap items-center gap-1.5 pt-1">
-          <span className="text-[11px] text-muted-foreground mr-1">
-            Quick add:
+        {/* Quick Location Chips */}
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
+          <span className="text-xs text-muted-foreground shrink-0">
+            Popular:
           </span>
           {POPULAR_LOCATIONS.map((loc) => {
             const isAdded = state.locations.some(
@@ -198,30 +171,59 @@ export function StepManualPreferences({
                 onClick={() =>
                   isAdded ? handleRemoveLocation(loc) : handleAddLocation(loc)
                 }
-                className={`min-h-[32px] px-2.5 py-0.5 rounded-md text-xs font-medium border transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
+                className={`px-3 py-1 rounded-md text-xs font-medium border transition-colors cursor-pointer shrink-0 ${
                   isAdded
-                    ? "bg-primary/15 text-primary border-primary/30"
-                    : "bg-secondary/40 text-muted-foreground border-border hover:bg-secondary hover:text-foreground"
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-secondary/40 text-muted-foreground border-border hover:text-foreground hover:bg-secondary"
                 }`}
               >
-                {loc} {isAdded ? "✓" : "+"}
+                {loc}
               </button>
             );
           })}
         </div>
+
+        {/* Custom Location Input */}
+        <div className="flex gap-2 pt-0.5">
+          <input
+            id="location-input"
+            type="text"
+            value={customLocation}
+            onChange={(e) => setCustomLocation(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleAddLocation(customLocation);
+              }
+            }}
+            placeholder="Add custom city or country..."
+            className="flex-1 min-h-[42px] px-3.5 text-sm rounded-sm bg-background border border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => handleAddLocation(customLocation)}
+            disabled={!customLocation.trim()}
+            className="min-h-[42px] px-4 text-xs sm:text-sm font-semibold cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5 mr-1" />
+            Add
+          </Button>
+        </div>
       </div>
 
       {/* Actions */}
-      <div className="pt-4 flex items-center justify-between gap-3 border-t border-border">
+      <div className="pt-3.5 flex items-center justify-between gap-3 border-t border-border/80">
         <Button
           type="button"
           variant="ghost"
           onClick={onBack}
           disabled={isSaving}
-          className="min-h-[44px] text-xs text-muted-foreground hover:text-foreground"
+          className="min-h-[44px] text-xs sm:text-sm text-muted-foreground hover:text-foreground cursor-pointer"
         >
-          <ArrowLeft className="w-3.5 h-3.5 mr-1.5" />
-          Back to Role
+          <ArrowLeft className="w-4 h-4 mr-1.5" />
+          Back
         </Button>
 
         <Button
@@ -229,17 +231,17 @@ export function StepManualPreferences({
           variant="default"
           onClick={onNext}
           disabled={isSaving || !canContinue}
-          className="min-h-[44px] text-xs font-semibold px-5"
+          className="min-h-[44px] text-sm font-semibold px-5 cursor-pointer"
         >
           {isSaving ? (
             <>
-              <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+              <Loader2 className="w-4 h-4 animate-spin mr-1.5" />
               Saving...
             </>
           ) : (
             <>
               Next: Core Skills
-              <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+              <ArrowRight className="w-4 h-4 ml-1.5" />
             </>
           )}
         </Button>

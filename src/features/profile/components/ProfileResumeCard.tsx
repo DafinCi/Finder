@@ -10,10 +10,7 @@ import {
   AlertCircle,
   FileCheck,
   Eye,
-  ExternalLink,
   ShieldCheck,
-  Copy,
-  Check,
   RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -48,8 +45,6 @@ export function ProfileResumeCard({
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStatus, setProcessingStatus] = useState<string>("");
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [copiedBlobId, setCopiedBlobId] = useState(false);
-  const [isSyncingWalrus, setIsSyncingWalrus] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -103,35 +98,6 @@ export function ProfileResumeCard({
       cancelled = true;
     };
   }, [resumeId]);
-
-  const handleCopyBlobId = (blobId: string) => {
-    navigator.clipboard.writeText(blobId);
-    setCopiedBlobId(true);
-    toast.success("Walrus Blob ID copied to clipboard.");
-    setTimeout(() => setCopiedBlobId(false), 2000);
-  };
-
-  const handleSyncToWalrus = async () => {
-    try {
-      setIsSyncingWalrus(true);
-      const res = await fetch("/api/profile/resume/walrus-sync", {
-        method: "POST",
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to publish to Walrus.");
-      }
-
-      toast.success("Resume synchronized to Walrus Testnet.");
-      await loadResumeMeta();
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Sync error.";
-      toast.error(msg);
-    } finally {
-      setIsSyncingWalrus(false);
-    }
-  };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -212,7 +178,7 @@ export function ProfileResumeCard({
       <div className="space-y-1.5 pb-3 border-b border-border/80">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-sm bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+            <div className="w-8 h-8 rounded-sm bg-secondary border border-border flex items-center justify-center text-muted-foreground shrink-0">
               <FileText className="w-4 h-4" />
             </div>
             <h2 className="text-sm font-semibold font-heading text-foreground">
@@ -240,7 +206,7 @@ export function ProfileResumeCard({
       <div className="space-y-3 flex-1">
         {loadingMeta ? (
           <div className="p-4 rounded-sm bg-secondary/30 border border-border/60 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-            <Loader2 className="w-4 h-4 animate-spin text-primary" />
+            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
             <span>Loading document details...</span>
           </div>
         ) : metaError ? (
@@ -263,7 +229,7 @@ export function ProfileResumeCard({
         ) : metadata ? (
           <div className="p-3.5 rounded-sm bg-secondary/40 border border-border/80 space-y-3">
             <div className="flex items-start gap-3">
-              <div className="w-9 h-9 rounded-sm bg-primary/15 border border-primary/30 flex items-center justify-center text-primary shrink-0 mt-0.5">
+              <div className="w-9 h-9 rounded-sm bg-secondary border border-border flex items-center justify-center text-muted-foreground shrink-0 mt-0.5">
                 <FileCheck className="w-4 h-4" />
               </div>
               <div className="flex-1 min-w-0">
@@ -281,85 +247,13 @@ export function ProfileResumeCard({
               </div>
             </div>
 
-            {/* Walrus Decentralized Storage Status Block */}
-            <div className="pt-2.5 border-t border-border/70 space-y-2 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-primary" />
-                  Walrus Decentralized Storage:
-                </span>
-
-                {metadata?.walrus_blob_id ? (
-                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
-                    <CheckCircle2 className="w-3 h-3" />
-                    Stored
-                  </span>
-                ) : metadata?.walrus_status === "pending" || isSyncingWalrus ? (
-                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-500">
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    Syncing...
-                  </span>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleSyncToWalrus}
-                    disabled={isSyncingWalrus}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-[10px] font-semibold bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 cursor-pointer transition-colors"
-                  >
-                    <RefreshCw className="w-3 h-3" />
-                    Sync to Walrus
-                  </button>
-                )}
-              </div>
-
-              {metadata?.walrus_blob_id && (
-                <div className="space-y-1.5 pt-0.5">
-                  <div className="flex items-center justify-between gap-2 p-1.5 px-2 rounded-sm bg-secondary/80 border border-border text-[11px]">
-                    <span
-                      className="font-mono text-foreground font-medium truncate max-w-[170px]"
-                      title={metadata.walrus_blob_id}
-                    >
-                      {metadata.walrus_blob_id.slice(0, 8)}...
-                      {metadata.walrus_blob_id.slice(-6)}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => handleCopyBlobId(metadata.walrus_blob_id!)}
-                      aria-label="Copy Walrus Blob ID"
-                      className="p-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                      title="Copy Blob ID"
-                    >
-                      {copiedBlobId ? (
-                        <Check className="w-3 h-3 text-emerald-500" />
-                      ) : (
-                        <Copy className="w-3 h-3" />
-                      )}
-                    </button>
-                  </div>
-
-                  <div className="flex items-center gap-3 text-[11px] pt-0.5">
-                    <a
-                      href={`/api/walrus/blob/${metadata.walrus_blob_id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-primary hover:underline font-medium"
-                    >
-                      <FileText className="w-3 h-3" />
-                      <span>Open Walrus PDF</span>
-                    </a>
-                    <span className="text-muted-foreground">•</span>
-                    <a
-                      href={`https://walruscan.com/testnet/blob/${metadata.walrus_blob_id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-primary hover:underline font-medium"
-                    >
-                      <ExternalLink className="w-3 h-3" />
-                      <span>Verify on Walruscan</span>
-                    </a>
-                  </div>
-                </div>
-              )}
+            {/* Resume privacy note: resumes are never published to Walrus */}
+            <div className="pt-2.5 border-t border-border/70 text-xs">
+              <p className="text-[11px] text-muted-foreground leading-relaxed flex items-start gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 shrink-0 mt-0.5 text-muted-foreground" />
+                This resume stays private in your account. We do not publish it
+                to Walrus or any public network.
+              </p>
             </div>
           </div>
         ) : (
@@ -379,9 +273,9 @@ export function ProfileResumeCard({
           <div
             role="status"
             aria-live="polite"
-            className="p-3 rounded-sm bg-primary/10 border border-primary/20 text-xs text-primary flex items-center gap-2.5 animate-in fade-in"
+            className="p-3 rounded-sm bg-secondary border border-border text-xs text-foreground flex items-center gap-2.5 animate-in fade-in"
           >
-            <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+            <Loader2 className="w-4 h-4 animate-spin shrink-0 text-muted-foreground" />
             <span className="font-medium text-[11px]">{processingStatus}</span>
           </div>
         )}
@@ -422,9 +316,9 @@ export function ProfileResumeCard({
               <Button
                 type="button"
                 variant="outline"
-                className="w-full min-h-[44px] h-11 text-xs font-semibold gap-2 border-border hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-primary transition-all rounded-sm"
+                className="w-full min-h-[44px] h-11 text-xs font-semibold gap-2 border-border hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-muted-foreground transition-all rounded-sm"
               >
-                <Eye className="w-4 h-4 text-primary" />
+                <Eye className="w-4 h-4 text-muted-foreground" />
                 <span>View Resume</span>
               </Button>
             </a>
@@ -437,11 +331,11 @@ export function ProfileResumeCard({
             onClick={() => fileInputRef.current?.click()}
             className={`${
               metadata ? "flex-1" : "w-full"
-            } min-h-[44px] h-11 text-xs font-semibold gap-2 border-border hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-primary transition-all rounded-sm`}
+            } min-h-[44px] h-11 text-xs font-semibold gap-2 border-border hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-muted-foreground transition-all rounded-sm`}
           >
             {isProcessing ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
                 <span>Processing Resume...</span>
               </>
             ) : (
@@ -456,7 +350,7 @@ export function ProfileResumeCard({
         </div>
 
         <p className="text-[10px] text-muted-foreground text-center">
-          Supported: PDF up to 5 MB. Dual-stored on Cloud &amp; Walrus Testnet.
+          Supported: PDF up to 5 MB. Stored privately in your account.
         </p>
       </div>
     </div>

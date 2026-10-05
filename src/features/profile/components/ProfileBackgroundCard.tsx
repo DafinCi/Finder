@@ -33,7 +33,7 @@ export function ProfileBackgroundCard({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/80">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-sm bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+          <div className="w-8 h-8 rounded-sm bg-secondary border border-border flex items-center justify-center text-muted-foreground shrink-0">
             <GraduationCap className="w-4 h-4" />
           </div>
           <div>
@@ -51,9 +51,9 @@ export function ProfileBackgroundCard({
           variant="outline"
           size="sm"
           onClick={onEdit}
-          className="text-xs h-9 min-h-[36px] sm:h-8 gap-1.5 border-border hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-primary self-start sm:self-auto rounded-sm"
+          className="text-xs h-9 min-h-[36px] sm:h-8 gap-1.5 border-border hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-muted-foreground self-start sm:self-auto rounded-sm"
         >
-          <Edit3 className="w-3.5 h-3.5 text-primary" />
+          <Edit3 className="w-3.5 h-3.5 text-muted-foreground" />
           <span>Edit Background</span>
         </Button>
       </div>
@@ -61,7 +61,7 @@ export function ProfileBackgroundCard({
       {/* Experience Section */}
       <div className="space-y-3">
         <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-          <Building2 className="w-3 h-3 text-primary" />
+          <Building2 className="w-3 h-3 text-muted-foreground" />
           Work Experience ({experienceList.length})
         </span>
 
@@ -77,7 +77,7 @@ export function ProfileBackgroundCard({
                     <h3 className="text-xs font-bold text-foreground">
                       {exp.role_title}
                     </h3>
-                    <p className="text-xs text-primary font-medium">
+                    <p className="text-xs text-muted-foreground font-medium">
                       {exp.company_name}
                     </p>
                   </div>
@@ -119,7 +119,7 @@ export function ProfileBackgroundCard({
       {/* Education Section */}
       <div className="space-y-3 pt-2 border-t border-border/60">
         <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-          <GraduationCap className="w-3 h-3 text-primary" />
+          <GraduationCap className="w-3 h-3 text-muted-foreground" />
           Education ({educationList.length})
         </span>
 
@@ -138,7 +138,7 @@ export function ProfileBackgroundCard({
                   {edu.field_of_study ? `• ${edu.field_of_study}` : ""}
                 </p>
                 {edu.graduation_year && (
-                  <span className="text-[10px] text-primary font-mono block">
+                  <span className="text-[10px] text-muted-foreground font-mono block">
                     Graduated: {edu.graduation_year}
                   </span>
                 )}
@@ -155,7 +155,7 @@ export function ProfileBackgroundCard({
       {/* Projects Section */}
       <div className="space-y-3 pt-2 border-t border-border/60">
         <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-          <FolderGit2 className="w-3 h-3 text-primary" />
+          <FolderGit2 className="w-3 h-3 text-muted-foreground" />
           Featured Projects ({projectList.length})
         </span>
 

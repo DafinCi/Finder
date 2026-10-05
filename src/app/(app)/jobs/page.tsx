@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import JobsView from "@/features/jobs/views/JobsView";
+import JobPageSkeleton from "@/features/jobs/skeletons/JobsPageSkeleton";
 
 export const metadata = {
   title: "Recommended Jobs | Finder",
@@ -6,5 +8,9 @@ export const metadata = {
 };
 
 export default function JobsPage() {
-  return <JobsView />;
+  return (
+    <Suspense fallback={<JobPageSkeleton />}>
+      <JobsView />
+    </Suspense>
+  );
 }

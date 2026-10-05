@@ -152,7 +152,7 @@ export default function RejectReasonModal({
             type="button"
             onClick={handleCancel}
             aria-label="Close dialog"
-            className="p-1.5 rounded-sm text-muted-foreground hover:text-foreground hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors cursor-pointer"
+            className="p-1.5 rounded-sm text-muted-foreground hover:text-foreground hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -173,15 +173,15 @@ export default function RejectReasonModal({
                 key={opt.id}
                 type="button"
                 onClick={() => setSelectedReason(isSelected ? null : opt.id)}
-                className={`w-full text-left px-3 py-2 rounded-sm text-xs transition-all flex items-center justify-between border cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+                className={`w-full text-left px-3 py-2 rounded-sm text-xs transition-all flex items-center justify-between border cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground ${
                   isSelected
-                    ? "bg-primary/10 border-primary text-foreground font-medium"
+                    ? "bg-secondary border-border-strong text-foreground font-medium"
                     : "bg-secondary/40 border-border/70 text-muted-foreground hover:text-foreground hover:bg-secondary"
                 }`}
               >
                 <span>{opt.label}</span>
                 {isSelected && (
-                  <Check className="w-3.5 h-3.5 text-primary shrink-0 ml-2" />
+                  <Check className="w-3.5 h-3.5 text-foreground shrink-0 ml-2" />
                 )}
               </button>
             );
@@ -193,14 +193,14 @@ export default function RejectReasonModal({
           <button
             type="button"
             onClick={handleCancel}
-            className="px-3.5 py-2 text-xs rounded-sm border border-border text-muted-foreground hover:text-foreground hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors cursor-pointer"
+            className="px-3.5 py-2 text-xs rounded-sm border border-border text-muted-foreground hover:text-foreground hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground transition-colors cursor-pointer"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={handleConfirm}
-            className="px-4 py-2 text-xs rounded-sm bg-slush-ember hover:bg-slush-ember/90 text-white font-medium shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors cursor-pointer"
+            className="px-4 py-2 text-xs rounded-sm bg-slush-ember hover:bg-slush-ember/90 text-white font-medium shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground transition-colors cursor-pointer"
           >
             {selectedReason ? "Submit & Exclude" : "Exclude without reason"}
           </button>

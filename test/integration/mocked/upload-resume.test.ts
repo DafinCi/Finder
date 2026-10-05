@@ -9,6 +9,11 @@ const mockAdminUpdate = vi.fn();
 const mockAdminMaybeSingle = vi.fn();
 const mockStorageUpload = vi.fn();
 const mockStorageRemove = vi.fn();
+const { mockPdfParse, mockEnsureState, mockAdvance } = vi.hoisted(() => ({
+  mockPdfParse: vi.fn(),
+  mockEnsureState: vi.fn(),
+  mockAdvance: vi.fn(),
+}));
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn(async () => ({
@@ -45,6 +50,11 @@ vi.mock("@/lib/supabase/admin", () => ({
               }),
             }),
           }),
+          update: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockResolvedValue({ error: null }),
+            }),
+          }),
         };
       }
       if (table === "chat_messages") {
@@ -73,18 +83,27 @@ vi.mock("@/lib/supabase/admin", () => ({
 }));
 
 vi.mock("pdf-parse", () => {
-  const parseFn = vi.fn(async () => ({
-    text: "John Doe - Senior Software Engineer with 8 years experience in TypeScript, React, and Node.js. Built distributed microservices and managed cloud infrastructure.",
-  }));
   return {
-    default: parseFn,
-    PDFParse: parseFn,
+    default: mockPdfParse,
+    PDFParse: mockPdfParse,
   };
 });
+
+vi.mock("@/features/ai-analysis/services/resume-processing.service", () => ({
+  resumeProcessingService: {
+    ensureState: mockEnsureState,
+    advance: mockAdvance,
+  },
+}));
 
 describe("Integration (Mock-Based): /api/upload-resume", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockPdfParse.mockResolvedValue({
+      text: "John Doe - Senior Software Engineer with 8 years experience in TypeScript, React, and Node.js. Built distributed microservices and managed cloud infrastructure.",
+    });
+    mockEnsureState.mockResolvedValue({});
+    mockAdvance.mockResolvedValue({});
   });
 
   it("should return 401 when request is unauthenticated", async () => {
@@ -238,5 +257,49 @@ describe("Integration (Mock-Based): /api/upload-resume", () => {
     const json = await res.json();
     expect(json.success).toBe(true);
     expect(json.resumeId).toBe("resume-123");
+  });
+
+  it("should reject a clearly non-resume document without uploading it", async () => {
+    mockAuthUser.mockResolvedValueOnce({
+      data: { user: { id: "user-legit" } },
+      error: null,
+    });
+
+    mockPdfParse.mockResolvedValueOnce({
+      text: [
+        "INVOICE #12345",
+        "Subtotal: 1,000,000",
+        "Tax 10%: 100,000",
+        "Total: 1,100,000",
+        "Bank account number: 1234567890",
+        "NPWP: 01.234.567.8-901.000",
+      ].join("\n"),
+    });
+
+    const validPdfBuffer = new Uint8Array([
+      0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34,
+    ]);
+    const validFile = new File([validPdfBuffer], "invoice.pdf", {
+      type: "application/pdf",
+    });
+    const formData = new FormData();
+    formData.append("file", validFile);
+
+    const req = new NextRequest("http://localhost:3000/api/upload-resume", {
+      method: "POST",
+      body: formData,
+    });
+    const res = await POST(req);
+
+    expect(res.status).toBe(422);
+    const json = await res.json();
+    expect(json.code).toBe("NOT_A_RESUME");
+    expect(mockStorageUpload).not.toHaveBeenCalled();
+    expect(mockAdvance).toHaveBeenCalledWith(
+      "resume-123",
+      "user-legit",
+      "rejected",
+      expect.objectContaining({ decision: "rejected" }),
+    );
   });
 });

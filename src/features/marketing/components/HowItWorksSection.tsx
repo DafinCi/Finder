@@ -27,7 +27,7 @@ export default function HowItWorksSection() {
       icon: Cpu,
       title: "AI Candidate Intelligence",
       description:
-        "Groq-accelerated models (openai/gpt-oss-120b / Prompt v2.1.0) decompose your CV into normalized skills, Core vs Supporting capabilities, seniority level, and verified strengths.",
+        "Groq-accelerated models (qwen/qwen3.8-27b / Prompt v2.1.0) decompose your CV into normalized skills, Core vs Supporting capabilities, seniority level, and verified strengths.",
       specs: [
         "Prompt template v2.1.0",
         "Strict Zod schema validation",
@@ -61,7 +61,10 @@ export default function HowItWorksSection() {
   ];
 
   return (
-    <section id="how-it-works" className="py-20 md:py-28 border-b border-border/40">
+    <section
+      id="how-it-works"
+      className="py-20 md:py-28 border-b border-border/40"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto space-y-4 mb-16">
           <h2 className="text-xs font-mono uppercase tracking-widest text-primary font-semibold">
@@ -71,7 +74,8 @@ export default function HowItWorksSection() {
             A resilient, four-step career intelligence pipeline
           </h3>
           <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-            Every step is traceable, deterministic where possible, and protected by resilient fallbacks to ensure you never encounter broken states.
+            Every step is traceable, deterministic where possible, and protected
+            by resilient fallbacks to ensure you never encounter broken states.
           </p>
         </div>
 
@@ -82,7 +86,7 @@ export default function HowItWorksSection() {
             return (
               <div
                 key={idx}
-                className="rounded-xl border border-border/80 bg-card/60 p-6 flex flex-col justify-between space-y-6 hover:border-primary/40 transition-all hover:bg-card/90 group"
+                className="rounded-sm border border-border/80 bg-card/60 p-6 flex flex-col justify-between space-y-6 hover:border-primary/40 transition-all hover:bg-card/90 group"
               >
                 <div className="space-y-4">
                   {/* Step Badge & Icon */}
@@ -90,7 +94,7 @@ export default function HowItWorksSection() {
                     <span className="text-2xl font-bold font-mono text-primary/40 group-hover:text-primary transition-colors">
                       {step.number}
                     </span>
-                    <div className="w-10 h-10 rounded-lg bg-secondary text-foreground flex items-center justify-center border border-border">
+                    <div className="w-10 h-10 rounded-sm bg-secondary text-foreground flex items-center justify-center border border-border">
                       <Icon className="w-5 h-5 text-primary" />
                     </div>
                   </div>

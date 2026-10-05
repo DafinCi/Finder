@@ -12,7 +12,7 @@ export function generateSmartSessionTitle(prompt: string): string {
       prompt.trim(),
     );
   const fallbackTitle = isIndonesianContext
-    ? "Konsultasi Karir"
+    ? "Career Consultation"
     : "Career Consultation";
 
   // 1. Strip markdown code fences, urls, and special characters

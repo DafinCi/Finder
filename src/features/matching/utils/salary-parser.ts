@@ -1,10 +1,15 @@
 // Safe salary range parser and multi-currency converter
 // Module: @/features/matching/utils/salary-parser
 
+import type { SalaryPeriod } from "@/features/profile/types/career-profile.types";
+
+export type { SalaryPeriod };
+
 export interface ParsedSalary {
   min: number | null;
   max: number | null;
   currency: string;
+  period: SalaryPeriod;
 }
 
 /**
@@ -43,6 +48,64 @@ export function convertSalary(
 }
 
 /**
+ * Resolves a salary period, falling back to a currency convention when unstated.
+ * IDR is conventionally quoted monthly; most other currencies are quoted annually.
+ */
+export function resolveSalaryPeriod(
+  period?: string | null,
+  currency?: string | null,
+): SalaryPeriod {
+  if (period === "year" || period === "month" || period === "hour") {
+    return period;
+  }
+  return (currency || "USD").toUpperCase().trim() === "IDR"
+    ? "month"
+    : "year";
+}
+
+/**
+ * Detects an explicit salary period from free text (e.g. "per month", "/year").
+ */
+export function detectSalaryPeriod(
+  text: string,
+  currency?: string | null,
+): SalaryPeriod {
+  const t = (text || "").toLowerCase();
+  if (/(per\s*hour|hourly|\/\s*(hr|hour)s?|per\s*jam)/.test(t)) {
+    return "hour";
+  }
+  if (
+    /(per\s*month|monthly|per\s*bln|\/\s*(mo|month)s?|\/\s*bln|per\s*bulan|bulanan)/.test(
+      t,
+    )
+  ) {
+    return "month";
+  }
+  if (
+    /(per\s*year|per\s*annum|annual|annually|yearly|\/\s*(yr|year)s?|p\.?\s?a\.?|per\s*tahun|tahunan)/.test(
+      t,
+    )
+  ) {
+    return "year";
+  }
+  return resolveSalaryPeriod(null, currency);
+}
+
+/**
+ * Normalizes an amount in any period to its annual equivalent so salaries with
+ * different periods can be compared safely.
+ */
+export function normalizeSalaryToAnnual(
+  amount: number,
+  period: SalaryPeriod,
+): number {
+  if (!amount || isNaN(amount)) return 0;
+  if (period === "month") return Math.round(amount * 12);
+  if (period === "hour") return Math.round(amount * 2080);
+  return amount;
+}
+
+/**
  * Parses raw salary strings into structured numeric values.
  * Handles patterns such as:
  * - "$100k - $140k"
@@ -58,6 +121,7 @@ export function parseSalaryRange(salaryText?: string | null): ParsedSalary {
     min: null,
     max: null,
     currency: "USD",
+    period: "year",
   };
 
   if (!salaryText || typeof salaryText !== "string") {
@@ -90,6 +154,8 @@ export function parseSalaryRange(salaryText?: string | null): ParsedSalary {
   } else {
     result.currency = "USD";
   }
+
+  result.period = detectSalaryPeriod(cleanText, result.currency);
 
   // Match numbers with optional suffix multipliers:
   // k, rb (thousand), m, mil, jt, juta (million)

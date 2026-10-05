@@ -169,6 +169,7 @@ describe("Phase 2: Agent Tool Layer & Dispatcher", () => {
       );
 
       expect(result.success).toBe(false);
+      expect(result.status).toBe("failed");
       expect(result.error).toContain("Unauthorized");
       expect(mockMatchingService.matchJobsForProfile).not.toHaveBeenCalled();
     });
@@ -323,6 +324,7 @@ describe("Phase 2: Agent Tool Layer & Dispatcher", () => {
       );
 
       expect(result.success).toBe(true);
+      expect(result.status).toBe("pending");
       expect(mockMemoryService.rememberFact).toHaveBeenCalledWith(
         TEST_PROFILE_ID,
         {
@@ -347,6 +349,7 @@ describe("Phase 2: Agent Tool Layer & Dispatcher", () => {
       );
 
       expect(result.success).toBe(true);
+      expect(result.status).toBe("pending");
       expect(result.actionProposal).toBeDefined();
       expect(result.actionProposal?.summary).toBe("Perbarui preferensi kerja menjadi Remote & Hybrid");
       expect(result.actionProposal?.proposedChanges.workMode).toEqual(["remote", "hybrid"]);

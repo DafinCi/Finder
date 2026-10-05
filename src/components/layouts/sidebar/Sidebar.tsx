@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import SidebarHeader from "./SidebarHeader";
 import SidebarNavigation from "./SidebarNavigation";
 import SidebarFooter from "./SidebarFooter";
@@ -18,8 +18,6 @@ export default function Sidebar() {
 
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
   const [isDragging, setIsDragging] = useState(false);
-  const widthRef = useRef(sidebarWidth);
-  widthRef.current = sidebarWidth;
 
   // Read saved width from localStorage upon mount
   useEffect(() => {
@@ -28,6 +26,8 @@ export default function Sidebar() {
       if (savedWidth) {
         const parsed = parseInt(savedWidth, 10);
         if (!isNaN(parsed) && parsed >= MIN_SIDEBAR_WIDTH && parsed <= MAX_SIDEBAR_WIDTH) {
+          // Browser-only value: sync it after mount to keep SSR markup stable.
+          // eslint-disable-next-line react-hooks/set-state-in-effect
           setSidebarWidth(parsed);
         }
       }
@@ -48,17 +48,22 @@ export default function Sidebar() {
   useEffect(() => {
     if (!isDragging) return;
 
+    let latestWidth: number | null = null;
+
     const handleMouseMove = (e: MouseEvent) => {
       const clampedWidth = Math.min(
         MAX_SIDEBAR_WIDTH,
         Math.max(MIN_SIDEBAR_WIDTH, e.clientX)
       );
+      latestWidth = clampedWidth;
       setSidebarWidth(clampedWidth);
     };
 
     const handleMouseUp = () => {
       setIsDragging(false);
-      saveWidth(widthRef.current);
+      if (latestWidth !== null) {
+        saveWidth(latestWidth);
+      }
     };
 
     document.body.style.userSelect = "none";
@@ -162,8 +167,8 @@ export default function Sidebar() {
                 w-[2px] h-full transition-colors duration-150
                 ${
                   isDragging
-                    ? "bg-primary"
-                    : "bg-transparent group-hover:bg-primary/50 group-focus-visible:bg-primary"
+                    ? "bg-foreground"
+                    : "bg-transparent group-hover:bg-muted-foreground/40 group-focus-visible:bg-foreground"
                 }
               `}
             />

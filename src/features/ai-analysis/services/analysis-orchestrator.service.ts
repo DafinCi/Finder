@@ -13,16 +13,87 @@ import {
   toCandidateMatchingContext,
   RawJobInput,
 } from "@/features/jobs/domain/job-matching-context";
+import type { ResumeProcessingStageReporter } from "../types/resume-processing.types";
+import { matchingOrchestratorService } from "@/features/matching/services/matching-orchestrator.service";
+import type { RecommendedJobOpportunity } from "@/features/matching/types/matching.types";
+import { careerProfileService } from "@/features/profile/services/career-profile.service";
 
 const MODEL_NAME = process.env.GROQ_MODEL || DEFAULT_GROQ_MODEL;
 const DB_CANDIDATE_POOL_LIMIT = 25;
 const AI_MATCHING_POOL_LIMIT = 5;
+
+export interface DeterministicJobScore {
+  preRankingScore: number;
+  matchedCount: number;
+  totalReqs: number;
+  missingSkills: string[];
+}
+
+/**
+ * Scores a job against the candidate's extracted skill sets using the same
+ * deterministic weighting used for pre-ranking. Core skills carry 2.0x,
+ * supporting skills 1.2x, and general extracted skills 1.0x per requirement.
+ */
+export function scoreCandidateSkillsAgainstJob(
+  job: RawJobInput,
+  coreSet: Set<string>,
+  supportingSet: Set<string>,
+  allSet: Set<string>,
+): DeterministicJobScore {
+  const reqs = (job.requirements || []).map((r) => r.toLowerCase().trim());
+  let coreCount = 0;
+  let supportingCount = 0;
+  let generalCount = 0;
+  const missingSkills: string[] = [];
+
+  for (const r of reqs) {
+    if (coreSet.has(r)) {
+      coreCount++;
+    } else if (supportingSet.has(r)) {
+      supportingCount++;
+    } else if (allSet.has(r)) {
+      generalCount++;
+    } else {
+      missingSkills.push(r);
+    }
+  }
+
+  const totalReqs = Math.max(1, reqs.length);
+  const preRankingScore =
+    (coreCount * 2.0 + supportingCount * 1.2 + generalCount * 1.0) /
+    totalReqs;
+
+  return {
+    preRankingScore,
+    matchedCount: coreCount + supportingCount + generalCount,
+    totalReqs: reqs.length,
+    missingSkills: missingSkills.slice(0, 5),
+  };
+}
+
+/**
+ * Converts the pre-ranking score (max 2.0 per requirement) into an authoritative
+ * [0, 100] match score. This keeps the displayed score deterministic.
+ */
+export function toDeterministicMatchScore(preRankingScore: number): number {
+  return Math.min(
+    100,
+    Math.max(0, Math.round((preRankingScore / 2.0) * 100)),
+  );
+}
+
+export function buildDeterministicReason(
+  score: DeterministicJobScore,
+): string {
+  return `Match score computed from skill alignment (${score.matchedCount} of ${score.totalReqs} qualifications met).`;
+}
 
 export interface RunResumeAnalysisParams {
   userId: string;
   resumeId: string;
   rawText: string;
   sessionId?: string;
+  onStage?: ResumeProcessingStageReporter;
 }
 
 export interface RunResumeAnalysisResult {
@@ -122,10 +193,24 @@ async function getCachedCompletedAnalysis(
  * foreign key integrity guarantees, idempotency caching, concurrency locks, and graceful degradation.
  */
 export async function runResumeAnalysisWorkflow({
+  userId,
   resumeId,
   rawText,
   sessionId,
+  onStage,
 }: RunResumeAnalysisParams): Promise<RunResumeAnalysisResult> {
+  const reportStage = async (
+    stage: Parameters<ResumeProcessingStageReporter>[0],
+    patch?: Parameters<ResumeProcessingStageReporter>[1],
+  ) => {
+    if (!onStage) return;
+    try {
+      await onStage(stage, patch);
+    } catch (stageError) {
+      console.error(`[ANALYSIS:Stage] Failed to report stage '${stage}':`, stageError);
+    }
+  };
+
   // 1. Idempotency Check: Reuse existing analysis if resume is already completed
   const { data: currentResume } = await supabaseAdmin
     .from("resumes")
@@ -212,7 +297,9 @@ export async function runResumeAnalysisWorkflow({
 
   try {
     // 3. Extract profile using AI model with fallback resilience
+    await reportStage("extracting");
     const aiCandidateData = await extractCandidateProfile(rawText);
+    await reportStage("extracted");
 
     // 4. Persist analysis record with accurate model lineage and prompt version
     const actualModelUsed = aiCandidateData._modelUsed || MODEL_NAME;
@@ -280,41 +367,93 @@ export async function runResumeAnalysisWorkflow({
     const allSet = new Set(allCandidateSkills);
 
     const scoredCandidates = candidateJobs.map((job) => {
-      const reqs = (job.requirements || []).map((r) => r.toLowerCase().trim());
-      let coreCount = 0;
-      let supportingCount = 0;
-      let generalCount = 0;
-
-      for (const r of reqs) {
-        if (coreSet.has(r)) {
-          coreCount++;
-        } else if (supportingSet.has(r)) {
-          supportingCount++;
-        } else if (allSet.has(r)) {
-          generalCount++;
-        }
-      }
-
-      const totalReqs = Math.max(1, reqs.length);
-      // Core skills carry 2.0x weight, supporting carry 1.2x weight, general carry 1.0x weight
-      const preRankingScore =
-        (coreCount * 2.0 + supportingCount * 1.2 + generalCount * 1.0) /
-        totalReqs;
-
-      return { job, preRankingScore };
+      const scoring = scoreCandidateSkillsAgainstJob(
+        job,
+        coreSet,
+        supportingSet,
+        allSet,
+      );
+      return { job, preRankingScore: scoring.preRankingScore, scoring };
     });
 
     scoredCandidates.sort((a, b) => b.preRankingScore - a.preRankingScore);
+    const deterministicByJobId = new Map(
+      scoredCandidates.map((item) => [item.job.id, item.scoring]),
+    );
     const topJobs = scoredCandidates
       .slice(0, AI_MATCHING_POOL_LIMIT)
       .map((item) => item.job);
 
-    // 6. Perform Job Matching with Graceful Degradation fallback
+    // 6. Matching. The Stage 2 deterministic engine is authoritative whenever
+    // the candidate has a canonical career profile. The analysis-path scoring
+    // below is only a fallback snapshot for users without a profile yet.
     let matchedJobsWithDetails: MatchedJobItem[] = [];
 
-    if (topJobs && topJobs.length > 0) {
-      let matchResults;
+    let stage2Matches: RecommendedJobOpportunity[] = [];
 
+    // Only use Stage 2 when the canonical profile already carries evidence.
+    // A fresh onboarding draft exists but is empty, so Stage 2 there would rank
+    // against nothing; in that case we fall back to the CV analysis snapshot.
+    const existingProfile = await careerProfileService
+      .getProfile(userId)
+      .catch(() => null);
+    const profileHasEvidence = Boolean(
+      existingProfile &&
+        ((existingProfile.capabilities?.skills?.length ?? 0) > 0 ||
+          (existingProfile.careerIntent?.target_roles?.length ?? 0) > 0 ||
+          (existingProfile.preferences?.work_modes?.length ?? 0) > 0),
+    );
+
+    if (profileHasEvidence) {
+      try {
+        stage2Matches = await matchingOrchestratorService.matchJobsForProfile(
+          userId,
+          { limit: AI_MATCHING_POOL_LIMIT },
+        );
+      } catch (stage2Error) {
+        console.warn(
+          "[ANALYSIS] Stage 2 matching unavailable; using analysis snapshot:",
+          (stage2Error as Error).message,
+        );
+      }
+    }
+
+    if (stage2Matches.length > 0) {
+      await reportStage("matching");
+      await reportStage("persisting");
+
+      const snapshotRows = stage2Matches.map((match) => ({
+        analysis_id: analysisId,
+        job_id: match.job_id,
+        match_score: match.match_score,
+        reason: match.qualitative?.fit_rationale || "Deterministic match",
+        missing_skills: match.qualitative?.missing_skills || [],
+      }));
+
+      // Replace any prior snapshot so job_matches holds one engine's output.
+      await supabaseAdmin
+        .from("job_matches")
+        .delete()
+        .eq("analysis_id", analysisId);
+
+      const { error: snapshotInsertError } = await supabaseAdmin
+        .from("job_matches")
+        .insert(snapshotRows);
+      if (snapshotInsertError) throw snapshotInsertError;
+
+      matchedJobsWithDetails = stage2Matches.map((match) => ({
+        id: match.job_id,
+        job_id: match.job_id,
+        match_score: match.match_score,
+        reason: match.qualitative?.fit_rationale || null,
+        missing_skills: match.qualitative?.missing_skills || [],
+        title: match.title,
+        company: match.company_name,
+        logo_url: match.company_logo,
+        location: match.location,
+        salary_range: match.salary_range,
+      }));
+    } else if (topJobs && topJobs.length > 0) {
       const compactCandidateContext = toCandidateMatchingContext(
         aiCandidateData.json_profile,
       );
@@ -322,62 +461,50 @@ export async function runResumeAnalysisWorkflow({
         toJobMatchingContext(job),
       );
 
+      // The LLM contributes qualitative explanation only. The authoritative numerical
+      // match score is always computed deterministically from candidate skills.
+      const llmMatchesByJobId = new Map<
+        string,
+        { reason?: string; missing_skills?: string[] }
+      >();
+      await reportStage("matching");
       try {
-        matchResults = await analyzeJobMatches(
+        const matchResults = await analyzeJobMatches(
           compactCandidateContext,
           compactJobContexts,
         );
+        for (const match of matchResults) {
+          llmMatchesByJobId.set(match.job_id, {
+            reason: match.reason,
+            missing_skills: match.missing_skills,
+          });
+        }
       } catch (matchingError) {
         console.warn(
-          "[ANALYSIS:DEGRADED_MODE] AI job matching failed, applying deterministic fallback:",
+          "[ANALYSIS:DEGRADED_MODE] AI job matching explanation failed; using deterministic rationale only:",
           matchingError,
         );
-
-        // Graceful Degradation: Compute deterministic match score based on skill overlap
-        const candidateSkillSet = new Set(
-          (aiCandidateData.extracted_skills || []).map((s) =>
-            s.toLowerCase().trim(),
-          ),
-        );
-
-        matchResults = topJobs.map((job) => {
-          const jobReqs = (job.requirements || []).map((r) =>
-            r.toLowerCase().trim(),
-          );
-          const matchedCount = jobReqs.filter((r) =>
-            candidateSkillSet.has(r),
-          ).length;
-          const overlapRatio =
-            jobReqs.length > 0 ? matchedCount / jobReqs.length : 0.5;
-          const score = Math.round(55 + overlapRatio * 35); // 55 - 90
-          const missing = (job.requirements || []).filter(
-            (r) => !candidateSkillSet.has(r.toLowerCase().trim()),
-          );
-
-          return {
-            job_id: job.id,
-            score,
-            reason: `Kecocokan dihitung berdasarkan keselarasan keahlian (${matchedCount} dari ${jobReqs.length} kualifikasi terpenuhi).`,
-            missing_skills: missing.slice(0, 3),
-          };
-        });
       }
 
-      // Validate that returned job_ids actually exist in topJobs (foreign key integrity guard)
-      const validJobIdSet = new Set(topJobs.map((j) => j.id));
-      const validMatches = matchResults.filter((match) =>
-        validJobIdSet.has(match.job_id),
-      );
+      await reportStage("persisting");
+      const matchInsertData = topJobs.map((job) => {
+        const det = deterministicByJobId.get(job.id);
+        const llm = llmMatchesByJobId.get(job.id);
 
-      const matchInsertData = validMatches.map((match) => ({
-        analysis_id: analysisId,
-        job_id: match.job_id,
-        match_score: Math.min(100, Math.max(0, Math.round(match.score))),
-        reason: match.reason?.trim() || "Kecocokan profil teridentifikasi.",
-        missing_skills: Array.isArray(match.missing_skills)
-          ? match.missing_skills
-          : [],
-      }));
+        return {
+          analysis_id: analysisId,
+          job_id: job.id,
+          match_score: toDeterministicMatchScore(det?.preRankingScore ?? 0),
+          reason:
+            llm?.reason?.trim() ||
+            (det
+              ? buildDeterministicReason(det)
+              : "Profile match identified."),
+          missing_skills: Array.isArray(llm?.missing_skills)
+            ? llm.missing_skills
+            : det?.missingSkills || [],
+        };
+      });
 
       if (matchInsertData.length > 0) {
         const { error: matchInsertError } = await supabaseAdmin
@@ -462,7 +589,7 @@ Here is a summary of your skills profile and a curation of **the best matching j
 
       const shouldUpdateTitle =
         !currentSession?.title ||
-        currentSession.title === "Obrolan Karir Baru" ||
+        currentSession.title === "New Career Chat" ||
         currentSession.title.startsWith("CV analysis:") ||
         currentSession.title.startsWith("CV Analysis:");
 
@@ -491,6 +618,8 @@ Here is a summary of your skills profile and a curation of **the best matching j
       .update({ status: "completed" })
       .eq("id", resumeId);
 
+    await reportStage("completed");
+
     return {
       analysisId,
       analysis: aiCandidateData.json_profile,
@@ -502,6 +631,11 @@ Here is a summary of your skills profile and a curation of **the best matching j
       .from("resumes")
       .update({ status: "failed" })
       .eq("id", resumeId);
+
+    await reportStage("failed", {
+      errorCode: "ANALYSIS_FAILED",
+      errorMessage: (error as Error).message || "Analysis workflow failed.",
+    });
 
     throw error;
   }

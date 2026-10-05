@@ -65,6 +65,7 @@ export interface SaveDraftPayload {
     salary?: {
       min_amount: number | null;
       currency: string;
+      period?: "year" | "month" | "hour" | null;
     } | null;
     negative_preferences?: NegativePreferenceItem[];
   };
@@ -88,6 +89,7 @@ export interface ConfirmProfilePayload {
     salary: {
       min_amount: number | null;
       currency: string;
+      period?: "year" | "month" | "hour" | null;
     } | null;
     negative_preferences: NegativePreferenceItem[];
   };
@@ -291,20 +293,51 @@ export const onboardingService = {
   /**
    * Analyzes an uploaded resume using Groq LLM extraction.
    */
-  async analyzeResume(resumeId: string): Promise<AnalyzeResumeResult> {
+  async analyzeResume(
+    resumeId: string,
+    options?: { allowNonResume?: boolean },
+  ): Promise<AnalyzeResumeResult> {
     const res = await fetch("/api/analyze", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
       },
-      body: JSON.stringify({ resumeId }),
+      body: JSON.stringify({
+        resumeId,
+        allowNonResume: options?.allowNonResume,
+      }),
     });
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new OnboardingApiError(
         err.error || "Failed to analyze resume",
+        res.status,
+        err,
+      );
+    }
+
+    return await res.json();
+  },
+
+  /**
+   * Finalizes a rejection by removing the uploaded document content.
+   */
+  async rejectResume(resumeId: string): Promise<{ code: string }> {
+    const res = await fetch("/api/analyze", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({ resumeId, decision: "reject" }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new OnboardingApiError(
+        err.error || "Failed to remove the document",
         res.status,
         err,
       );

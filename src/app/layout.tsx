@@ -16,6 +16,10 @@ import { AppProviders } from "@/components/providers/AppProviders";
 export const metadata: Metadata = {
   title: "Finder | AI Career Intelligence",
   description: "Understand your career before applying.",
+  icons: {
+    icon: "/brand/finder-logo.png",
+    apple: "/brand/finder-logo.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

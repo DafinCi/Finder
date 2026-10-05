@@ -101,8 +101,11 @@ export function EditBackgroundDialog({
     setEditingProjId(null);
   };
 
-  // Sync state on open
-  useEffect(() => {
+  // Sync state on open. Keyed on the prop identity so a re-render with the same
+  // profile does not clobber in-progress edits.
+  const [syncState, setSyncState] = useState({ isOpen, background });
+  if (isOpen !== syncState.isOpen || background !== syncState.background) {
+    setSyncState({ isOpen, background });
     if (isOpen) {
       setExperienceList(background?.experience || []);
       setEducationList(background?.education || []);
@@ -112,7 +115,7 @@ export function EditBackgroundDialog({
       resetEduForm();
       resetProjForm();
     }
-  }, [isOpen, background]);
+  }
 
   // Focus trap, autofocus, and ESC key
   useEffect(() => {
@@ -414,7 +417,7 @@ export function EditBackgroundDialog({
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-border/80 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-sm bg-primary/10 text-primary border border-primary/20">
+            <div className="p-2 rounded-sm bg-secondary text-muted-foreground border border-border">
               <GraduationCap className="w-4 h-4" />
             </div>
             <div>
@@ -434,7 +437,7 @@ export function EditBackgroundDialog({
             onClick={onClose}
             disabled={isSaving}
             aria-label="Close background dialog"
-            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-sm text-muted-foreground hover:text-foreground hover:bg-secondary focus-visible:ring-2 focus-visible:ring-primary transition-colors cursor-pointer"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-sm text-muted-foreground hover:text-foreground hover:bg-secondary focus-visible:ring-2 focus-visible:ring-muted-foreground transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -445,9 +448,9 @@ export function EditBackgroundDialog({
           <button
             type="button"
             onClick={() => setActiveTab("experience")}
-            className={`min-h-[44px] py-2.5 px-4 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ${
+            className={`min-h-[44px] py-2.5 px-4 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-muted-foreground ${
               activeTab === "experience"
-                ? "border-primary text-primary"
+                ? "border-foreground text-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -458,9 +461,9 @@ export function EditBackgroundDialog({
           <button
             type="button"
             onClick={() => setActiveTab("education")}
-            className={`min-h-[44px] py-2.5 px-4 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ${
+            className={`min-h-[44px] py-2.5 px-4 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-muted-foreground ${
               activeTab === "education"
-                ? "border-primary text-primary"
+                ? "border-foreground text-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -471,9 +474,9 @@ export function EditBackgroundDialog({
           <button
             type="button"
             onClick={() => setActiveTab("projects")}
-            className={`min-h-[44px] py-2.5 px-4 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ${
+            className={`min-h-[44px] py-2.5 px-4 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-muted-foreground ${
               activeTab === "projects"
-                ? "border-primary text-primary"
+                ? "border-foreground text-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -495,18 +498,18 @@ export function EditBackgroundDialog({
                   <h3 className="text-xs font-bold text-foreground flex items-center gap-1">
                     {editingExpId ? (
                       <>
-                        <Edit3 className="w-3.5 h-3.5 text-primary" />
+                        <Edit3 className="w-3.5 h-3.5 text-muted-foreground" />
                         <span>Edit Work Experience</span>
                       </>
                     ) : (
                       <>
-                        <Plus className="w-3.5 h-3.5 text-primary" />
+                        <Plus className="w-3.5 h-3.5 text-muted-foreground" />
                         <span>Add Work Experience</span>
                       </>
                     )}
                   </h3>
                   {editingExpId && (
-                    <span className="text-[10px] text-primary font-semibold">
+                    <span className="text-[10px] text-muted-foreground font-semibold">
                       Editing active item
                     </span>
                   )}
@@ -518,14 +521,14 @@ export function EditBackgroundDialog({
                     value={expCompany}
                     onChange={(e) => setExpCompany(e.target.value)}
                     placeholder="Company Name *"
-                    className="bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    className="bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground"
                   />
                   <input
                     type="text"
                     value={expRole}
                     onChange={(e) => setExpRole(e.target.value)}
                     placeholder="Job Title / Role *"
-                    className="bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    className="bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground"
                   />
                 </div>
 
@@ -535,7 +538,7 @@ export function EditBackgroundDialog({
                     value={expStartDate}
                     onChange={(e) => setExpStartDate(e.target.value)}
                     placeholder="Start Date (e.g. Jan 2023)"
-                    className="bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    className="bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground"
                   />
                   <input
                     type="text"
@@ -547,7 +550,7 @@ export function EditBackgroundDialog({
                         ? "Present"
                         : "End Date (e.g. Dec 2024)"
                     }
-                    className="bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
+                    className="bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground disabled:opacity-50"
                   />
                 </div>
 
@@ -557,7 +560,7 @@ export function EditBackgroundDialog({
                     id="exp-is-current"
                     checked={expIsCurrent}
                     onChange={(e) => setExpIsCurrent(e.target.checked)}
-                    className="w-5 h-5 accent-primary cursor-pointer shrink-0"
+                    className="w-5 h-5 accent-foreground cursor-pointer shrink-0"
                   />
                   <span className="text-xs text-muted-foreground">
                     I currently work here
@@ -569,7 +572,7 @@ export function EditBackgroundDialog({
                   onChange={(e) => setExpSummary(e.target.value)}
                   placeholder="Key responsibilities and achievements..."
                   rows={2}
-                  className="w-full bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary resize-none"
+                  className="w-full bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground resize-none"
                 />
 
                 <input
@@ -577,7 +580,7 @@ export function EditBackgroundDialog({
                   value={expTech}
                   onChange={(e) => setExpTech(e.target.value)}
                   placeholder="Technologies used (comma-separated: React, TypeScript, Docker)..."
-                  className="w-full bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  className="w-full bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground"
                 />
 
                 {editingExpId ? (
@@ -627,7 +630,7 @@ export function EditBackgroundDialog({
                       <div className="space-y-1">
                         <h4 className="text-xs font-bold text-foreground">
                           {exp.role_title} •{" "}
-                          <span className="text-primary">
+                          <span className="text-muted-foreground">
                             {exp.company_name}
                           </span>
                         </h4>
@@ -685,18 +688,18 @@ export function EditBackgroundDialog({
                   <h3 className="text-xs font-bold text-foreground flex items-center gap-1">
                     {editingEduId ? (
                       <>
-                        <Edit3 className="w-3.5 h-3.5 text-primary" />
+                        <Edit3 className="w-3.5 h-3.5 text-muted-foreground" />
                         <span>Edit Education Record</span>
                       </>
                     ) : (
                       <>
-                        <Plus className="w-3.5 h-3.5 text-primary" />
+                        <Plus className="w-3.5 h-3.5 text-muted-foreground" />
                         <span>Add Education Record</span>
                       </>
                     )}
                   </h3>
                   {editingEduId && (
-                    <span className="text-[10px] text-primary font-semibold">
+                    <span className="text-[10px] text-muted-foreground font-semibold">
                       Editing active item
                     </span>
                   )}
@@ -707,7 +710,7 @@ export function EditBackgroundDialog({
                   value={eduInstitution}
                   onChange={(e) => setEduInstitution(e.target.value)}
                   placeholder="Institution or University *"
-                  className="w-full bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  className="w-full bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground"
                 />
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -716,21 +719,21 @@ export function EditBackgroundDialog({
                     value={eduDegree}
                     onChange={(e) => setEduDegree(e.target.value)}
                     placeholder="Degree (e.g. Bachelor's, Master's)"
-                    className="bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    className="bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground"
                   />
                   <input
                     type="text"
                     value={eduField}
                     onChange={(e) => setEduField(e.target.value)}
                     placeholder="Field of Study / Major"
-                    className="bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    className="bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground"
                   />
                   <input
                     type="number"
                     value={eduYear}
                     onChange={(e) => setEduYear(e.target.value)}
                     placeholder="Graduation Year (e.g. 2024)"
-                    className="bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    className="bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground"
                   />
                 </div>
 
@@ -787,7 +790,7 @@ export function EditBackgroundDialog({
                           {edu.field_of_study ? `• ${edu.field_of_study}` : ""}
                         </p>
                         {edu.graduation_year && (
-                          <span className="text-[10px] text-primary font-mono block">
+                          <span className="text-[10px] text-muted-foreground font-mono block">
                             Graduated: {edu.graduation_year}
                           </span>
                         )}
@@ -835,18 +838,18 @@ export function EditBackgroundDialog({
                   <h3 className="text-xs font-bold text-foreground flex items-center gap-1">
                     {editingProjId ? (
                       <>
-                        <Edit3 className="w-3.5 h-3.5 text-primary" />
+                        <Edit3 className="w-3.5 h-3.5 text-muted-foreground" />
                         <span>Edit Project</span>
                       </>
                     ) : (
                       <>
-                        <Plus className="w-3.5 h-3.5 text-primary" />
+                        <Plus className="w-3.5 h-3.5 text-muted-foreground" />
                         <span>Add Project</span>
                       </>
                     )}
                   </h3>
                   {editingProjId && (
-                    <span className="text-[10px] text-primary font-semibold">
+                    <span className="text-[10px] text-muted-foreground font-semibold">
                       Editing active item
                     </span>
                   )}
@@ -857,7 +860,7 @@ export function EditBackgroundDialog({
                   value={projTitle}
                   onChange={(e) => setProjTitle(e.target.value)}
                   placeholder="Project Title *"
-                  className="w-full bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  className="w-full bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground"
                 />
 
                 <textarea
@@ -865,7 +868,7 @@ export function EditBackgroundDialog({
                   onChange={(e) => setProjDesc(e.target.value)}
                   placeholder="Brief description of the project..."
                   rows={2}
-                  className="w-full bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary resize-none"
+                  className="w-full bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground resize-none"
                 />
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -874,14 +877,14 @@ export function EditBackgroundDialog({
                     value={projTech}
                     onChange={(e) => setProjTech(e.target.value)}
                     placeholder="Technologies (e.g. Next.js, PostgreSQL)"
-                    className="bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    className="bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground"
                   />
                   <input
                     type="text"
                     value={projUrl}
                     onChange={(e) => setProjUrl(e.target.value)}
                     placeholder="Project URL (e.g. https://...)"
-                    className="bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    className="bg-card border border-border rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground"
                   />
                 </div>
 

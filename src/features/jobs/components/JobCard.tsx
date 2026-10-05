@@ -61,7 +61,7 @@ export default function JobCard({
 
     if (workMode === "hybrid") {
       return (
-        <span className="text-xs px-2.5 py-0.5 rounded-sm bg-primary/15 text-slush-lavender border border-primary/30 font-medium">
+        <span className="text-xs px-2.5 py-0.5 rounded-sm bg-secondary text-muted-foreground border border-border/80 font-medium">
           Hybrid
         </span>
       );
@@ -75,14 +75,14 @@ export default function JobCard({
   };
 
   return (
-    <div className="group border border-border/80 bg-card hover:bg-card/90 rounded-sm p-5 transition-all duration-200 hover:border-primary/40 shadow-2xs flex flex-col gap-4">
+    <div className="group border border-border/80 bg-card hover:bg-card/90 rounded-sm p-5 transition-all duration-200 hover:border-border-strong shadow-2xs flex flex-col gap-4">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div className="flex gap-3.5 items-start min-w-0">
           <CompanyLogo src={companyLogo} name={companyName} size="md" />
           <div className="space-y-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-base font-semibold font-heading text-foreground group-hover:text-primary transition-colors">
+              <h3 className="text-base font-semibold font-heading text-foreground group-hover:text-foreground transition-colors">
                 {title}
               </h3>
               <MatchBadge score={matchScore} />
@@ -108,9 +108,9 @@ export default function JobCard({
               }}
               title={isSaved ? "Remove from saved" : "Save job"}
               aria-label={isSaved ? "Remove from saved" : "Save job"}
-              className={`h-11 w-11 sm:h-9 sm:w-9 flex items-center justify-center rounded-sm border transition-colors cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+              className={`h-11 w-11 sm:h-9 sm:w-9 flex items-center justify-center rounded-sm border transition-colors cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground ${
                 isSaved
-                  ? "bg-primary/10 border-primary text-primary"
+                  ? "bg-secondary border-border-strong text-foreground"
                   : "bg-secondary/60 border-border/70 text-muted-foreground hover:text-foreground hover:bg-secondary"
               }`}
             >
@@ -129,7 +129,7 @@ export default function JobCard({
               }}
               title="Not interested"
               aria-label="Not interested in this role"
-              className="h-11 w-11 sm:h-9 sm:w-9 flex items-center justify-center rounded-sm border border-border/70 bg-secondary/60 text-muted-foreground hover:text-slush-ember hover:border-slush-ember/40 hover:bg-slush-ember/10 transition-colors cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              className="h-11 w-11 sm:h-9 sm:w-9 flex items-center justify-center rounded-sm border border-border/70 bg-secondary/60 text-muted-foreground hover:text-slush-ember hover:border-slush-ember/40 hover:bg-slush-ember/10 transition-colors cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground"
             >
               <ThumbsDown className="w-4 h-4" />
             </button>
@@ -158,7 +158,7 @@ export default function JobCard({
       {/* Fit Rationale Snippet */}
       {reason && (
         <div className="p-3 bg-secondary/40 border border-border/60 rounded-sm space-y-1 text-xs">
-          <div className="flex items-center gap-1.5 text-primary font-semibold text-[11px] uppercase tracking-wider">
+          <div className="flex items-center gap-1.5 text-muted-foreground font-semibold text-[11px] uppercase tracking-wider">
             <Brain className="w-3.5 h-3.5" />
             <span>Why this matches you</span>
           </div>
@@ -174,7 +174,7 @@ export default function JobCard({
           type="button"
           onClick={() => onSelect(match)}
           aria-label={`View details for ${title} at ${companyName}`}
-          className="w-full sm:w-auto min-h-[44px] sm:min-h-[38px] flex items-center justify-center gap-1.5 px-4 py-2 border border-border/80 bg-secondary/60 hover:bg-primary hover:border-primary hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm text-xs font-semibold transition-all cursor-pointer shadow-2xs ml-auto"
+          className="w-full sm:w-auto min-h-[44px] sm:min-h-[38px] flex items-center justify-center gap-1.5 px-4 py-2 border border-border/80 bg-secondary/60 hover:bg-secondary hover:border-border-strong hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground rounded-sm text-xs font-semibold transition-all cursor-pointer shadow-2xs ml-auto"
         >
           <span>View Details & Breakdown</span>
           <ChevronRight className="w-3.5 h-3.5 ml-0.5" />

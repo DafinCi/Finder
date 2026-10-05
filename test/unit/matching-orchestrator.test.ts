@@ -1,11 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { MatchingOrchestratorService } from "@/features/matching/services/matching-orchestrator.service";
+import {
+  MatchingOrchestratorService,
+  extractExclusionKeywordsFromMemories,
+  extractMinSalaryFromMemories,
+  isRemoteOnlyFromMemories,
+} from "@/features/matching/services/matching-orchestrator.service";
 import { CareerProfile } from "@/features/profile/types/career-profile.types";
+import { CareerMemory } from "@/features/memory/types/memory.types";
 
 describe("Unit: MatchingOrchestratorService", () => {
   let mockProfileService: any;
   let mockFeedbackRepo: any;
   let mockDbClient: any;
+  let mockMemoryService: any;
   let service: MatchingOrchestratorService;
 
   const sampleProfile: CareerProfile = {
@@ -103,6 +110,18 @@ describe("Unit: MatchingOrchestratorService", () => {
       is_active: true,
       posted_at: "2026-09-28T10:00:00Z",
     },
+    {
+      id: "j-gambling-4",
+      title: "Frontend Developer",
+      company_name: "Casino Tech",
+      description: "Build high stakes crypto casino and gambling games.",
+      requirements: ["React", "TypeScript"],
+      location: "Remote",
+      work_mode: "remote",
+      salary_range: "$120,000",
+      is_active: true,
+      posted_at: "2026-09-28T09:00:00Z",
+    },
   ];
 
   beforeEach(() => {
@@ -113,7 +132,6 @@ describe("Unit: MatchingOrchestratorService", () => {
     };
 
     mockFeedbackRepo = {
-      // Exclude j-rejected-2
       getExcludedJobIds: vi.fn().mockResolvedValue(new Set(["j-rejected-2"])),
     };
 
@@ -132,10 +150,15 @@ describe("Unit: MatchingOrchestratorService", () => {
       }),
     };
 
+    mockMemoryService = {
+      getActiveMemories: vi.fn().mockResolvedValue([]),
+    };
+
     service = new MatchingOrchestratorService(
       mockProfileService,
       mockFeedbackRepo,
       mockDbClient,
+      mockMemoryService,
     );
   });
 
@@ -144,12 +167,143 @@ describe("Unit: MatchingOrchestratorService", () => {
 
     // j-rejected-2 is rejected -> filtered in Stage 1
     // j-onsite-3 is onsite while candidate has work_mode_strict=true -> filtered in Stage 1
-    // Only j-top-1 should survive
-    expect(results.length).toBe(1);
+    // j-top-1 and j-gambling-4 survive (no memory exclusions yet)
+    expect(results.length).toBe(2);
     expect(results[0].job_id).toBe("j-top-1");
     expect(results[0].title).toBe("Senior Frontend Developer");
     expect(results[0].match_score).toBeGreaterThan(60);
     expect(results[0].score_breakdown).toBeDefined();
     expect(results[0].qualitative.fit_rationale).toBeDefined();
+  });
+
+  describe("Walrus Career Memory Constraint Enforcement", () => {
+    it("should extract exclusion keywords from constraint_avoid memories", () => {
+      const memories: CareerMemory[] = [
+        {
+          id: "m-1",
+          profileId: "p1",
+          category: "constraint_avoid",
+          content: "Rejects Web3 gambling, casino, and betting projects",
+          source: "explicit_user",
+          confidence: "high",
+          status: "active",
+          walrusStatus: "stored",
+          walrusBlobId: "b-1",
+          walrusObjectId: null,
+          metadata: {},
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ];
+
+      const exclusions = extractExclusionKeywordsFromMemories(memories);
+      expect(exclusions).toContain("gambling");
+      expect(exclusions).toContain("casino");
+      expect(exclusions).toContain("betting");
+    });
+
+    it("should extract minimum salary requirements from memories", () => {
+      const memories: CareerMemory[] = [
+        {
+          id: "m-2",
+          profileId: "p1",
+          category: "constraint_avoid",
+          content: "Target salary must be at least $150k USD",
+          source: "explicit_user",
+          confidence: "high",
+          status: "active",
+          walrusStatus: "stored",
+          walrusBlobId: "b-2",
+          walrusObjectId: null,
+          metadata: {},
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ];
+
+      const minSalary = extractMinSalaryFromMemories(memories);
+      expect(minSalary).toEqual({
+        amount: 150000,
+        currency: "USD",
+        period: "year",
+      });
+    });
+
+    it("should capture a monthly salary floor together with its period", () => {
+      const memories: CareerMemory[] = [
+        {
+          id: "m-monthly",
+          profileId: "p1",
+          category: "constraint_avoid",
+          content:
+            "Candidate requires a salary above $10,000 per month (updated from previous $100,000/month floor).",
+          source: "explicit_user",
+          confidence: "high",
+          status: "active",
+          walrusStatus: "stored",
+          walrusBlobId: "b-monthly",
+          walrusObjectId: null,
+          metadata: {},
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ];
+
+      expect(extractMinSalaryFromMemories(memories)).toEqual({
+        amount: 10000,
+        currency: "USD",
+        period: "month",
+      });
+    });
+
+    it("should detect remote only constraint from memories", () => {
+      const memories: CareerMemory[] = [
+        {
+          id: "m-3",
+          profileId: "p1",
+          category: "work_preference",
+          content: "Candidate strictly accepts 100% remote roles only",
+          source: "explicit_user",
+          confidence: "high",
+          status: "active",
+          walrusStatus: "stored",
+          walrusBlobId: "b-3",
+          walrusObjectId: null,
+          metadata: {},
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ];
+
+      expect(isRemoteOnlyFromMemories(memories)).toBe(true);
+    });
+
+    it("should automatically filter out gambling job when Walrus memory contains anti-gambling constraint", async () => {
+      mockMemoryService.getActiveMemories.mockResolvedValue([
+        {
+          id: "mem-anti-gambling",
+          profileId: "u1",
+          category: "constraint_avoid",
+          content: "Rejects any work involving casino, gambling, or betting platforms",
+          source: "explicit_user",
+          confidence: "high",
+          status: "active",
+          walrusStatus: "stored",
+          walrusBlobId: "blob-123",
+          walrusObjectId: null,
+          metadata: {},
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ]);
+
+      const results = await service.matchJobsForProfile("u1", { limit: 5 });
+
+      // j-gambling-4 must be completely excluded by the Walrus memory constraint!
+      const jobIds = results.map((r) => r.job_id);
+      expect(jobIds).not.toContain("j-gambling-4");
+      expect(jobIds).toContain("j-top-1");
+      expect(results[0].qualitative.fit_rationale).toContain("Walrus career memory constraints");
+    });
   });
 });

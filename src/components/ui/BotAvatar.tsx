@@ -204,7 +204,7 @@ export default function BotAvatar({
 
           {/* Half-body Torso / Curved Robotic Shoulders */}
           <path
-            d="M5 50 C5 29, 11 26, 20 26 C29 26, 35 29, 35 50 Z"
+            d="M0 50 C0 29, 11 26, 20 26 C29 26, 35 29, 45 50 Z"
             fill={palette.botColor}
           />
         </svg>

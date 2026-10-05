@@ -14,32 +14,44 @@ export default function CandidateSummaryCard({
   const candidate = analysis.candidate || analysis;
   const career = analysis.career || analysis;
 
-  const name = candidate.name || "Professional Candidate";
-  const title = candidate.title || "Software Engineer";
-  const years = candidate.years_of_experience || 0;
+  const rawName = candidate.name?.trim();
+  const name = rawName && rawName.length > 0 ? rawName : "Resume Profile";
+  const title = candidate.title?.trim() || "";
+  const rawYears = candidate.years_of_experience;
+  const years = typeof rawYears === "number" && rawYears > 0 ? rawYears : null;
   const summary = candidate.summary || "";
   const coreSkills = candidate.skills?.core || [];
   const strengths =
     analysis.career?.strengths || analysis.insights?.strengths || [];
 
+  const initialChar = rawName ? rawName.charAt(0).toUpperCase() : "R";
+  const subtitle =
+    title && years !== null
+      ? `${title} • ${years} ${years === 1 ? "Year" : "Years"} of Experience`
+      : title
+        ? title
+        : years !== null
+          ? `${years} ${years === 1 ? "Year" : "Years"} of Experience`
+          : null;
+
   return (
-    <div className="w-full my-4 rounded-xl border border-border/80 bg-card/60 p-5 shadow-sm space-y-4">
+    <div className="w-full my-4 rounded-sm border border-border/80 bg-card/60 p-5 shadow-sm space-y-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-3">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-base">
-            {name.charAt(0)}
+            {initialChar}
           </div>
           <div>
             <h3 className="text-base font-semibold text-foreground leading-tight">
               {name}
             </h3>
-            <p className="text-xs text-primary font-medium flex items-center gap-1.5 mt-0.5">
-              <Briefcase className="w-3.5 h-3.5" />
-              <span>
-                {title} • {years} {years === 1 ? "Year" : "Years"} of Experience
-              </span>
-            </p>
+            {subtitle && (
+              <p className="text-xs text-primary font-medium flex items-center gap-1.5 mt-0.5">
+                <Briefcase className="w-3.5 h-3.5" />
+                <span>{subtitle}</span>
+              </p>
+            )}
           </div>
         </div>
 

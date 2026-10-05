@@ -19,7 +19,7 @@ export default function JobSummary({ stats }: JobSummaryProps) {
       {/* Mobile compact summary strip */}
       <div className="sm:hidden border border-border/80 bg-card rounded-sm px-3.5 py-2.5 flex items-center justify-between text-xs text-muted-foreground shadow-2xs">
         <div className="flex items-center gap-2">
-          <Briefcase className="w-4 h-4 text-primary shrink-0" />
+          <Briefcase className="w-4 h-4 text-muted-foreground shrink-0" />
           <span className="font-semibold text-foreground">
             {count} {isFiltered ? `of ${totalCount} Roles` : "Roles Found"}
           </span>
@@ -28,14 +28,14 @@ export default function JobSummary({ stats }: JobSummaryProps) {
           {highest !== null && (
             <span className="flex items-center gap-1">
               <Award className="w-3.5 h-3.5 text-slush-mint" />
-              <span className="font-medium text-foreground">{highest}%</span>
+              <span className="font-medium text-foreground">{highest} / 100</span>
               <span className="text-[10px] text-muted-foreground uppercase">Top</span>
             </span>
           )}
           {average !== null && (
             <span className="flex items-center gap-1">
-              <TrendingUp className="w-3.5 h-3.5 text-primary" />
-              <span className="font-medium text-foreground">{average}%</span>
+              <TrendingUp className="w-3.5 h-3.5 text-muted-foreground" />
+              <span className="font-medium text-foreground">{average} / 100</span>
               <span className="text-[10px] text-muted-foreground uppercase">Avg</span>
             </span>
           )}
@@ -46,7 +46,7 @@ export default function JobSummary({ stats }: JobSummaryProps) {
       <div className="hidden sm:grid sm:grid-cols-3 gap-3.5">
         <div className="border border-border/80 bg-card rounded-sm p-4 flex items-center gap-3.5 shadow-2xs">
           <div className="p-2.5 bg-secondary/80 rounded-sm text-secondary-foreground border border-border/60">
-            <Briefcase className="w-5 h-5 text-primary" />
+            <Briefcase className="w-5 h-5 text-muted-foreground" />
           </div>
           <div>
             <p className="text-xs text-muted-foreground uppercase font-semibold tracking-wider">
@@ -78,8 +78,8 @@ export default function JobSummary({ stats }: JobSummaryProps) {
         </div>
 
         <div className="border border-border/80 bg-card rounded-sm p-4 flex items-center gap-3.5 shadow-2xs">
-          <div className="p-2.5 bg-primary/10 rounded-sm text-primary border border-primary/20">
-            <TrendingUp className="w-5 h-5" />
+          <div className="p-2.5 bg-secondary/80 rounded-sm text-secondary-foreground border border-border/60">
+            <TrendingUp className="w-5 h-5 text-muted-foreground" />
           </div>
           <div>
             <p className="text-xs text-muted-foreground uppercase font-semibold tracking-wider">

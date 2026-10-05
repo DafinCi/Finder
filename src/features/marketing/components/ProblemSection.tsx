@@ -38,7 +38,10 @@ export default function ProblemSection() {
   ];
 
   return (
-    <section id="problem" className="py-20 md:py-28 border-b border-border/40 bg-card/20">
+    <section
+      id="problem"
+      className="py-20 md:py-28 border-b border-border/40 bg-card/20"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto space-y-4 mb-14">
           <h2 className="text-xs font-mono uppercase tracking-widest text-primary font-semibold">
@@ -48,7 +51,9 @@ export default function ProblemSection() {
             Traditional job boards are transactional. Finder is advisory.
           </h3>
           <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-            Most job sites treat you as an application counter to maximize recruiter views. Finder acts as your personal technical career strategist.
+            Most job sites treat you as an application counter to maximize
+            recruiter views. Finder acts as your personal technical career
+            strategist.
           </p>
         </div>
 
@@ -59,10 +64,10 @@ export default function ProblemSection() {
             return (
               <div
                 key={idx}
-                className="rounded-xl border border-border/80 bg-card/60 p-6 flex flex-col justify-between space-y-5 hover:border-border transition-colors"
+                className="rounded-sm border border-border/80 bg-card/60 p-6 flex flex-col justify-between space-y-5 hover:border-border transition-colors"
               >
                 <div className="space-y-4">
-                  <div className="w-10 h-10 rounded-lg bg-secondary text-foreground flex items-center justify-center border border-border">
+                  <div className="w-10 h-10 rounded-sm bg-secondary text-foreground flex items-center justify-center border border-border">
                     <Icon className="w-5 h-5 text-muted-foreground" />
                   </div>
                   <h4 className="text-base font-semibold font-heading text-foreground">
@@ -70,7 +75,7 @@ export default function ProblemSection() {
                   </h4>
 
                   {/* Traditional Pain Point */}
-                  <div className="space-y-1.5 rounded-lg bg-destructive/5 border border-destructive/15 p-3 text-xs">
+                  <div className="space-y-1.5 rounded-sm bg-destructive/5 border border-destructive/15 p-3 text-xs">
                     <div className="flex items-center gap-1.5 text-destructive font-semibold">
                       <X className="w-3.5 h-3.5" />
                       <span>Traditional Job Portals</span>
@@ -81,7 +86,7 @@ export default function ProblemSection() {
                   </div>
 
                   {/* Finder Solution */}
-                  <div className="space-y-1.5 rounded-lg bg-emerald-500/5 border border-emerald-500/20 p-3 text-xs">
+                  <div className="space-y-1.5 rounded-sm bg-emerald-500/5 border border-emerald-500/20 p-3 text-xs">
                     <div className="flex items-center gap-1.5 text-emerald-400 font-semibold">
                       <Check className="w-3.5 h-3.5" />
                       <span>The Finder Approach</span>

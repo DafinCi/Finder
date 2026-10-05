@@ -1,3 +1,5 @@
+import { formatSuiNetworkLabel } from "@/lib/sui/network";
+
 export type SuiBackendErrorCode =
   | "UNAUTHENTICATED"
   | "INVALID_SIWS"
@@ -33,20 +35,18 @@ export const SUI_ERROR_MESSAGES: Record<SuiClientErrorCode, string> = {
   INVALID_NONCE:
     "Authentication request timed out or was already used. Please try again.",
   PURPOSE_MISMATCH: "Security challenge purpose mismatch. Please try again.",
-  NETWORK_MISMATCH:
-    "Network mismatch. Please switch your wallet network to Sui Testnet.",
+  NETWORK_MISMATCH: `Network mismatch. Please switch your wallet network to Sui ${formatSuiNetworkLabel()}.`,
   ADDRESS_MISMATCH:
     "Wallet address mismatch. The signature does not match your active account.",
   WALLET_ALREADY_LINKED:
     "This Sui wallet is already linked to an existing account.",
   NO_ALTERNATIVE_AUTH_METHOD:
-    "Can't unlink your wallet — it's your only way to sign in. Add an email and password first.",
+    "Can't unlink your wallet, it is your only way to sign in. Add an email and password first.",
   RATE_LIMITED: "Too many requests. Please wait a moment before trying again.",
   USER_REJECTED: "Signature request was rejected in your wallet.",
   NO_WALLET_CONNECTED:
     "No wallet connected. Please connect a Sui wallet to continue.",
-  WRONG_NETWORK:
-    "Please switch your wallet to Sui Testnet.",
+  WRONG_NETWORK: `Please switch your wallet to Sui ${formatSuiNetworkLabel()}.`,
   GENERIC_ERROR: "An unexpected error occurred during wallet authentication.",
 };
 

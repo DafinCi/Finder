@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Plus, BriefcaseBusiness, User, Settings } from "lucide-react";
+import { Plus, BriefcaseBusiness, User } from "lucide-react";
 import { useSessions } from "@/features/chat/hooks/useSessions";
 import SessionHistoryList from "./SessionHistoryList";
 
@@ -30,7 +30,7 @@ export default function SidebarNavigation({
           href="/c"
           className={`p-2.5 rounded-sm border transition-all ${
             pathname === "/c"
-              ? "bg-primary text-primary-foreground border-primary"
+              ? "bg-secondary text-foreground border-border-strong"
               : "bg-secondary/60 text-muted-foreground hover:text-foreground border-border"
           }`}
           title="New Chat"
@@ -41,7 +41,7 @@ export default function SidebarNavigation({
           href="/jobs"
           className={`p-2.5 rounded-sm border transition-all ${
             pathname === "/jobs"
-              ? "bg-primary text-primary-foreground border-primary"
+              ? "bg-secondary text-foreground border-border-strong"
               : "bg-secondary/60 text-muted-foreground hover:text-foreground border-border"
           }`}
           title="Jobs"
@@ -52,23 +52,12 @@ export default function SidebarNavigation({
           href="/profile"
           className={`p-2.5 rounded-sm border transition-all ${
             pathname === "/profile"
-              ? "bg-primary text-primary-foreground border-primary"
+              ? "bg-secondary text-foreground border-border-strong"
               : "bg-secondary/60 text-muted-foreground hover:text-foreground border-border"
           }`}
           title="Career Profile"
         >
           <User className="w-4 h-4" />
-        </Link>
-        <Link
-          href="/settings"
-          className={`p-2.5 rounded-sm border transition-all ${
-            pathname === "/settings"
-              ? "bg-primary text-primary-foreground border-primary"
-              : "bg-secondary/60 text-muted-foreground hover:text-foreground border-border"
-          }`}
-          title="Settings"
-        >
-          <Settings className="w-4 h-4" />
         </Link>
       </nav>
     );
@@ -95,7 +84,7 @@ export default function SidebarNavigation({
               : "text-muted-foreground hover:bg-secondary/70 hover:text-foreground"
           }`}
         >
-          <BriefcaseBusiness className="w-[18px] h-[18px] text-primary shrink-0" />
+          <BriefcaseBusiness className="w-[18px] h-[18px] shrink-0" />
           <span>Jobs</span>
         </Link>
         <Link
@@ -106,19 +95,8 @@ export default function SidebarNavigation({
               : "text-muted-foreground hover:bg-secondary/70 hover:text-foreground"
           }`}
         >
-          <User className="w-[18px] h-[18px] text-primary shrink-0" />
+          <User className="w-[18px] h-[18px] shrink-0" />
           <span>Profile</span>
-        </Link>
-        <Link
-          href="/settings"
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-sm text-sm font-medium transition-colors ${
-            pathname === "/settings"
-              ? "bg-secondary text-foreground font-semibold"
-              : "text-muted-foreground hover:bg-secondary/70 hover:text-foreground"
-          }`}
-        >
-          <Settings className="w-[18px] h-[18px] text-primary shrink-0" />
-          <span>Settings</span>
         </Link>
       </div>
 

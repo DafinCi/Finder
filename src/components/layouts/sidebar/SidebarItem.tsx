@@ -32,17 +32,17 @@ export default function SidebarItem({
         ${collapsed ? "justify-center" : "gap-3"}
         ${
           isActive
-            ? "bg-primary/10 text-primary font-medium"
+            ? "bg-secondary text-foreground font-medium"
             : "text-muted-foreground hover:bg-accent/40 hover:text-foreground"
         }
       `}
     >
       {isActive && (
-        <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r bg-primary" />
+        <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r bg-muted-foreground" />
       )}
 
       <Icon
-        className={`w-4 h-4 shrink-0 ${isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground transition-colors"}`}
+        className={`w-4 h-4 shrink-0 ${isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground transition-colors"}`}
       />
 
       {!collapsed && (
@@ -50,7 +50,7 @@ export default function SidebarItem({
       )}
 
       {!collapsed && item.badge && (
-        <span className="ml-auto text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-md font-semibold leading-none">
+        <span className="ml-auto text-[10px] bg-secondary text-muted-foreground px-1.5 py-0.5 rounded-md font-semibold leading-none">
           {item.badge}
         </span>
       )}

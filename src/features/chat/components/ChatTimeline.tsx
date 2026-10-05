@@ -41,7 +41,9 @@ export default function ChatTimeline({
 
   useEffect(() => {
     if (isNearBottomRef.current) {
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+      bottomRef.current?.scrollIntoView({
+        behavior: isLoading ? "auto" : "smooth",
+      });
     }
   }, [messages, isLoading]);
 
@@ -50,7 +52,7 @@ export default function ChatTimeline({
       role="log"
       aria-live="polite"
       aria-busy={isLoading}
-      className="w-full max-w-4xl lg:max-w-5xl mx-auto px-4 py-4 sm:py-6"
+      className="w-full min-w-[320px] px-4 sm:px-6 md:px-8 lg:px-12 py-4 sm:py-6"
     >
       {messages.map((message, index) => {
         const prev = messages[index - 1];
@@ -101,7 +103,7 @@ export default function ChatTimeline({
       {/* Bottom spacer ensures messages and actions clear the floating bottom omnibar */}
       <div
         ref={bottomRef}
-        className="h-28 md:h-24 shrink-0"
+        className="h-36 md:h-40 shrink-0"
         aria-hidden="true"
       />
     </div>

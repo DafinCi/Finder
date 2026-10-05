@@ -22,6 +22,10 @@ import {
   parseSiwsMessage,
   SIWS_STATEMENTS,
 } from "@/lib/sui/siws-message";
+import {
+  formatSuiNetworkLabel,
+  getConfiguredSuiNetwork,
+} from "@/lib/sui/network";
 import type { User } from "@supabase/supabase-js";
 
 describe("Phase 6: Frontend Sui Wallet Authentication UX & Integration Tests", () => {
@@ -142,22 +146,32 @@ describe("Phase 6: Frontend Sui Wallet Authentication UX & Integration Tests", (
   // SCENARIO 4: Wrong Network Handling
   // =========================================================================
   describe("Scenario 4: Wrong Network Detection & Rejection", () => {
-    it("should reject non-testnet chains (mainnet, devnet, localnet)", () => {
-      const networksToReject = ["mainnet", "devnet", "localnet", "unknown:999"];
+    it("should reject any chain that differs from the configured Sui network", () => {
+      const expected = getConfiguredSuiNetwork();
+      const networksToReject = ["mainnet", "testnet", "devnet", "localnet"].filter(
+        (net) => net !== expected,
+      );
+
+      expect(networksToReject.length).toBeGreaterThan(0);
 
       for (const net of networksToReject) {
-        const isSupported = !net || net === "testnet";
+        const isSupported = !net || net === expected;
         expect(isSupported).toBe(false);
-
-        const mappedError = mapSuiAuthError("NETWORK_MISMATCH");
-        expect(mappedError).toContain("Sui Testnet");
       }
     });
 
-    it("should permit testnet network", () => {
-      const net = "testnet";
-      const isSupported = !net || net === "testnet";
+    it("should permit the configured Sui network", () => {
+      const net = getConfiguredSuiNetwork();
+      const isSupported = !net || net === net;
       expect(isSupported).toBe(true);
+    });
+
+    it("should name the configured network in the mismatch message", () => {
+      const mappedError = mapSuiAuthError("NETWORK_MISMATCH");
+      expect(mappedError).toContain(`Sui ${formatSuiNetworkLabel()}`);
+      expect(mapSuiAuthError("WRONG_NETWORK")).toContain(
+        `Sui ${formatSuiNetworkLabel()}`,
+      );
     });
   });
 

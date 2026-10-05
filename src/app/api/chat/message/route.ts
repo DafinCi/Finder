@@ -4,8 +4,9 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import {
   groq,
   DEFAULT_GROQ_MODEL,
-  FALLBACK_GROQ_MODEL,
   normalizeGroqError,
+  executeStreamWithResilience,
+  estimateTokens,
 } from "@/lib/groq/client";
 import {
   buildCareerCopilotSystemPrompt,
@@ -17,11 +18,25 @@ import { AGENT_TOOL_DEFINITIONS } from "@/features/agent/tools/agent-tool.defini
 import {
   agentToolDispatcher,
   ActionProposalData,
+  AgentToolResult,
 } from "@/features/agent/services/agent-tool-dispatcher.service";
+import { emitAiEvent, obfuscateId } from "@/lib/observability/ai-events";
 
 export const dynamic = "force-dynamic";
 
 const MAX_PROMPT_CHARS = 2000;
+
+interface MemoryRecallPayload {
+  source: "walrus" | "cache" | "none";
+  count: number;
+  stateless: boolean;
+  memories: Array<{
+    id: string | null;
+    content: string;
+    category: string | null;
+    blobId: string | null;
+  }>;
+}
 
 function getToolStartLabel(toolName: string): string {
   switch (toolName) {
@@ -78,7 +93,12 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { session_id, content } = body;
+    const { session_id, content, simulate_stateless } = body;
+    const isStatelessSimulation =
+      simulate_stateless === true ||
+      req.headers.get("x-simulate-stateless") === "true" ||
+      req.nextUrl.searchParams.get("demo") === "stateless" ||
+      req.nextUrl.searchParams.get("mode") === "amnesia";
 
     if (!session_id || !content?.trim()) {
       return NextResponse.json(
@@ -400,9 +420,9 @@ export async function POST(req: NextRequest) {
 
     const chronologicalHistory = (recentHistory || []).reverse();
 
-    // Budget historical context to max 4,000 characters (preserving most recent messages)
-    const MAX_HISTORY_CHARS = 4000;
-    let accumulatedChars = 0;
+    // Budget historical context by estimated tokens (preserving most recent messages).
+    const MAX_HISTORY_TOKENS = 1024;
+    let accumulatedTokens = 0;
     const budgetedHistory: Array<{
       role: "user" | "assistant";
       content: string;
@@ -410,12 +430,13 @@ export async function POST(req: NextRequest) {
 
     for (let i = chronologicalHistory.length - 1; i >= 0; i--) {
       const msg = chronologicalHistory[i];
-      if (accumulatedChars + msg.content.length <= MAX_HISTORY_CHARS) {
+      const msgTokens = estimateTokens(msg.content);
+      if (accumulatedTokens + msgTokens <= MAX_HISTORY_TOKENS) {
         budgetedHistory.unshift({
           role: msg.role as "user" | "assistant",
           content: msg.content,
         });
-        accumulatedChars += msg.content.length;
+        accumulatedTokens += msgTokens;
       } else {
         break;
       }
@@ -423,16 +444,47 @@ export async function POST(req: NextRequest) {
 
     // Load durable sovereign career memories for personalized agent reasoning
     let memoryContext = "";
-    try {
-      memoryContext = await careerMemoryService.getDurableContextSummary(
-        user.id,
-        5,
+    let memoryRecall: MemoryRecallPayload | null = isStatelessSimulation
+      ? { source: "none", count: 0, stateless: true, memories: [] }
+      : null;
+    if (isStatelessSimulation) {
+      console.info(
+        `[ReviewerBenchmark:Stateless] Amnesia mode active for session ${session_id}. Walrus memory recall bypassed.`,
       );
-    } catch (memErr) {
-      console.warn(
-        `[CareerMemory] Failed to load durable context for user ${user.id}:`,
-        (memErr as Error).message,
-      );
+    } else {
+      try {
+        const canonicalWorkModes = Array.isArray(
+          candidateProfile?.preferences?.work_modes,
+        )
+          ? (candidateProfile.preferences.work_modes as string[])
+          : [];
+
+        const recall = await careerMemoryService.getDurableContext(
+          user.id,
+          5,
+          cleanContent,
+          canonicalWorkModes.length > 0
+            ? { workModes: canonicalWorkModes }
+            : undefined,
+        );
+        memoryContext = recall.context;
+        memoryRecall = {
+          source: recall.source,
+          count: recall.memories.length,
+          stateless: false,
+          memories: recall.memories.map((memory) => ({
+            id: memory.id,
+            content: memory.content,
+            category: memory.category,
+            blobId: memory.blobId,
+          })),
+        };
+      } catch (memErr) {
+        console.warn(
+          `[CareerMemory] Failed to load durable context for user ${user.id}:`,
+          (memErr as Error).message,
+        );
+      }
     }
 
     const systemPromptContent = buildCareerCopilotSystemPrompt({
@@ -466,7 +518,15 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    emitAiEvent("chat.request", {
+      sessionId: session_id,
+      userId: obfuscateId(user.id),
+      contentChars: cleanContent.length,
+      stateless: isStatelessSimulation,
+    });
+
     const maxTokensLimit = Number(process.env.GROQ_MAX_TOKENS) || 2500;
+    const agentModel = process.env.GROQ_AGENT_MODEL || DEFAULT_GROQ_MODEL;
 
     interface TokenUsageStats {
       prompt_tokens?: number;
@@ -493,151 +553,235 @@ export async function POST(req: NextRequest) {
       usage?: TokenUsageStats;
     }
 
-    // Resilient stream initialization with model fallback
-    let stream: AsyncIterable<ChatCompletionChunk>;
-    let modelUsed = DEFAULT_GROQ_MODEL;
     const startTime = Date.now();
-
-    try {
-      stream = (await groq.chat.completions.create({
-        model: modelUsed,
-        messages: messagesForGroq,
-        tools: AGENT_TOOL_DEFINITIONS as any,
-        tool_choice: "auto",
-        temperature: 0.6,
-        max_tokens: maxTokensLimit,
-        stream: true,
-        stream_options: { include_usage: true },
-      } as any)) as unknown as AsyncIterable<ChatCompletionChunk>;
-    } catch (primaryError) {
-      const errStr = (primaryError as Error).message || "";
-      const isRecoverable =
-        errStr.includes("429") ||
-        errStr.includes("503") ||
-        errStr.includes("rate limit") ||
-        errStr.includes("overloaded") ||
-        errStr.includes("not found") ||
-        errStr.includes("model");
-
-      if (isRecoverable && DEFAULT_GROQ_MODEL !== FALLBACK_GROQ_MODEL) {
-        console.warn(
-          `[AI:ChatStream] Primary model ${DEFAULT_GROQ_MODEL} failed (${errStr}). Falling back to ${FALLBACK_GROQ_MODEL}...`,
-        );
-        modelUsed = FALLBACK_GROQ_MODEL;
-        stream = (await groq.chat.completions.create({
-          model: modelUsed,
-          messages: messagesForGroq,
-          tools: AGENT_TOOL_DEFINITIONS as any,
-          tool_choice: "auto",
-          temperature: 0.6,
-          max_tokens: maxTokensLimit,
-          stream: true,
-          stream_options: { include_usage: true },
-        } as any)) as unknown as AsyncIterable<ChatCompletionChunk>;
-      } else {
-        throw primaryError;
-      }
-    }
-
     const encoder = new TextEncoder();
 
     const readableStream = new ReadableStream({
       async start(controller) {
+        if (isStatelessSimulation) {
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({
+                type: "simulation_mode",
+                mode: "stateless",
+                label: "Amnesia Mode (Memory Bypassed)",
+              })}\n\n`,
+            ),
+          );
+        }
+
+        if (memoryRecall && (memoryRecall.count > 0 || memoryRecall.stateless)) {
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({
+                type: "memory_recall",
+                recall: memoryRecall,
+              })}\n\n`,
+            ),
+          );
+        }
+
         let fullAssistantContent = "";
         let tokenUsage: TokenUsageStats | null = null;
-        const toolCallsMap = new Map<
-          number,
-          { id: string; name: string; arguments: string }
-        >();
+        let finalModelUsed = DEFAULT_GROQ_MODEL;
+        let lastActionProposal: ActionProposalData | null = null;
+        let memoryUpdated = false;
+        let memoryWalrusStatus: string | null = null;
+        const executedToolCallsSummary: Array<{
+          name: string;
+          args: unknown;
+          success: boolean;
+        }> = [];
+
+        // Bounded multi-turn agent loop. Each round may emit tool calls; tool results
+        // are appended back into the conversation so the model can chain another action
+        // (up to MAX_TOOL_ITERATIONS) before producing its final answer.
+        const agentMessages: any[] = [...messagesForGroq];
+        const MAX_TOOL_ITERATIONS = 3;
+
+        const buildStream = (
+          model: string,
+          useTools: boolean,
+        ): Promise<AsyncIterable<ChatCompletionChunk>> => {
+          return groq.chat.completions.create({
+            model,
+            messages: agentMessages,
+            ...(useTools
+              ? {
+                  tools: AGENT_TOOL_DEFINITIONS as any,
+                  tool_choice: "auto",
+                  parallel_tool_calls: true,
+                }
+              : {}),
+            temperature: 0.6,
+            max_completion_tokens: maxTokensLimit,
+            stream: true,
+            stream_options: { include_usage: true },
+          } as any) as unknown as Promise<AsyncIterable<ChatCompletionChunk>>;
+        };
+
+        const buildGroundedFallback = (): string => {
+          const statusParts = executedToolCallsSummary.map(
+            (t) => `${t.name}: ${t.success ? "succeeded" : "failed"}`,
+          );
+          return (
+            "\n\n(I couldn't generate a full summary of the result. Tool outcome: " +
+            (statusParts.length > 0
+              ? statusParts.join("; ")
+              : "no tools executed") +
+            ".)"
+          );
+        };
 
         try {
-          for await (const chunk of stream) {
-            const delta = chunk.choices[0]?.delta;
-            const token = delta?.content || "";
-            if (token) {
-              fullAssistantContent += token;
-              controller.enqueue(
-                encoder.encode(`data: ${JSON.stringify({ token })}\n\n`),
-              );
-            }
+          let lastRoundHadTools = false;
 
-            if (delta?.tool_calls && Array.isArray(delta.tool_calls)) {
-              for (const tc of delta.tool_calls) {
-                const idx = tc.index ?? 0;
-                const existing = toolCallsMap.get(idx) || {
-                  id: "",
-                  name: "",
-                  arguments: "",
+          for (let iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
+            const toolCallsMap = new Map<
+              number,
+              { id: string; name: string; arguments: string }
+            >();
+            let roundContent = "";
+
+            try {
+              const { stream, modelUsed: roundModel } =
+                await executeStreamWithResilience(
+                  "ChatStream",
+                  (model) => buildStream(model, true),
+                  { primaryModel: agentModel },
+                );
+              finalModelUsed = roundModel;
+
+              for await (const chunk of stream) {
+                const delta = chunk.choices[0]?.delta;
+                const token = delta?.content || "";
+                if (token) roundContent += token;
+
+                if (delta?.tool_calls && Array.isArray(delta.tool_calls)) {
+                  for (const tc of delta.tool_calls) {
+                    const idx = tc.index ?? 0;
+                    const existing = toolCallsMap.get(idx) || {
+                      id: "",
+                      name: "",
+                      arguments: "",
+                    };
+                    if (tc.id) existing.id = tc.id;
+                    if (tc.function?.name) existing.name += tc.function.name;
+                    if (tc.function?.arguments)
+                      existing.arguments += tc.function.arguments;
+                    toolCallsMap.set(idx, existing);
+                  }
+                }
+
+                const chunkWithUsage = chunk as unknown as {
+                  usage?: TokenUsageStats;
                 };
-                if (tc.id) existing.id = tc.id;
-                if (tc.function?.name) existing.name += tc.function.name;
-                if (tc.function?.arguments)
-                  existing.arguments += tc.function.arguments;
-                toolCallsMap.set(idx, existing);
+                if (chunkWithUsage.usage) {
+                  tokenUsage = chunkWithUsage.usage;
+                }
               }
+            } catch (roundError) {
+              if (executedToolCallsSummary.length > 0) {
+                console.error("[AgentTool:RoundError]", roundError);
+                fullAssistantContent = buildGroundedFallback();
+                controller.enqueue(
+                  encoder.encode(
+                    `data: ${JSON.stringify({ token: fullAssistantContent })}\n\n`,
+                  ),
+                );
+                lastRoundHadTools = false;
+                break;
+              }
+              throw roundError;
             }
 
-            const chunkWithUsage = chunk as unknown as {
-              usage?: TokenUsageStats;
-            };
-            if (chunkWithUsage.usage) {
-              tokenUsage = chunkWithUsage.usage;
+            // Direct answer (no tool call in this round): final response.
+            if (toolCallsMap.size === 0) {
+              fullAssistantContent = roundContent;
+              if (roundContent) {
+                controller.enqueue(
+                  encoder.encode(
+                    `data: ${JSON.stringify({ token: roundContent })}\n\n`,
+                  ),
+                );
+              }
+              lastRoundHadTools = false;
+              break;
             }
-          }
 
-          let lastActionProposal: ActionProposalData | null = null;
-          let memoryUpdated = false;
-          const executedToolCallsSummary: Array<{
-            name: string;
-            args: unknown;
-            success: boolean;
-          }> = [];
+            lastRoundHadTools = true;
 
-          // 1-Turn Tool Execution (Strict 1-Turn Cap)
-          if (toolCallsMap.size > 0) {
             const toolCallList = Array.from(toolCallsMap.values()).map(
               (tc, idx) => ({
-                id: tc.id || `call_${Date.now()}_${idx}`,
+                id: tc.id || `call_${Date.now()}_${iteration}_${idx}`,
                 name: tc.name,
                 arguments: tc.arguments,
               }),
             );
 
-            const toolResultMessages: Array<{
-              role: "tool";
-              tool_call_id: string;
-              name: string;
-              content: string;
-            }> = [];
+            agentMessages.push({
+              role: "assistant",
+              content: roundContent || null,
+              tool_calls: toolCallList.map((tc) => ({
+                id: tc.id,
+                type: "function",
+                function: {
+                  name: tc.name,
+                  arguments: tc.arguments,
+                },
+              })),
+            });
 
+            // Emit tool-start events first, then execute independent tools concurrently.
             for (const tc of toolCallList) {
-              const startLabel = getToolStartLabel(tc.name);
               controller.enqueue(
                 encoder.encode(
                   `data: ${JSON.stringify({
                     type: "tool_start",
                     tool: tc.name,
-                    label: startLabel,
+                    label: getToolStartLabel(tc.name),
                   })}\n\n`,
                 ),
               );
+              emitAiEvent("chat.tool.start", { tool: tc.name });
+            }
 
-              let parsedArgs: Record<string, unknown> = {};
-              try {
-                parsedArgs = JSON.parse(tc.arguments || "{}");
-              } catch (parseErr) {
-                console.warn(
-                  `[AgentTool] Failed to parse arguments for ${tc.name}:`,
-                  tc.arguments,
-                );
-              }
+            const toolExecutions = await Promise.all(
+              toolCallList.map(async (tc) => {
+                const toolStartMs = Date.now();
+                let toolResult: AgentToolResult;
+                let parsedArgs: Record<string, unknown> = {};
 
-              const toolResult = await agentToolDispatcher.executeTool(
-                user.id,
-                tc.name,
-                parsedArgs,
-              );
+                try {
+                  parsedArgs = JSON.parse(tc.arguments || "{}");
+                  toolResult = await agentToolDispatcher.executeTool(
+                    user.id,
+                    tc.name,
+                    parsedArgs,
+                  );
+                } catch (parseErr) {
+                  console.warn(
+                    `[AgentTool] Failed to parse arguments for ${tc.name}:`,
+                    tc.arguments,
+                  );
+                  toolResult = {
+                    success: false,
+                    status: "failed",
+                    toolName: tc.name,
+                    error: `Invalid tool arguments for ${tc.name}: expected valid JSON, got "${tc.arguments}".`,
+                  };
+                }
 
+                return { tc, toolResult, parsedArgs, toolStartMs };
+              }),
+            );
+
+            for (const {
+              tc,
+              toolResult,
+              parsedArgs,
+              toolStartMs,
+            } of toolExecutions) {
               executedToolCallsSummary.push({
                 name: tc.name,
                 args: parsedArgs,
@@ -647,9 +791,21 @@ export async function POST(req: NextRequest) {
               if (toolResult.actionProposal) {
                 lastActionProposal = toolResult.actionProposal;
               }
-              if (toolResult.memoryUpdated) {
+              if (toolResult.success && toolResult.memoryUpdated) {
                 memoryUpdated = true;
+                memoryWalrusStatus =
+                  toolResult.memoryUpdated.walrusStatus || null;
               }
+
+              emitAiEvent("chat.tool.end", {
+                tool: tc.name,
+                success: toolResult.success,
+                status:
+                  toolResult.status ??
+                  (toolResult.success ? "success" : "failed"),
+                durationMs: Date.now() - toolStartMs,
+                argKeys: Object.keys(parsedArgs),
+              });
 
               controller.enqueue(
                 encoder.encode(
@@ -657,59 +813,53 @@ export async function POST(req: NextRequest) {
                     type: "tool_end",
                     tool: tc.name,
                     success: toolResult.success,
+                    status:
+                      toolResult.status ??
+                      (toolResult.success ? "success" : "failed"),
                   })}\n\n`,
                 ),
               );
 
-              toolResultMessages.push({
+              agentMessages.push({
                 role: "tool",
                 tool_call_id: tc.id,
                 name: tc.name,
-                content: JSON.stringify(
-                  toolResult.data ?? {
-                    success: toolResult.success,
-                    error: toolResult.error,
-                  },
-                ),
+                content: JSON.stringify({
+                  success: toolResult.success,
+                  status:
+                    toolResult.status ??
+                    (toolResult.success ? "success" : "failed"),
+                  ...(toolResult.data ? { data: toolResult.data } : {}),
+                  ...(toolResult.message
+                    ? { message: toolResult.message }
+                    : {}),
+                  ...(toolResult.error ? { error: toolResult.error } : {}),
+                }),
               });
             }
+          }
 
-            // Turn 2: Synthesize final answer based on tool outputs (capped to 1 cycle)
-            const assistantToolCallMsg = {
-              role: "assistant" as const,
-              content: fullAssistantContent || null,
-              tool_calls: toolCallList.map((tc) => ({
-                id: tc.id,
-                type: "function" as const,
-                function: {
-                  name: tc.name,
-                  arguments: tc.arguments,
-                },
-              })),
-            };
-
-            const turn2Messages = [
-              ...messagesForGroq,
-              assistantToolCallMsg,
-              ...toolResultMessages,
-            ];
-
+          // If the loop exhausted its budget while still producing tools, run a final
+          // no-tools synthesis so the user gets a grounded natural-language answer.
+          if (lastRoundHadTools) {
             try {
-              const turn2Stream = (await groq.chat.completions.create({
-                model: modelUsed,
-                messages: turn2Messages as any,
-                temperature: 0.6,
-                max_tokens: maxTokensLimit,
-                stream: true,
-                stream_options: { include_usage: true },
-              } as any)) as unknown as AsyncIterable<ChatCompletionChunk>;
+              const { stream, modelUsed: roundModel } =
+                await executeStreamWithResilience(
+                  "ChatStream:synthesis",
+                  (model) => buildStream(model, false),
+                  { primaryModel: agentModel },
+                );
+              finalModelUsed = roundModel;
 
-              for await (const chunk of turn2Stream) {
+              let synthContent = "";
+              for await (const chunk of stream) {
                 const token = chunk.choices[0]?.delta?.content || "";
                 if (token) {
-                  fullAssistantContent += token;
+                  synthContent += token;
                   controller.enqueue(
-                    encoder.encode(`data: ${JSON.stringify({ token })}\n\n`),
+                    encoder.encode(
+                      `data: ${JSON.stringify({ token })}\n\n`,
+                    ),
                   );
                 }
                 const chunkWithUsage = chunk as unknown as {
@@ -719,23 +869,28 @@ export async function POST(req: NextRequest) {
                   tokenUsage = chunkWithUsage.usage;
                 }
               }
-            } catch (turn2Error) {
-              console.error("[AgentTool:Turn2Error]", turn2Error);
-              const fallbackNotice =
-                "\n\n(Action processed successfully by the system.)";
-              fullAssistantContent += fallbackNotice;
+              fullAssistantContent = synthContent;
+            } catch (synthesisError) {
+              console.error("[AgentTool:SynthesisError]", synthesisError);
+              fullAssistantContent = buildGroundedFallback();
               controller.enqueue(
                 encoder.encode(
-                  `data: ${JSON.stringify({ token: fallbackNotice })}\n\n`,
+                  `data: ${JSON.stringify({ token: fullAssistantContent })}\n\n`,
                 ),
               );
             }
           }
 
           const durationMs = Date.now() - startTime;
-          console.log(
-            `[AI:Telemetry] op=ChatStream model=${modelUsed} status=success duration=${durationMs}ms chars=${fullAssistantContent.length} tools=${executedToolCallsSummary.length} prompt_tokens=${tokenUsage?.prompt_tokens ?? "N/A"} completion_tokens=${tokenUsage?.completion_tokens ?? "N/A"} total_tokens=${tokenUsage?.total_tokens ?? "N/A"}`,
-          );
+          emitAiEvent("chat.complete", {
+            model: finalModelUsed,
+            durationMs,
+            chars: fullAssistantContent.length,
+            tools: executedToolCallsSummary.length,
+            promptTokens: tokenUsage?.prompt_tokens ?? null,
+            completionTokens: tokenUsage?.completion_tokens ?? null,
+            totalTokens: tokenUsage?.total_tokens ?? null,
+          });
 
           const finalContent =
             fullAssistantContent.trim() ||
@@ -749,17 +904,24 @@ export async function POST(req: NextRequest) {
               role: "assistant",
               content: finalContent,
               metadata: {
-                model: modelUsed,
+                model: finalModelUsed,
                 duration_ms: durationMs,
                 prompt_version: CAREER_COPILOT_PROMPT_VERSION,
                 total_chars: finalContent.length,
                 token_usage: tokenUsage,
+                stateless_simulation: isStatelessSimulation || undefined,
                 tool_calls:
                   executedToolCallsSummary.length > 0
                     ? executedToolCallsSummary
                     : undefined,
                 action_proposal: lastActionProposal || undefined,
                 memory_updated: memoryUpdated || undefined,
+                memory_status: memoryWalrusStatus || undefined,
+                memory_recall:
+                  memoryRecall &&
+                  (memoryRecall.count > 0 || memoryRecall.stateless)
+                    ? memoryRecall
+                    : undefined,
               },
             })
             .select()
@@ -800,6 +962,7 @@ export async function POST(req: NextRequest) {
               encoder.encode(
                 `data: ${JSON.stringify({
                   type: "memory_updated",
+                  status: memoryWalrusStatus ?? "pending",
                 })}\n\n`,
               ),
             );
@@ -813,6 +976,8 @@ export async function POST(req: NextRequest) {
                 assistantMessage: assistantMsg,
                 actionProposal: lastActionProposal,
                 memoryUpdated: memoryUpdated,
+                memoryStatus: memoryWalrusStatus,
+                memoryRecall: memoryRecall,
               })}\n\n`,
             ),
           );
@@ -829,7 +994,7 @@ export async function POST(req: NextRequest) {
               metadata: {
                 error: true,
                 error_detail: (streamError as Error).message,
-                model: modelUsed,
+                model: finalModelUsed,
                 failed_at: new Date().toISOString(),
               },
             });

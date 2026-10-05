@@ -108,7 +108,7 @@ export default function SessionHistoryList({
             return (
               <div
                 key={session.id}
-                className="flex items-center gap-1 px-2 py-1.5 rounded-sm bg-secondary/80 border border-primary/40 text-xs my-0.5"
+                className="flex items-center gap-1 px-2 py-1.5 rounded-sm bg-secondary/80 border border-border-strong text-xs my-0.5"
               >
                 <input
                   type="text"
@@ -121,7 +121,7 @@ export default function SessionHistoryList({
                   autoFocus
                   maxLength={100}
                   disabled={isSavingRename}
-                  className="flex-1 bg-background text-foreground text-xs px-2 py-1 rounded-sm border border-border focus:outline-none focus:ring-1 focus:ring-primary min-w-0"
+                  className="flex-1 bg-background text-foreground text-xs px-2 py-1 rounded-sm border border-border focus:outline-none focus:ring-1 focus:ring-muted-foreground min-w-0"
                   aria-label="Edit session title"
                 />
                 <button
@@ -133,13 +133,13 @@ export default function SessionHistoryList({
                     handleSaveRename(session.id);
                   }}
                   aria-label="Save changes"
-                  className="p-1 hover:text-primary rounded-sm hover:bg-secondary cursor-pointer disabled:opacity-40"
+                  className="p-1 hover:text-foreground rounded-sm hover:bg-secondary cursor-pointer disabled:opacity-40"
                   title="Save"
                 >
                   {isSavingRename ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
                   ) : (
-                    <Check className="w-3.5 h-3.5 text-primary" />
+                    <Check className="w-3.5 h-3.5 text-foreground" />
                   )}
                 </button>
                 <button

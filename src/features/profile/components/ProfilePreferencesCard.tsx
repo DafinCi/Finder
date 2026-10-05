@@ -32,16 +32,19 @@ export function ProfilePreferencesCard({
   const isWorkModeStrict = Boolean(constraints?.work_mode_strict);
   const isRelocationProhibited = Boolean(constraints?.relocation_prohibited);
 
+  const salaryPeriod =
+    preferences?.salary?.period ||
+    (preferences?.salary?.currency === "IDR" ? "month" : "year");
   const formattedSalary = preferences?.salary?.min_amount
-    ? `${preferences.salary.currency} ${preferences.salary.min_amount.toLocaleString("en-US")}`
+    ? `${preferences.salary.currency} ${preferences.salary.min_amount.toLocaleString("en-US")} / ${salaryPeriod === "month" ? "mo" : "yr"}`
     : "Flexible (No minimum constraint)";
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 space-y-5 shadow-2xs">
+    <div className="rounded-sm border border-border bg-card p-5 space-y-5 shadow-2xs">
       {/* Header */}
       <div className="flex items-center justify-between gap-3 pb-3 border-b border-border/80">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+          <div className="w-8 h-8 rounded-sm bg-secondary border border-border flex items-center justify-center text-muted-foreground shrink-0">
             <SlidersHorizontal className="w-4 h-4" />
           </div>
           <div>
@@ -89,7 +92,7 @@ export function ProfilePreferencesCard({
             preferences.work_modes.map((wm) => (
               <span
                 key={wm}
-                className="px-3 py-1 rounded-lg bg-secondary/80 border border-border text-xs font-medium text-foreground"
+                className="px-3 py-1 rounded-sm bg-secondary/80 border border-border text-xs font-medium text-foreground"
               >
                 {WORK_MODE_LABELS[wm] || wm}
               </span>
@@ -106,7 +109,7 @@ export function ProfilePreferencesCard({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-border/60 text-xs">
         <div className="space-y-1">
           <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-            <MapPin className="w-3 h-3 text-primary" />
+            <MapPin className="w-3 h-3 text-muted-foreground" />
             Preferred Locations
           </span>
           <div className="flex flex-wrap gap-1">
@@ -146,10 +149,10 @@ export function ProfilePreferencesCard({
       {/* Salary Expectation */}
       <div className="pt-2 border-t border-border/60 space-y-1">
         <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-          <Banknote className="w-3 h-3 text-primary" />
+          <Banknote className="w-3 h-3 text-muted-foreground" />
           Salary Expectation
         </span>
-        <div className="p-2.5 rounded-lg bg-secondary/30 border border-border/80 text-xs flex items-center justify-between">
+        <div className="p-2.5 rounded-sm bg-secondary/30 border border-border/80 text-xs flex items-center justify-between">
           <span className="font-semibold text-foreground">
             {formattedSalary}
           </span>
@@ -171,7 +174,7 @@ export function ProfilePreferencesCard({
             {preferences.priorities.map((p) => (
               <span
                 key={p}
-                className="px-2.5 py-1 rounded-md bg-primary/10 border border-primary/20 text-xs text-primary font-medium capitalize"
+                className="px-2.5 py-1 rounded-md bg-secondary border border-border text-xs text-foreground font-medium capitalize"
               >
                 {p}
               </span>
@@ -204,8 +207,8 @@ export function ProfilePreferencesCard({
           </div>
         ) : (
           <p className="text-xs text-muted-foreground italic">
-            No negative preferences declared. Finder will not apply score penalties for
-            specific domains or technologies.
+            No negative preferences declared. Finder will not apply score
+            penalties for specific domains or technologies.
           </p>
         )}
       </div>

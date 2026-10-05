@@ -148,7 +148,7 @@ export function Step3PreferencesConstraints({
                 key={opt.value}
                 type="button"
                 onClick={() => handleToggleWorkMode(opt.value)}
-                className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                className={`p-3 rounded-sm border text-left transition-all cursor-pointer ${
                   isSelected
                     ? "bg-primary/10 border-primary text-foreground shadow-2xs"
                     : "bg-card/70 border-border/70 hover:border-border text-muted-foreground hover:text-foreground"
@@ -181,7 +181,7 @@ export function Step3PreferencesConstraints({
         </div>
 
         {/* Strict Work Mode Switch */}
-        <div className="p-3 rounded-xl bg-card border border-border/80 flex items-center justify-between gap-3">
+        <div className="p-3 rounded-sm bg-card border border-border/80 flex items-center justify-between gap-3">
           <div className="space-y-0.5">
             <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
               <ShieldAlert className="w-3.5 h-3.5 text-primary" />
@@ -225,7 +225,7 @@ export function Step3PreferencesConstraints({
             {state.locations.map((loc) => (
               <span
                 key={loc}
-                className="inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-lg bg-primary/10 border border-primary/30 text-xs font-medium text-foreground"
+                className="inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-sm bg-primary/10 border border-primary/30 text-xs font-medium text-foreground"
               >
                 <span>{loc}</span>
                 <button
@@ -249,7 +249,7 @@ export function Step3PreferencesConstraints({
                 key={loc}
                 type="button"
                 onClick={() => handleToggleLocation(loc)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-sm text-xs font-medium border transition-all cursor-pointer ${
                   isSelected
                     ? "bg-primary/15 border-primary/50 text-primary font-semibold"
                     : "bg-secondary/30 border-border/70 text-muted-foreground hover:text-foreground"
@@ -269,7 +269,7 @@ export function Step3PreferencesConstraints({
             placeholder="Add location (e.g. Bandung, remote APAC, London)..."
             value={customLocationInput}
             onChange={(e) => setCustomLocationInput(e.target.value)}
-            className="flex-1 bg-secondary/40 border border-border/80 rounded-lg px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-sans"
+            className="flex-1 bg-secondary/40 border border-border/80 rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-sans"
           />
           <Button
             type="submit"
@@ -284,7 +284,7 @@ export function Step3PreferencesConstraints({
         </form>
 
         {/* Prohibit Relocation Switch */}
-        <div className="p-3 rounded-xl bg-card border border-border/80 flex items-center justify-between gap-3">
+        <div className="p-3 rounded-sm bg-card border border-border/80 flex items-center justify-between gap-3">
           <div className="space-y-0.5">
             <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
               <ShieldAlert className="w-3.5 h-3.5 text-primary" />
@@ -330,7 +330,7 @@ export function Step3PreferencesConstraints({
           <select
             value={state.salaryCurrency}
             onChange={(e) => setSalaryCurrency(e.target.value)}
-            className="bg-secondary/40 border border-border/80 rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-mono"
+            className="bg-secondary/40 border border-border/80 rounded-sm px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-mono"
           >
             <option value="USD">USD ($)</option>
             <option value="IDR">IDR (Rp)</option>
@@ -348,7 +348,7 @@ export function Step3PreferencesConstraints({
               const val = e.target.value;
               setSalaryMin(val === "" ? null : parseFloat(val));
             }}
-            className="flex-1 bg-secondary/40 border border-border/80 rounded-lg px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-mono"
+            className="flex-1 bg-secondary/40 border border-border/80 rounded-sm px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-mono"
           />
 
           {state.salaryMin !== null && (
@@ -384,7 +384,7 @@ export function Step3PreferencesConstraints({
                 key={p.id}
                 type="button"
                 onClick={() => handleTogglePriority(p.id)}
-                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                className={`p-2.5 rounded-sm border text-left transition-all cursor-pointer ${
                   isSelected
                     ? "bg-primary/10 border-primary text-foreground shadow-2xs"
                     : "bg-secondary/20 border-border/60 hover:border-border text-muted-foreground hover:text-foreground"
@@ -437,7 +437,7 @@ export function Step3PreferencesConstraints({
                 key={np.token}
                 type="button"
                 onClick={() => handleToggleNegativePreference(np)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-sm text-xs font-medium border transition-all cursor-pointer ${
                   isSelected
                     ? "bg-destructive/15 border-destructive/50 text-destructive font-semibold"
                     : "bg-secondary/30 border-border/70 text-muted-foreground hover:text-foreground"

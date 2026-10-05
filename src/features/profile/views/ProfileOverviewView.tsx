@@ -25,6 +25,7 @@ import { EditPreferencesDialog } from "../components/dialogs/EditPreferencesDial
 import { ManageSkillsSheet } from "../components/dialogs/ManageSkillsSheet";
 import { EditBackgroundDialog } from "../components/dialogs/EditBackgroundDialog";
 import { Button } from "@/components/ui/button";
+import AppHeader from "@/components/layouts/AppHeader";
 
 export default function ProfileOverviewView() {
   const { user } = useAuth();
@@ -97,7 +98,7 @@ export default function ProfileOverviewView() {
     return (
       <div className="flex-1 min-h-0 w-full h-full overflow-y-auto custom-scrollbar flex items-center justify-center p-6">
         <div className="max-w-md w-full rounded-sm border border-border bg-card p-8 text-center space-y-5 shadow-xs">
-          <div className="w-14 h-14 rounded-sm bg-primary/10 border border-primary/20 text-primary flex items-center justify-center mx-auto">
+          <div className="w-14 h-14 rounded-sm bg-secondary border border-border text-muted-foreground flex items-center justify-center mx-auto">
             <Briefcase className="w-7 h-7" />
           </div>
 
@@ -127,161 +128,165 @@ export default function ProfileOverviewView() {
   };
 
   return (
-    <div className="flex-1 min-h-0 w-full h-full overflow-y-auto custom-scrollbar scroll-smooth">
-      <div className="px-4 sm:px-6 py-6 sm:py-8 max-w-6xl mx-auto w-full space-y-6">
-        {/* Error banner when refreshing existing profile */}
-        {error && profile && (
-          <div className="p-4 rounded-sm border border-destructive/20 bg-destructive/10 text-destructive text-sm flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{error}</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => refreshProfile()}
-              className="text-xs font-semibold underline hover:no-underline cursor-pointer"
-            >
-              Retry
-            </button>
-          </div>
-        )}
+    <div className="flex-1 min-h-0 w-full h-full flex flex-col overflow-hidden">
+      <AppHeader title="Profile" />
 
-        {/* Unified Career Profile Document Sheet */}
-        <div className="rounded-sm border border-border bg-card shadow-xs overflow-hidden">
-          {/* Profile Hero Header with Centered Avatar and Chat-Wallpaper Cover */}
-          <ProfileHeader
-            user={user}
-            profile={profile}
-            completenessScore={completenessScore}
-            isRefreshing={isRefreshing}
-            isMutating={isMutating}
-            onRefresh={refreshProfile}
+      <div className="flex-1 min-h-0 w-full overflow-y-auto custom-scrollbar scroll-smooth">
+        <div className="">
+          {/* Error banner when refreshing existing profile */}
+          {error && profile && (
+            <div className="p-4 rounded-sm border border-destructive/20 bg-destructive/10 text-destructive text-sm flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{error}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => refreshProfile()}
+                className="text-xs font-semibold underline hover:no-underline cursor-pointer"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
+          {/* Unified Career Profile Document Sheet */}
+          <div className="overflow-hidden">
+            {/* Profile Hero Header with Centered Avatar and Chat-Wallpaper Cover */}
+            <ProfileHeader
+              user={user}
+              profile={profile}
+              completenessScore={completenessScore}
+              isRefreshing={isRefreshing}
+              isMutating={isMutating}
+              onRefresh={refreshProfile}
+            />
+
+            {/* Sticky Navigation Bar across Desktop & Mobile (min 44px touch targets) */}
+            <nav
+              aria-label="Profile Sections"
+              className="sticky top-0 z-20 bg-card/95 backdrop-blur-xs border-y border-border/80 px-4 sm:px-6 py-2 flex items-center gap-2 overflow-x-auto no-scrollbar"
+            >
+              <a
+                href="#section-preferences"
+                className="min-h-[44px] h-11 px-3.5 rounded-sm border border-border/70 bg-secondary/50 hover:bg-secondary text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-2 whitespace-nowrap transition-colors"
+              >
+                <Target className="w-3.5 h-3.5 text-muted-foreground" />
+                <span>Target & Preferences</span>
+              </a>
+              <a
+                href="#section-resume"
+                className="min-h-[44px] h-11 px-3.5 rounded-sm border border-border/70 bg-secondary/50 hover:bg-secondary text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-2 whitespace-nowrap transition-colors"
+              >
+                <FileText className="w-3.5 h-3.5 text-muted-foreground" />
+                <span>Resume</span>
+              </a>
+              <a
+                href="#section-skills"
+                className="min-h-[44px] h-11 px-3.5 rounded-sm border border-border/70 bg-secondary/50 hover:bg-secondary text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-2 whitespace-nowrap transition-colors"
+              >
+                <Code className="w-3.5 h-3.5 text-muted-foreground" />
+                <span>Skills Inventory</span>
+              </a>
+              <a
+                href="#section-background"
+                className="min-h-[44px] h-11 px-3.5 rounded-sm border border-border/70 bg-secondary/50 hover:bg-secondary text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-2 whitespace-nowrap transition-colors"
+              >
+                <GraduationCap className="w-3.5 h-3.5 text-muted-foreground" />
+                <span>Work & Background</span>
+              </a>
+            </nav>
+
+            {/* Document Sections with clean continuous divider lines */}
+            <div className="divide-y divide-border/80">
+              {/* Section 1: Career Goals & Work Preferences */}
+              <section id="section-preferences" className="scroll-mt-14">
+                <ProfileTargetPreferencesCard
+                  careerIntent={profile.careerIntent}
+                  preferences={profile.preferences}
+                  constraints={profile.constraints}
+                  primaryRole={primaryRole}
+                  secondaryRoles={secondaryRoles}
+                  onEditIntent={() => setActiveModal("intent")}
+                  onEditPreferences={() => setActiveModal("preferences")}
+                  className="p-5 sm:p-7 space-y-6"
+                />
+              </section>
+
+              {/* Section 2: Resume & Document Source */}
+              <section id="section-resume" className="scroll-mt-14">
+                <ProfileResumeCard
+                  resumeId={profile.resumeId}
+                  expectedVersion={profile.profileVersion}
+                  onProfileUpdated={refreshProfile}
+                  className="p-5 sm:p-7 space-y-4"
+                />
+              </section>
+
+              {/* Section 3: Skills & Capabilities */}
+              <section id="section-skills" className="scroll-mt-14">
+                <ProfileSkillsCard
+                  coreSkills={coreSkills}
+                  supportingSkills={supportingSkills}
+                  toolSkills={toolSkills}
+                  suppressedSkills={suppressedSkills}
+                  isMutating={isMutating}
+                  onAddSkill={(skill, cat) => addSkill(skill, cat)}
+                  onSuppressSkill={(skill) => suppressSkill(skill)}
+                  onRestoreSkill={(skill) => restoreSkill(skill)}
+                  onConfirmSkill={handleConfirmSkill}
+                  onManage={() => setActiveModal("skills")}
+                  className="p-5 sm:p-7 space-y-6"
+                />
+              </section>
+
+              {/* Section 4: Career Background & Education */}
+              <section id="section-background" className="scroll-mt-14">
+                <ProfileBackgroundCard
+                  background={profile.background}
+                  onEdit={() => setActiveModal("background")}
+                  className="p-5 sm:p-7 space-y-6"
+                />
+              </section>
+            </div>
+          </div>
+
+          {/* Edit Dialogs */}
+          <EditCareerIntentDialog
+            isOpen={activeModal === "intent"}
+            onClose={() => setActiveModal(null)}
+            careerIntent={profile.careerIntent}
+            onSave={updateCareerIntent}
           />
 
-          {/* Sticky Navigation Bar across Desktop & Mobile (min 44px touch targets) */}
-          <nav
-            aria-label="Profile Sections"
-            className="sticky top-0 z-20 bg-card/95 backdrop-blur-xs border-y border-border/80 px-4 sm:px-6 py-2 flex items-center gap-2 overflow-x-auto no-scrollbar"
-          >
-            <a
-              href="#section-preferences"
-              className="min-h-[44px] h-11 px-3.5 rounded-sm border border-border/70 bg-secondary/50 hover:bg-secondary text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-2 whitespace-nowrap transition-colors"
-            >
-              <Target className="w-3.5 h-3.5 text-primary" />
-              <span>Target & Preferences</span>
-            </a>
-            <a
-              href="#section-resume"
-              className="min-h-[44px] h-11 px-3.5 rounded-sm border border-border/70 bg-secondary/50 hover:bg-secondary text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-2 whitespace-nowrap transition-colors"
-            >
-              <FileText className="w-3.5 h-3.5 text-primary" />
-              <span>Resume & Walrus</span>
-            </a>
-            <a
-              href="#section-skills"
-              className="min-h-[44px] h-11 px-3.5 rounded-sm border border-border/70 bg-secondary/50 hover:bg-secondary text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-2 whitespace-nowrap transition-colors"
-            >
-              <Code className="w-3.5 h-3.5 text-primary" />
-              <span>Skills Inventory</span>
-            </a>
-            <a
-              href="#section-background"
-              className="min-h-[44px] h-11 px-3.5 rounded-sm border border-border/70 bg-secondary/50 hover:bg-secondary text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-2 whitespace-nowrap transition-colors"
-            >
-              <GraduationCap className="w-3.5 h-3.5 text-primary" />
-              <span>Work & Background</span>
-            </a>
-          </nav>
+          <EditPreferencesDialog
+            isOpen={activeModal === "preferences"}
+            onClose={() => setActiveModal(null)}
+            preferences={profile.preferences}
+            constraints={profile.constraints}
+            onSave={updatePreferences}
+          />
 
-          {/* Document Sections with clean continuous divider lines */}
-          <div className="divide-y divide-border/80">
-            {/* Section 1: Career Goals & Work Preferences */}
-            <section id="section-preferences" className="scroll-mt-14">
-              <ProfileTargetPreferencesCard
-                careerIntent={profile.careerIntent}
-                preferences={profile.preferences}
-                constraints={profile.constraints}
-                primaryRole={primaryRole}
-                secondaryRoles={secondaryRoles}
-                onEditIntent={() => setActiveModal("intent")}
-                onEditPreferences={() => setActiveModal("preferences")}
-                className="p-5 sm:p-7 space-y-6"
-              />
-            </section>
+          <ManageSkillsSheet
+            isOpen={activeModal === "skills"}
+            onClose={() => setActiveModal(null)}
+            skills={profile.capabilities?.skills || []}
+            suppressedSkills={profile.capabilities?.suppressed_skills || []}
+            isMutating={isMutating}
+            onAddSkill={addSkill}
+            onUpdateSkill={updateSkill}
+            onSuppressSkill={suppressSkill}
+            onRestoreSkill={restoreSkill}
+            onSyncSkills={syncSkills}
+          />
 
-            {/* Section 2: Resume & Document Source */}
-            <section id="section-resume" className="scroll-mt-14">
-              <ProfileResumeCard
-                resumeId={profile.resumeId}
-                expectedVersion={profile.profileVersion}
-                onProfileUpdated={refreshProfile}
-                className="p-5 sm:p-7 space-y-4"
-              />
-            </section>
-
-            {/* Section 3: Skills & Capabilities */}
-            <section id="section-skills" className="scroll-mt-14">
-              <ProfileSkillsCard
-                coreSkills={coreSkills}
-                supportingSkills={supportingSkills}
-                toolSkills={toolSkills}
-                suppressedSkills={suppressedSkills}
-                isMutating={isMutating}
-                onAddSkill={(skill, cat) => addSkill(skill, cat)}
-                onSuppressSkill={(skill) => suppressSkill(skill)}
-                onRestoreSkill={(skill) => restoreSkill(skill)}
-                onConfirmSkill={handleConfirmSkill}
-                onManage={() => setActiveModal("skills")}
-                className="p-5 sm:p-7 space-y-6"
-              />
-            </section>
-
-            {/* Section 4: Career Background & Education */}
-            <section id="section-background" className="scroll-mt-14">
-              <ProfileBackgroundCard
-                background={profile.background}
-                onEdit={() => setActiveModal("background")}
-                className="p-5 sm:p-7 space-y-6"
-              />
-            </section>
-          </div>
+          <EditBackgroundDialog
+            isOpen={activeModal === "background"}
+            onClose={() => setActiveModal(null)}
+            background={profile.background}
+            onSave={updateBackground}
+          />
         </div>
-
-        {/* Edit Dialogs */}
-        <EditCareerIntentDialog
-          isOpen={activeModal === "intent"}
-          onClose={() => setActiveModal(null)}
-          careerIntent={profile.careerIntent}
-          onSave={updateCareerIntent}
-        />
-
-        <EditPreferencesDialog
-          isOpen={activeModal === "preferences"}
-          onClose={() => setActiveModal(null)}
-          preferences={profile.preferences}
-          constraints={profile.constraints}
-          onSave={updatePreferences}
-        />
-
-        <ManageSkillsSheet
-          isOpen={activeModal === "skills"}
-          onClose={() => setActiveModal(null)}
-          skills={profile.capabilities?.skills || []}
-          suppressedSkills={profile.capabilities?.suppressed_skills || []}
-          isMutating={isMutating}
-          onAddSkill={addSkill}
-          onUpdateSkill={updateSkill}
-          onSuppressSkill={suppressSkill}
-          onRestoreSkill={restoreSkill}
-          onSyncSkills={syncSkills}
-        />
-
-        <EditBackgroundDialog
-          isOpen={activeModal === "background"}
-          onClose={() => setActiveModal(null)}
-          background={profile.background}
-          onSave={updateBackground}
-        />
       </div>
     </div>
   );

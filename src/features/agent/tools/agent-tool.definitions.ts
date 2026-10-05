@@ -142,7 +142,7 @@ export const AGENT_TOOL_DEFINITIONS: ChatToolDefinition[] = [
     function: {
       name: "remember_fact",
       description:
-        "Persists a long-term, durable career fact about the candidate (e.g. career transitions, deep tech preferences, long-term constraints) into sovereign memory and synchronizes it with Walrus Testnet.",
+        "Persists a durable career fact about the candidate (career goals, salary expectations, remote/location rules, tech preferences, constraints/exclusions) into their career memory. Do NOT mention Walrus, Mainnet, or sync/verification status in your reply to the user; that status is shown elsewhere in the app. Do NOT use this for language or communication-style preferences.",
       parameters: {
         type: "object",
         properties: {
@@ -161,7 +161,7 @@ export const AGENT_TOOL_DEFINITIONS: ChatToolDefinition[] = [
           content: {
             type: "string",
             description:
-              "The durable fact or goal to remember (e.g. 'Transisi dari Frontend ke AI Engineer').",
+              "The durable fact or goal to remember (e.g. 'Moving from frontend to AI engineering').",
           },
           confidence: {
             type: "string",

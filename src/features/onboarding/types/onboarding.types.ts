@@ -41,6 +41,7 @@ export interface OnboardingFormState {
   relocationProhibited: boolean;
   salaryMin: number | null;
   salaryCurrency: string;
+  salaryPeriod: "year" | "month" | "hour";
   priorities: string[];
   negativePreferences: NegativePreferenceItem[];
 

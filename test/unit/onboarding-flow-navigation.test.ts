@@ -29,6 +29,7 @@ describe("Phase 3C: Onboarding Flow Navigation & Fast TTV Lifecycle", () => {
       relocationProhibited: false,
       salaryMin: null,
       salaryCurrency: "USD",
+      salaryPeriod: "year",
       priorities: [],
       negativePreferences: [],
       skills: [],

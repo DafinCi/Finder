@@ -39,7 +39,7 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-background px-4 text-foreground">
-      <div className="w-full max-w-md rounded-xl bg-card p-8 border border-border shadow-md space-y-6">
+      <div className="w-full max-w-md rounded-sm bg-card p-8 border border-border shadow-md space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-2">
           <Logo size={40} alt="" className="mx-auto mb-1" />
@@ -68,7 +68,7 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               aria-invalid={Boolean(error)}
               aria-describedby={error ? "auth-error-msg" : undefined}
-              className={`w-full bg-secondary/50 border rounded-lg px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 transition-all font-sans ${
+              className={`w-full bg-secondary/50 border rounded-sm px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 transition-all font-sans ${
                 error
                   ? "border-destructive/60 focus:border-destructive focus:ring-destructive/20"
                   : "border-border focus:border-primary focus:ring-primary/20"
@@ -95,7 +95,7 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               aria-invalid={Boolean(error)}
               aria-describedby={error ? "auth-error-msg" : undefined}
-              className={`w-full bg-secondary/50 border rounded-lg px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 transition-all font-sans ${
+              className={`w-full bg-secondary/50 border rounded-sm px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 transition-all font-sans ${
                 error
                   ? "border-destructive/60 focus:border-destructive focus:ring-destructive/20"
                   : "border-border focus:border-primary focus:ring-primary/20"
@@ -110,7 +110,7 @@ export default function LoginPage() {
               id="auth-error-msg"
               role="alert"
               aria-live="polite"
-              className="rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-destructive text-xs font-medium flex items-start gap-2"
+              className="rounded-sm bg-destructive/10 border border-destructive/20 p-3 text-destructive text-xs font-medium flex items-start gap-2"
             >
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>{error}</span>

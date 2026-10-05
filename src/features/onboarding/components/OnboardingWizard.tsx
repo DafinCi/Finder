@@ -35,6 +35,11 @@ export function OnboardingWizard() {
     setEmploymentTypes,
     setWorkModes,
     setLocations,
+    resumeReview,
+    resumeProcessing,
+    isResumeActionWorking,
+    continueWithNonResume,
+    rejectResumeDocument,
     reloadProfile,
   } = useOnboardingProfile();
 
@@ -65,7 +70,7 @@ export function OnboardingWizard() {
 
   if (error && !state.profileId) {
     return (
-      <div className="p-8 rounded-xl border border-destructive/30 bg-destructive/10 text-center space-y-4 max-w-md mx-auto">
+      <div className="p-8 rounded-sm border border-destructive/30 bg-destructive/10 text-center space-y-4 max-w-md mx-auto">
         <AlertCircle className="w-10 h-10 text-destructive mx-auto" />
         <div className="space-y-1">
           <h2 className="text-sm font-semibold text-foreground">
@@ -87,7 +92,7 @@ export function OnboardingWizard() {
   }
 
   return (
-    <div className="w-full max-w-3xl mx-auto space-y-6 py-6 px-4">
+    <div className="w-full max-w-4xl mx-auto space-y-4 px-3 sm:px-6">
       {/* Dynamic Header */}
       <OnboardingHeader
         currentStep={state.currentStep}
@@ -97,28 +102,16 @@ export function OnboardingWizard() {
 
       {/* Active Profile Shortcut Banner */}
       {state.isExistingActiveProfile && (
-        <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
-          <div className="space-y-0.5">
-            <p className="font-semibold text-foreground">
-              You already have an active Career Profile
-            </p>
-            <p className="text-muted-foreground">
-              You can re-configure your preferences here, or manage your full
-              settings in your Career Profile.
-            </p>
-          </div>
+        <div className="p-3 rounded-sm border border-emerald-500/30 bg-emerald-500/10 flex items-center justify-between gap-3 text-xs sm:text-sm">
+          <p className="font-medium text-foreground truncate">
+            You already have an active profile. Reconfigure or explore jobs.
+          </p>
           <div className="flex items-center gap-2 shrink-0">
             <Link
-              href="/profile"
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-secondary text-foreground font-medium transition-colors"
-            >
-              Manage in Profile
-            </Link>
-            <Link
               href="/jobs"
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-primary text-primary-foreground font-semibold hover:opacity-90 transition-opacity text-xs"
             >
-              View Matching Jobs
+              <span>Jobs</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
@@ -126,7 +119,7 @@ export function OnboardingWizard() {
       )}
 
       {/* Main Screen Container */}
-      <main className="rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-xs">
+      <div className="rounded-2xl border border-border bg-card/95 backdrop-blur-md p-5 sm:p-6 shadow-xl">
         {state.flowMode === "choice" && (
           <StepWelcomeChoice
             state={state}
@@ -137,6 +130,11 @@ export function OnboardingWizard() {
             }}
             onGoToCvReview={() => setFlowMode("cv_magic")}
             isSaving={isSaving}
+            resumeReview={resumeReview}
+            resumeProcessing={resumeProcessing}
+            isResumeActionWorking={isResumeActionWorking}
+            onContinueWithNonResume={continueWithNonResume}
+            onRejectResume={rejectResumeDocument}
           />
         )}
 
@@ -200,7 +198,7 @@ export function OnboardingWizard() {
             )}
           </>
         )}
-      </main>
+      </div>
     </div>
   );
 }

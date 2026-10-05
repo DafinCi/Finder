@@ -70,8 +70,11 @@ export function ProfileTargetPreferencesCard({
     ? LEVEL_LABELS[careerIntent.target_level] || careerIntent.target_level
     : "Not specified";
 
+  const salaryPeriod =
+    preferences?.salary?.period ||
+    (preferences?.salary?.currency === "IDR" ? "month" : "year");
   const formattedSalary = preferences?.salary?.min_amount
-    ? `${preferences.salary.currency} ${preferences.salary.min_amount.toLocaleString("en-US")}`
+    ? `${preferences.salary.currency} ${preferences.salary.min_amount.toLocaleString("en-US")} / ${salaryPeriod === "month" ? "mo" : "yr"}`
     : "Flexible (No minimum constraint)";
 
   return (
@@ -79,7 +82,7 @@ export function ProfileTargetPreferencesCard({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/80">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-sm bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+          <div className="w-8 h-8 rounded-sm bg-secondary border border-border flex items-center justify-center text-muted-foreground shrink-0">
             <Target className="w-4 h-4" />
           </div>
           <div>
@@ -99,9 +102,9 @@ export function ProfileTargetPreferencesCard({
             variant="outline"
             size="sm"
             onClick={onEditIntent}
-            className="text-xs h-9 min-h-[36px] sm:h-8 gap-1.5 border-border hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
+            className="text-xs h-9 min-h-[36px] sm:h-8 gap-1.5 border-border hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-muted-foreground rounded-sm"
           >
-            <Edit3 className="w-3.5 h-3.5 text-primary" />
+            <Edit3 className="w-3.5 h-3.5 text-muted-foreground" />
             <span>Edit Roles</span>
           </Button>
 
@@ -110,9 +113,9 @@ export function ProfileTargetPreferencesCard({
             variant="outline"
             size="sm"
             onClick={onEditPreferences}
-            className="text-xs h-9 min-h-[36px] sm:h-8 gap-1.5 border-border hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
+            className="text-xs h-9 min-h-[36px] sm:h-8 gap-1.5 border-border hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-muted-foreground rounded-sm"
           >
-            <SlidersHorizontal className="w-3.5 h-3.5 text-primary" />
+            <SlidersHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
             <span>Edit Preferences</span>
           </Button>
         </div>
@@ -236,7 +239,7 @@ export function ProfileTargetPreferencesCard({
       {/* Provenance Tag */}
       {careerIntent?.provenance && (
         <div className="pt-2 text-[11px] text-muted-foreground flex items-center gap-1.5 border-t border-border/40">
-          <ShieldCheck className="w-3.5 h-3.5 text-primary shrink-0" />
+          <ShieldCheck className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
           <span>
             Goal source:{" "}
             {careerIntent.provenance.source === "user_explicit" ||

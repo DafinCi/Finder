@@ -3,6 +3,9 @@ import { evaluateLocationCompatibility } from "@/features/matching/utils/locatio
 import {
   parseSalaryRange,
   convertSalary,
+  detectSalaryPeriod,
+  resolveSalaryPeriod,
+  normalizeSalaryToAnnual,
 } from "@/features/matching/utils/salary-parser";
 
 describe("Unit: Global Remote Location & Multi-Currency Matching", () => {
@@ -136,6 +139,33 @@ describe("Unit: Global Remote Location & Multi-Currency Matching", () => {
       expect(res.currency).toBe("USD");
       expect(res.min).toBe(1200000);
       expect(res.max).toBe(1500000);
+    });
+  });
+
+  describe("salary period detection and normalization", () => {
+    it("should detect explicit periods from text", () => {
+      expect(detectSalaryPeriod("$10,000 per month")).toBe("month");
+      expect(detectSalaryPeriod("$120,000 per year")).toBe("year");
+      expect(detectSalaryPeriod("$60 / hour")).toBe("hour");
+    });
+
+    it("should default by currency convention when no period is stated", () => {
+      expect(resolveSalaryPeriod(null, "USD")).toBe("year");
+      expect(resolveSalaryPeriod(null, "IDR")).toBe("month");
+    });
+
+    it("should normalize amounts to their annual equivalent", () => {
+      expect(normalizeSalaryToAnnual(10000, "month")).toBe(120000);
+      expect(normalizeSalaryToAnnual(120000, "year")).toBe(120000);
+      expect(normalizeSalaryToAnnual(60, "hour")).toBe(124800);
+    });
+
+    it("should expose the detected period from parseSalaryRange", () => {
+      expect(parseSalaryRange("$8,000 - $10,000 per month").period).toBe(
+        "month",
+      );
+      expect(parseSalaryRange("$80,000 - $100,000").period).toBe("year");
+      expect(parseSalaryRange("Rp 15jt - 25jt").period).toBe("month");
     });
   });
 });
