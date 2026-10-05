@@ -169,7 +169,11 @@ export class AgentToolDispatcher {
           };
       }
     } catch (err) {
-      console.warn(`[AgentToolDispatcher] Error executing ${toolName}:`, err);
+      console.warn(
+        `[AgentToolDispatcher] Error executing ${toolName}: ${
+          (err as Error).message || String(err)
+        }`,
+      );
       return {
         success: false,
         status: "failed",

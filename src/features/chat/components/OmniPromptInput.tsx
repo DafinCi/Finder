@@ -11,6 +11,7 @@ import React, {
 } from "react";
 import { Paperclip, ArrowUp, X, FileText, UploadCloud } from "lucide-react";
 import { toast } from "sonner";
+import { hasPdfSignature } from "@/lib/files/pdf-signature";
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 const MAX_PROMPT_CHARS = 2000;
@@ -47,7 +48,7 @@ export default function OmniPromptInput({
     }
   }, [prompt, isSticky]);
 
-  const validateAndAttachFile = (file: File) => {
+  const validateAndAttachFile = async (file: File) => {
     if (file.type !== "application/pdf") {
       toast.error("Invalid file format", {
         description: "Please upload your resume in PDF format.",
@@ -59,6 +60,13 @@ export default function OmniPromptInput({
       const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
       toast.error("File size exceeded", {
         description: `Your file is ${sizeMB} MB. Maximum allowed size is 5 MB.`,
+      });
+      return;
+    }
+
+    if (!(await hasPdfSignature(file))) {
+      toast.error("Invalid file format", {
+        description: "This file is not a valid PDF document.",
       });
       return;
     }

@@ -55,7 +55,9 @@ export function parseAndValidateJson<T>(text: string, schema: z.ZodType<T>): T {
   try {
     rawParsed = JSON.parse(cleaned);
   } catch (parseError) {
-    console.error("Malformed JSON received from LLM:", cleaned);
+    console.error(
+      `[AI:Parse] Malformed JSON from LLM (output length ${cleaned.length}).`,
+    );
     throw new Error(
       `Couldn't process AI response: invalid JSON format (${(parseError as Error).message})`,
     );
@@ -65,7 +67,6 @@ export function parseAndValidateJson<T>(text: string, schema: z.ZodType<T>): T {
   if (!validation.success) {
     console.error("Zod Schema Validation Failed on LLM Output:", {
       issues: validation.error.issues,
-      raw: rawParsed,
     });
     const issueSummary = validation.error.issues
       .map((i) => `${i.path.join(".") || "root"}: ${i.message}`)
@@ -174,8 +175,9 @@ export async function executeWithResilience<T>(
         return { data, modelUsed: fallbackModel, durationMs };
       } catch (fallbackError) {
         console.error(
-          `[AI:Resilience] op=${operationName} fallback=${fallbackModel} also failed:`,
-          fallbackError,
+          `[AI:Resilience] op=${operationName} fallback=${fallbackModel} also failed: ${
+            (fallbackError as Error).message || String(fallbackError)
+          }`,
         );
         throw fallbackError;
       }
@@ -222,8 +224,9 @@ export async function executeStreamWithResilience<T>(
         return { stream, modelUsed: fallbackModel };
       } catch (fallbackError) {
         console.error(
-          `[AI:StreamResilience] op=${operationName} fallback=${fallbackModel} also failed:`,
-          fallbackError,
+          `[AI:StreamResilience] op=${operationName} fallback=${fallbackModel} also failed: ${
+            (fallbackError as Error).message || String(fallbackError)
+          }`,
         );
         throw fallbackError;
       }

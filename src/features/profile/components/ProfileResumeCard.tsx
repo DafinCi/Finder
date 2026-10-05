@@ -14,6 +14,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { hasPdfSignature } from "@/lib/files/pdf-signature";
 import { onboardingService } from "@/features/onboarding/services/onboarding.service";
 import { toast } from "sonner";
 
@@ -113,6 +114,12 @@ export function ProfileResumeCard({
     if (file.size > MAX_SIZE) {
       setUploadError("File size exceeds 5 MB limit.");
       toast.error("File size exceeds 5 MB limit.");
+      return;
+    }
+
+    if (!(await hasPdfSignature(file))) {
+      setUploadError("This file is not a valid PDF document.");
+      toast.error("File must be a valid PDF document.");
       return;
     }
 

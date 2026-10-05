@@ -29,7 +29,7 @@ flowchart TD
 
     subgraph ExternalServices ["External Cloud & Web3 Tier"]
         Supabase["Supabase Cloud<br>(PostgreSQL 15+, Auth SSR, RLS, Storage)"]
-        Groq["Groq Cloud API<br>(openai/gpt-oss-120b / openai/gpt-oss-20b)"]
+        Groq["Groq Cloud API<br>(qwen/qwen3.8-27b / openai/gpt-oss-20b)"]
         Remotive["Remotive Jobs API<br>(Remote Job Feed Sync)"]
         SuiNetwork["Sui Blockchain<br>(Testnet / Mainnet RPC Verification)"]
     end
@@ -64,7 +64,7 @@ flowchart TD
 
 ### 3. AI & Matching Engine (`src/lib/groq/`, `src/features/ai-analysis/`)
 
-- **Primary Model**: `openai/gpt-oss-120b` via Groq Cloud API for ultra-fast candidate profiling and contextual matching.
+- **Primary Model**: `qwen/qwen3.8-27b` via Groq Cloud API for ultra-fast candidate profiling and contextual matching.
 - **Fallback Model**: `openai/gpt-oss-20b` for automatic recovery on HTTP 429 (rate limits) or 503 (service degradation). For all active models, see [Groq Supported Models](https://console.groq.com/docs/models).
 - **Two-Stage Matching**: Deterministic SQL skill-overlap pre-filter (limit 25) followed by weighted pre-ranking and LLM qualitative scoring for the top 5 candidates.
 - **Algorithmic Fallback**: Mathematical score derivation (`55 + overlapRatio * 35`) guaranteeing zero downtime if external AI APIs are unreachable.

@@ -4,17 +4,17 @@
 
 Finder is an open-source platform that analyzes candidate resumes, extracts structured career profiles, and recommends matching job opportunities through an interactive, chat-first workspace.
 
-Unlike traditional job boards that require users to search through raw keyword listings, Finder acts as a personal AI career advisor. Candidates upload their resume (PDF), which the system analyzes using Groq-accelerated models (`openai/gpt-oss-120b`, fallback `openai/gpt-oss-20b`). The platform identifies core strengths, detects skill gaps, curates matching active jobs via a resilient two-stage matching pipeline, and provides an interactive Career Copilot for technical interview preparation.
+Unlike traditional job boards that require users to search through raw keyword listings, Finder acts as a personal AI career advisor. Candidates upload their resume (PDF), which the system analyzes using Groq-accelerated models (`qwen/qwen3.8-27b`, fallback `openai/gpt-oss-20b`). The platform identifies core strengths, detects skill gaps, curates matching active jobs via a resilient two-stage matching pipeline, and provides an interactive Career Copilot for technical interview preparation.
 
 ---
 
 ## Key Features
 
 - **Document Parsing & Text Extraction**: Drag-and-drop PDF resume upload with magic bytes verification (`%PDF-`), text extraction via `pdf-parse`, and storage in private Supabase buckets.
-- **AI Candidate Profiling**: Structured profile extraction powered by Groq (`openai/gpt-oss-120b` / Prompt v2.1.0, fallback `openai/gpt-oss-20b`) into candidate skills, experience, education, and career level.
+- **AI Candidate Profiling**: Structured profile extraction powered by Groq (`qwen/qwen3.8-27b` / Prompt v2.7, fallback `openai/gpt-oss-20b`) into candidate skills, experience, education, and career level.
 - **Two-Stage Job Matching Engine**:
   - _Stage 1 (Deterministic)_: SQL skill-overlap pre-filter (limit 25) + weighted pre-ranking (Core: 2.0x, Supporting: 1.2x, General: 1.0x) to select the top 5 candidates.
-  - _Stage 2 (AI Evaluation)_: Groq LLM qualitative fit evaluation, with an automated fallback formula (`55 + overlapRatio * 35`) for HTTP 429/503 resilience.
+  - _Stage 2 (Deterministic Re-score)_: Finder recomputes the final score deterministically from skill overlap and profile evidence, so the model never overrides the ranking.
 - **Conversational Career Copilot**: Real-time multi-turn career consulting streaming via Server-Sent Events (SSE), pre-grounded with candidate strengths and active job requirements.
 - **Job Discovery & Detail Drawer**: Curated job listings view with interactive match level, experience, and location filters, paired with an accessible WAI-ARIA detail drawer.
 - **Dual Authentication (Web2 + Web3)**:
@@ -33,7 +33,7 @@ Unlike traditional job boards that require users to search through raw keyword l
 | **Styling & Components**  | [Tailwind CSS 4](https://tailwindcss.com), [Base UI](https://base-ui.com), [Lucide React](https://lucide.dev), [Sonner](https://sonner.emilkowal.ski)                    |
 | **Backend & Runtime**     | Next.js Server & Edge Route Handlers, Node.js 22                                                                                                                         |
 | **Database & Auth**       | [Supabase](https://supabase.com) (PostgreSQL 15+, Row Level Security, Auth SSR)                                                                                          |
-| **AI / LLM Acceleration** | [Groq SDK](https://console.groq.com) (`openai/gpt-oss-120b`, fallback `openai/gpt-oss-20b` — [Active Models](https://console.groq.com/docs/models))                      |
+| **AI / LLM Acceleration** | [Groq SDK](https://console.groq.com) (`qwen/qwen3.8-27b`, fallback `openai/gpt-oss-20b` — [Active Models](https://console.groq.com/docs/models))                      |
 | **Web3 Blockchain**       | [@mysten/sui](https://sdk.mystenlabs.com/typescript), [@mysten/dapp-kit-react](https://sdk.mystenlabs.com/dapp-kit), [@tanstack/react-query](https://tanstack.com/query) |
 | **Testing & Tooling**     | [Vitest 5](https://vitest.dev), ESLint 9, TypeScript 6                                                                                                                   |
 
@@ -59,7 +59,7 @@ flowchart TD
 
     subgraph ExternalServices ["External Cloud Services"]
         Supabase["Supabase Cloud<br>(PostgreSQL, Auth, RLS, Storage Bucket)"]
-        Groq["Groq Cloud API<br>(openai/gpt-oss-120b / openai/gpt-oss-20b)"]
+        Groq["Groq Cloud API<br>(qwen/qwen3.8-27b / openai/gpt-oss-20b)"]
         Remotive["Remotive Jobs API<br>(Remote Tech Jobs Feed)"]
         SuiNetwork["Sui Network<br>(Testnet / Mainnet RPC)"]
     end
@@ -123,7 +123,7 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
 # Groq AI (Active models: https://console.groq.com/docs/models)
 GROQ_API_KEY=gsk_your_groq_api_key
-GROQ_MODEL=openai/gpt-oss-120b
+GROQ_MODEL=qwen/qwen3.8-27b
 GROQ_FALLBACK_MODEL=openai/gpt-oss-20b
 GROQ_MAX_TOKENS=2500
 
@@ -131,7 +131,7 @@ GROQ_MAX_TOKENS=2500
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
 # Sui Web3 Network
-NEXT_PUBLIC_SUI_NETWORK=testnet
+NEXT_PUBLIC_SUI_NETWORK=mainnet
 
 # Cron Sync Secret (optional in development)
 CRON_SECRET=your_cron_secret
@@ -140,9 +140,10 @@ CRON_SECRET=your_cron_secret
 ### 3. Setup Database & Storage
 
 1. In your Supabase project dashboard, open the **SQL Editor**.
-2. Run [`src/database/schema_v2.sql`](src/database/schema_v2.sql) to create all tables, indexes, RLS policies, and seed data.
-3. Run [`src/database/triggerAuth.sql`](src/database/triggerAuth.sql) to create the automated profile trigger.
-4. In the **Storage** dashboard, create a private bucket named **`resumes`**.
+2. Run [`src/database/schema_v2.sql`](src/database/schema_v2.sql) to create all tables, indexes, and RLS policies.
+3. Optional, for local demos only: run [`src/database/seed-demo.sql`](src/database/seed-demo.sql) to add clearly marked sample companies and jobs. Skip this on production.
+4. Run [`src/database/triggerAuth.sql`](src/database/triggerAuth.sql) to create the automated profile trigger.
+5. In the **Storage** dashboard, create a private bucket named **`resumes`**.
 
 ### 4. Start Development Server
 
@@ -163,8 +164,8 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 | `npm run start`                   | Start Next.js production server                             |
 | `npm run lint`                    | Run ESLint code quality checks                              |
 | `npx tsc --noEmit`                | Execute static TypeScript type checking                     |
-| `npm run test:unit`               | Run hermetic unit tests (120 tests)                         |
-| `npm run test:integration:mocked` | Run hermetic mocked integration tests (53 tests)            |
+| `npm run test:unit`               | Run hermetic unit tests                                     |
+| `npm run test:integration:mocked` | Run hermetic mocked integration tests                       |
 | `npm run test:integration:live`   | Run live Supabase integration tests (requires test DB)      |
 | `npm run test:coverage`           | Run full test suite with V8 code coverage report            |
 
@@ -220,6 +221,17 @@ Finder/
 - [**Design System**](docs/design-system.md)
 - [**Product Roadmap**](docs/roadmap.md)
 - [**Security Policy**](SECURITY.md)
+
+---
+
+## Data Handling & Privacy
+
+- Resumes are stored privately in Supabase Storage and are never published to Walrus.
+- Resume text is sent to Groq for extraction and matching. Groq is a third-party processor, so review your own compliance needs before real user data flows through it.
+- Career memories live in Supabase and on Walrus through Walrus Memory. Walrus blobs are public by default, and Walrus Memory encrypts their contents with Seal so only the owner and authorized delegate keys can read them.
+- The optional public career passport contains only skills, target roles, employment types, and career level. It excludes name, contact details, education, employers, salary, location, and account identifiers, and it publishes only after explicit confirmation.
+- Forget hides a memory from chat recall and marks it forgotten in the database. It does not delete the encrypted blob already written to Walrus. Permanent blob deletion requires a separate deletion flow.
+- Server logs record operational metadata such as IDs, model names, and durations. They are not intended to contain resume text, memory content, prompts, or credentials.
 
 ---
 

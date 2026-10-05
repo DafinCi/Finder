@@ -19,7 +19,7 @@ Finder is currently in active development on the `develop` branch. Core authenti
   - In-memory text extraction via `pdf-parse` (up to 15,000 characters).
   - Secure storage in private Supabase bucket `resumes`.
 - [x] **AI Candidate Profile Extraction**:
-  - Prompt v2.1.0 executed against Groq (`openai/gpt-oss-120b`, fallback `openai/gpt-oss-20b`).
+  - Prompt v2.7 executed against Groq (`qwen/qwen3.8-27b`, fallback `openai/gpt-oss-20b`).
   - Structured JSON candidate data extraction with Zod schema validation.
 - [x] **Two-Stage Job Matching Engine**:
   - SQL skill-overlap pre-filter (limit 25).
