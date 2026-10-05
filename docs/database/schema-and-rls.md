@@ -1,243 +1,102 @@
-# Database Schema & Security Policies
+# Database and RLS
 
-## Overview
+The database is PostgreSQL on Supabase. This document explains the model and its
+rules. `src/database/schema_v2.sql` and the files in `src/database/migrations/`
+are authoritative for exact columns, types, and constraints.
 
-Finder utilizes Supabase PostgreSQL 15+ as its primary data store. The database enforces strict multi-tenant data isolation using PostgreSQL Row Level Security (RLS), referential integrity constraints, automated triggers, and optimized indexes.
+## Tables
 
-The consolidated schema definition is located at `src/database/schema_v2.sql`.
+Fourteen application tables are defined. `auth.users` is managed by Supabase.
 
----
+| Table | Owner column | Purpose |
+| --- | --- | --- |
+| `profiles` | `id` = `auth.users.id` | Links an account to app data |
+| `career_profiles` | `profile_id` | Structured career data: intent, preferences, skills, background |
+| `resumes` | `profile_id` | Uploaded resume metadata and extracted text |
+| `resume_analysis` | via `resume_id` | Structured analysis output for a resume |
+| `resume_processing` | via `resume_id` | Pipeline stage and classification decision |
+| `career_memories` | `profile_id` | Durable career facts |
+| `companies` | none | Employers referenced by jobs |
+| `jobs` | none | Normalized job records |
+| `saved_jobs` | `profile_id` | Jobs the user saved or rejected |
+| `job_matches` | `profile_id` | Match snapshot per job and profile version |
+| `chat_sessions` | `user_id` | Conversation threads |
+| `chat_messages` | via `session_id` | Messages inside a thread |
+| `job_feedback_events` | `profile_id` | Explicit user signals |
+| `job_interaction_telemetry` | `profile_id` | Implicit interaction events |
 
-## Entity Relationship Diagram
+## Relationships
 
 ```mermaid
 erDiagram
-    auth_users ||--|| profiles : "id = auth.users.id"
-    profiles ||--o{ resumes : "has many"
-    profiles ||--o{ chat_sessions : "has many"
-    resumes ||--o{ resume_analysis : "has many"
-    resumes ||--o{ chat_sessions : "referenced by"
-    companies ||--o{ jobs : "posts"
-    resume_analysis ||--o{ job_matches : "evaluated in"
-    jobs ||--o{ job_matches : "matched to"
-    chat_sessions ||--o{ chat_messages : "contains"
-
-    profiles {
-        uuid id PK
-        text full_name
-        text avatar_url
-        text headline
-        text sui_address UK
-        text memwal_space_id
-        timestamp created_at
-        timestamp updated_at
-    }
-
-    resumes {
-        uuid id PK
-        uuid profile_id FK
-        text file_name
-        text storage_path
-        text raw_text
-        text status
-        text walrus_blob_id
-        text walrus_status
-        timestamp uploaded_at
-    }
-
-    resume_analysis {
-        uuid id PK
-        uuid resume_id FK
-        text model_version
-        text prompt_version
-        jsonb candidate_data
-        text_array extracted_skills
-        timestamp created_at
-    }
-
-    companies {
-        uuid id PK
-        text name
-        text logo_url
-        text description
-        text website
-        timestamp created_at
-    }
-
-    jobs {
-        uuid id PK
-        uuid company_id FK
-        text company_name
-        text company_logo
-        text source
-        text source_job_id
-        text source_url
-        text apply_url
-        text title
-        text description
-        text_array requirements
-        text location
-        text job_type
-        text salary_range
-        text experience_level
-        boolean is_active
-        timestamp posted_at
-        timestamp last_synced_at
-        timestamp created_at
-    }
-
-    job_matches {
-        uuid id PK
-        uuid analysis_id FK
-        uuid job_id FK
-        integer match_score
-        text reason
-        jsonb missing_skills
-        timestamp created_at
-    }
-
-    chat_sessions {
-        uuid id PK
-        uuid user_id FK
-        text title
-        uuid resume_id FK
-        timestamp created_at
-        timestamp updated_at
-    }
-
-    chat_messages {
-        uuid id PK
-        uuid session_id FK
-        text role
-        text content
-        jsonb metadata
-        timestamp created_at
-    }
+  profiles ||--o| career_profiles : has
+  profiles ||--o{ resumes : uploads
+  resumes ||--o| resume_analysis : yields
+  resumes ||--o| resume_processing : tracks
+  profiles ||--o{ career_memories : owns
+  profiles ||--o{ chat_sessions : owns
+  chat_sessions ||--o{ chat_messages : contains
+  companies ||--o{ jobs : offers
+  profiles ||--o{ job_matches : matched
+  jobs ||--o{ job_matches : scored
+  profiles ||--o{ saved_jobs : keeps
+  jobs ||--o{ saved_jobs : kept
 ```
 
----
+## Important constraints
 
-## Detailed Table Reference
+- `profiles.sui_address` is unique, so a wallet links to at most one account.
+- `jobs` keeps a unique identity per source (`source` plus `source_job_id`) so a
+  re-sync updates a row instead of inserting a duplicate.
+- Most user-owned tables cascade on delete from `profiles`, so removing an account
+  removes its data.
+- `resume_processing` and `career_profiles` reference their parent by foreign key
+  and are created automatically where the flow needs them.
 
-### 1. `public.profiles`
-Stores the user profile information bound 1:1 with `auth.users`.
-- `id` (UUID, PK): References `auth.users(id)` ON DELETE CASCADE.
-- `full_name` (TEXT, NOT NULL): User's display name (default `'User'`).
-- `avatar_url` (TEXT): URL to profile image.
-- `headline` (TEXT): Professional headline.
-- `sui_address` (TEXT, UNIQUE): Linked Sui Wallet address (enforced via constraint `uq_profiles_sui_address`). Nullable to allow non-wallet users.
-- `memwal_space_id` (TEXT): Placeholder for decentralized Walrus Memory space ID.
+## Row Level Security
 
-### 2. `public.resumes`
-Stores metadata and parsed text for uploaded resume documents.
-- `id` (UUID, PK): Default `uuid_generate_v4()`.
-- `profile_id` (UUID, FK): References `public.profiles(id)` ON DELETE CASCADE.
-- `file_name` (TEXT, NOT NULL): Original uploaded filename.
-- `storage_path` (TEXT, NOT NULL): Supabase Storage path (`${userId}/${timestamp}_${fileName}`).
-- `raw_text` (TEXT): Extracted text content from the PDF (max 15,000 characters).
-- `status` (TEXT): Status enum (`'uploaded'`, `'processing'`, `'completed'`, `'failed'`).
-- `walrus_blob_id` & `walrus_status`: Schema placeholders for future Walrus integration.
+RLS is enabled on every user-owned table. Policies scope rows to the authenticated
+identity:
 
-### 3. `public.resume_analysis`
-Stores structured candidate intelligence extracted by Groq LLM.
-- `id` (UUID, PK): Default `uuid_generate_v4()`.
-- `resume_id` (UUID, FK): References `public.resumes(id)` ON DELETE CASCADE.
-- `model_version` (TEXT): Name of LLM model used (e.g., `qwen/qwen3.8-27b`).
-- `prompt_version` (TEXT): Prompt template version (e.g., `2.1.0`).
-- `candidate_data` (JSONB, NOT NULL): Structured JSON profile containing candidate summary, experience array, education array, and strengths.
-- `extracted_skills` (TEXT[]): Normalized array of candidate skill strings.
+- `profiles`: `auth.uid() = id`
+- `resumes`, `career_profiles`, `career_memories`, `saved_jobs`, `job_matches`,
+  `job_feedback_events`, `job_interaction_telemetry`: `auth.uid() = profile_id`
+- `chat_sessions`: `auth.uid() = user_id`
+- `chat_messages`: the session must belong to the caller
 
-### 4. `public.companies`
-Stores employer metadata.
-- `id` (UUID, PK): Default `uuid_generate_v4()`.
-- `name` (TEXT, NOT NULL): Company name.
-- `logo_url` (TEXT): Company logo URL.
-- `website` (TEXT): Company official website.
+Consequences:
 
-### 5. `public.jobs`
-Stores active job listings from internal posting or external ingestion.
-- `id` (UUID, PK): Default `uuid_generate_v4()`.
-- `company_id` (UUID, FK): References `public.companies(id)` ON DELETE CASCADE. Nullable for ingested external jobs.
-- `company_name` & `company_logo` (TEXT): De-normalized company details for fast joins.
-- `source` (TEXT, NOT NULL): Origin source enum (`'manual'`, `'remotive'`, `'remoteok'`, `'jobicy'`, `'arbeitnow'`).
-- `source_job_id` (TEXT): External ID from the origin provider.
-- `requirements` (TEXT[]): Array of required skills/keywords used in SQL pre-filter.
-- `is_active` (BOOLEAN): Flag indicating if job is currently open (Default `true`).
-- **Constraint**: `uq_jobs_source_job_id UNIQUE (source, source_job_id)` guarantees idempotent upsert during sync.
+- The public anon key cannot read another user's rows.
+- Server code that must read across users uses the service-role client, which is
+  server-only and bypasses RLS.
 
-### 6. `public.job_matches`
-Stores the results of matching an analysis to a job opportunity.
-- `id` (UUID, PK): Default `uuid_generate_v4()`.
-- `analysis_id` (UUID, FK): References `public.resume_analysis(id)` ON DELETE CASCADE.
-- `job_id` (UUID, FK): References `public.jobs(id)` ON DELETE CASCADE.
-- `match_score` (INTEGER, NOT NULL): Score from 0 to 100.
-- `reason` (TEXT): AI explanation of candidate fit.
-- `missing_skills` (JSONB): Array of gap skills identified for interview prep.
-- **Constraint**: `UNIQUE (analysis_id, job_id)`.
+## Lifecycle semantics
 
-### 7. `public.chat_sessions`
-Stores conversational career consulting sessions.
-- `id` (UUID, PK): Default `uuid_generate_v4()`.
-- `user_id` (UUID, FK): References `public.profiles(id)` ON DELETE CASCADE.
-- `title` (TEXT, NOT NULL): Session title.
-- `resume_id` (UUID, FK): Optional link to `public.resumes(id)` ON DELETE SET NULL.
+**Career Profile version.** Editing keeps a draft. Confirming pins a version.
+Match snapshots reference that version, so a score is attributable to the profile
+state that produced it.
 
-### 8. `public.chat_messages`
-Stores multi-turn conversational messages and embedded UI widget data.
-- `id` (UUID, PK): Default `uuid_generate_v4()`.
-- `session_id` (UUID, FK): References `public.chat_sessions(id)` ON DELETE CASCADE.
-- `role` (TEXT, NOT NULL): Enum (`'user'`, `'assistant'`, `'system'`).
-- `content` (TEXT, NOT NULL): Markdown message content.
-- `metadata` (JSONB): Embedded widget payloads (e.g. `{ analysis: {...}, job_matches: [...] }`).
+**Resume processing.** Stages advance from `received` to `stored`, with terminal
+outcomes `needs_review`, `rejected`, and `failed`. A rejected document has its
+stored content removed.
 
----
+**Career Memory.** Status is `active`, `superseded`, or `forgotten`. Superseding
+happens when a newer overlapping memory of the same category replaces an older
+one. Persistence to Walrus is tracked separately in `walrus_status`.
 
-## Row Level Security (RLS) Policies
+**Saved jobs.** One table holds both saved and rejected jobs, distinguished by
+state, so both feed recommendation filtering.
 
-All tables have RLS explicitly enabled (`ALTER TABLE ... ENABLE ROW LEVEL SECURITY`).
+## Indexes
 
-| Table | Policy Name | Permitted Roles | Condition |
-| :--- | :--- | :--- | :--- |
-| `profiles` | Users can view own profile | `authenticated` | `auth.uid() = id` |
-| `profiles` | Users can update own profile | `authenticated` | `auth.uid() = id` |
-| `profiles` | Users can insert own profile | `authenticated` | `auth.uid() = id` |
-| `resumes` | Users can view own resumes | `authenticated` | `auth.uid() = profile_id` |
-| `resumes` | Users can insert own resumes | `authenticated` | `auth.uid() = profile_id` |
-| `resumes` | Users can update own resumes | `authenticated` | `auth.uid() = profile_id` |
-| `resume_analysis` | Users can view own analysis | `authenticated` | Via join to `resumes.profile_id = auth.uid()` |
-| `companies` | Anyone can view companies | `anon`, `authenticated` | `true` |
-| `jobs` | Anyone can view active jobs | `anon`, `authenticated` | `is_active = true` |
-| `job_matches` | Users can view own matches | `authenticated` | Via join to `resumes.profile_id = auth.uid()` |
-| `chat_sessions` | Users can manage own chat sessions | `authenticated` | `auth.uid() = user_id` |
-| `chat_messages` | Users can manage own chat messages | `authenticated` | Via join to `chat_sessions.user_id = auth.uid()` |
+Indexes exist for the columns queried on hot paths, including owner columns,
+`career_memories` status and category, the per-source job identity, and job
+activity. Add an index when a new query pattern becomes expensive, and update the
+migration files rather than editing the database by hand.
 
----
+## Related
 
-## Database Triggers & Functions
-
-### Automated User Profile Provisioning
-Located in `src/database/triggerAuth.sql`:
-```sql
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS trigger
-LANGUAGE plpgsql
-SECURITY DEFINER SET search_path = public
-AS $$
-BEGIN
-  INSERT INTO public.profiles (id, full_name, avatar_url)
-  VALUES (
-    NEW.id,
-    COALESCE(NEW.raw_user_meta_data->>'full_name', 'User'),
-    NEW.raw_user_meta_data->>'avatar_url'
-  )
-  ON CONFLICT (id) DO UPDATE
-  SET full_name = EXCLUDED.full_name,
-      avatar_url = EXCLUDED.avatar_url;
-  RETURN NEW;
-END;
-$$;
-
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
-```
+- [../architecture/domain-model.md](../architecture/domain-model.md)
+- [../architecture/data-ownership.md](../architecture/data-ownership.md)
+- [../integrations/supabase.md](../integrations/supabase.md)
+- [../development/change-map.md](../development/change-map.md)

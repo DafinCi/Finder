@@ -209,17 +209,27 @@ Finder/
 
 ---
 
-## Documentation Sitemap
+## Documentation
 
+Full index: [`docs/README.md`](docs/README.md).
+
+- [**Architecture Overview**](docs/architecture/overview.md)
 - [**System Architecture**](docs/architecture/system-architecture.md)
-- [**Job Matching Engine**](docs/architecture/matching-engine.md)
-- [**API Reference**](docs/api/endpoints.md)
-- [**Database Schema & RLS**](docs/database/schema-and-rls.md)
-- [**Local Development Setup**](docs/development/setup.md)
-- [**Testing Strategy & Quality Gates**](docs/development/testing.md)
-- [**Coding Standards**](docs/coding-standards.md)
-- [**Design System**](docs/design-system.md)
-- [**Product Roadmap**](docs/roadmap.md)
+- [**Domain Model**](docs/architecture/domain-model.md)
+- [**Architecture Invariants**](docs/architecture/invariants.md)
+- [**Failure Semantics**](docs/architecture/failure-semantics.md)
+- [**API Overview**](docs/api/overview.md)
+- [**Database & RLS**](docs/database/schema-and-rls.md)
+- [**AI Agent Context**](docs/ai/agent-context.md)
+- [**Walrus & MemWal**](docs/integrations/walrus-memwal.md)
+- [**Local Setup**](docs/development/setup.md)
+- [**Testing**](docs/development/testing.md)
+- [**Coding Standards**](docs/development/coding-standards.md)
+- [**Change Map**](docs/development/change-map.md)
+- [**Design System**](docs/design/design-system.md)
+- [**Glossary**](docs/glossary.md)
+- [**Product Vision**](docs/product/vision.md)
+- [**Roadmap**](docs/product/roadmap.md)
 - [**Security Policy**](SECURITY.md)
 
 ---
