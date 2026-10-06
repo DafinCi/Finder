@@ -1,29 +1,21 @@
 import React, { ReactNode } from "react";
-import { createClient } from "@/lib/supabase/server";
-import MarketingNavbar from "@/features/marketing/components/MarketingNavbar";
+import MarqueeBanner from "@/features/marketing/components/MarqueeBanner";
 import MarketingFooter from "@/features/marketing/components/MarketingFooter";
+import MarketingScrollbarManager from "@/features/marketing/components/MarketingScrollbarManager";
 
-export default async function MarketingLayout({
+export default function MarketingLayout({
   children,
 }: {
   children: ReactNode;
 }) {
-  let isAuthenticated = false;
-
-  try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    isAuthenticated = !!user;
-  } catch {
-    isAuthenticated = false;
-  }
-
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground selection:bg-primary/20 selection:text-primary">
-      <MarketingNavbar isAuthenticated={isAuthenticated} />
-      <main id="main-content" className="flex-1 focus:outline-hidden">
+    <div className="marketing-page no-scrollbar min-h-screen flex flex-col bg-carbon text-carbon selection:bg-lavender selection:text-carbon font-sans antialiased overflow-x-hidden">
+      <MarketingScrollbarManager />
+      <MarqueeBanner />
+      <main
+        id="main-content"
+        className="flex-1 focus:outline-hidden w-full px-3 sm:px-4 pt-3 sm:pt-4 pb-0 space-y-3 sm:space-y-4 no-scrollbar"
+      >
         {children}
       </main>
       <MarketingFooter />

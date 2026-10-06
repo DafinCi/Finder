@@ -6,154 +6,138 @@ import {
   KeyRound,
   RefreshCw,
   LayoutTemplate,
-  CheckCircle2,
-  ArrowRight,
 } from "lucide-react";
+import StickerBadge, { StickerColor } from "./StickerBadge";
 
 export default function FeatureGridSection() {
-  const capabilities = [
+  const capabilities: Array<{
+    icon: React.ElementType;
+    capability: string;
+    behavior: string;
+    benefit: string;
+    tag: string;
+    tagColor: StickerColor;
+  }> = [
     {
       icon: FileCode2,
       capability: "Structured Profile Extraction",
-      problem:
-        "Manual profile wizards are exhausting, and basic text extractors fail to distinguish core technical skills from passing mentions.",
       behavior:
-        "Extracts text directly from PDFs and validates against strict Zod schemas, identifying Core (primary) vs Supporting skills and career seniority.",
+        "Extracts text directly from PDFs via pdf-parse, verifies magic bytes (%PDF-), and validates against strict Zod schemas to distinguish Core (2.0x) vs Supporting (1.2x) skills.",
       benefit:
         "Instant, highly structured breakdown of your technical market positioning with zero manual data entry.",
-      tag: "AI Extraction (v2.1.0)",
+      tag: "AI Extraction (v2.7)",
+      tagColor: "voltage",
     },
     {
       icon: GitBranch,
       capability: "Two-Stage Matching Engine",
-      problem:
-        "Keyword searches match irrelevant titles, while passing hundreds of jobs to an LLM causes severe rate limits and downtime.",
       behavior:
-        "Deterministic SQL array overlap pre-filters candidate pools, weighted pre-ranking selects top 5, and Groq evaluates qualitative fit.",
+        "Deterministic SQL array overlap pre-filters candidate pools, weighted pre-ranking selects top matches, and deterministic re-scoring locks the ranking.",
       benefit:
         "High-accuracy job recommendations with transparent fit percentages, detailed reasoning, and exact missing skills.",
-      tag: "Algorithmic + LLM",
+      tag: "Deterministic SQL",
+      tagColor: "mint",
     },
     {
       icon: Bot,
       capability: "Conversational Career Copilot",
-      problem:
-        "Job listings are passive descriptions that don't help you prepare for technical screens or translate your past experience.",
       behavior:
-        "Streams tokens in real-time via Server-Sent Events (SSE), pre-grounded with your resume strengths and target role requirements.",
+        "Streams tokens in real-time via Server-Sent Events (SSE), pre-grounded with candidate strengths and active target role requirements.",
       benefit:
         "Practice mock interview questions, clarify ambiguous requirements, and develop strategies to compensate for missing skills.",
-      tag: "SSE Token Streaming",
+      tag: "SSE Streaming",
+      tagColor: "ember",
     },
     {
       icon: KeyRound,
       capability: "Dual Auth: Web2 + Web3 (SIWS)",
-      problem:
-        "Most platforms force proprietary email accounts, locking out Web3 natives who demand cryptographic identity ownership.",
       behavior:
-        "Supports standard email/password SSR cookies alongside cryptographic Sign-In with Sui (SIWS) personal message verification.",
+        "Supports standard email/password SSR session cookies alongside cryptographic Sign-In with Sui (SIWS) personal message verification.",
       benefit:
         "Connect with a Web3 browser wallet or traditional email with unified identity continuity and zero lock-in.",
-      tag: "Cryptographic SIWS",
+      tag: "Sui Ed25519",
+      tagColor: "sunburst",
     },
     {
       icon: RefreshCw,
       capability: "Automated External Job Ingestion",
-      problem:
-        "Many job sites display stale, expired listings that waste candidates' time applying to closed openings.",
       behavior:
-        "Scheduled cron synchronization from Remotive API normalizes remote tech roles with timing-safe constant-time authentication.",
+        "Scheduled cron synchronization from Remotive API normalizes remote tech roles with timing-safe constant-time secret authentication.",
       benefit:
         "Direct access to active, fresh software engineering and tech opportunities ready for immediate evaluation.",
-      tag: "Live Remote Feed",
+      tag: "Live Remotive Feed",
+      tagColor: "lavender",
     },
     {
       icon: LayoutTemplate,
       capability: "Accessible Discovery Drawer",
-      problem:
-        "Opening dozens of external browser tabs ruins your evaluation workflow and creates visual clutter.",
       behavior:
         "WAI-ARIA accessible slide-over sheet featuring focus trapping, keyboard navigation, and responsive filter controls.",
       benefit:
         "Evaluate job specs, match insights, and apply externally without ever losing your place in the workspace.",
-      tag: "WAI-ARIA Accessible",
+      tag: "WAI-ARIA Ready",
+      tagColor: "blue",
     },
   ];
 
   return (
     <section
       id="features"
-      className="py-20 md:py-28 border-b border-border/40 bg-card/10"
+      className="py-20 md:py-28 rounded-[32px] sm:rounded-[44px] border border-carbon bg-paper-white"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto space-y-4 mb-16">
-          <h2 className="text-xs font-mono uppercase tracking-widest text-primary font-semibold">
-            Product Capabilities
+        <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
+          <div className="inline-flex items-center">
+            <StickerBadge color="mint" pill className="text-xs uppercase tracking-[0.032em]">
+              Product Capabilities
+            </StickerBadge>
+          </div>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-carbon leading-[0.95]">
+            ENGINEERED FOR TECHNICAL PRECISION AND TRANSPARENCY
           </h2>
-          <h3 className="text-3xl sm:text-4xl font-bold font-heading text-foreground tracking-tight">
-            Engineered for technical precision and transparency
-          </h3>
-          <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+          <p className="text-base sm:text-lg text-carbon/80 font-medium leading-relaxed max-w-2xl mx-auto pt-1">
             Every feature in Finder addresses a concrete failure point of
             traditional recruiting software.
           </p>
         </div>
 
-        {/* 6 Grid Capability Cards */}
+        {/* 6 Capabilities Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {capabilities.map((item, idx) => {
             const Icon = item.icon;
             return (
               <div
                 key={idx}
-                className="rounded-sm border border-border/80 bg-card/70 p-6 flex flex-col justify-between space-y-5 hover:border-primary/40 transition-all hover:bg-card group"
+                className="rounded-[24px] border border-carbon bg-paper-white p-6 flex flex-col justify-between space-y-6"
               >
                 <div className="space-y-4">
-                  {/* Top Bar: Icon + Tag */}
                   <div className="flex items-center justify-between">
-                    <div className="w-10 h-10 rounded-sm bg-secondary text-foreground flex items-center justify-center border border-border group-hover:border-primary/30 transition-colors">
-                      <Icon className="w-5 h-5 text-primary" />
+                    <div className="w-12 h-12 rounded-2xl border border-carbon bg-soft-mist flex items-center justify-center text-carbon">
+                      <Icon className="w-6 h-6 text-carbon" />
                     </div>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-secondary/80 text-muted-foreground border border-border">
+                    <StickerBadge color={item.tagColor} pill className="text-[10px]">
                       {item.tag}
-                    </span>
+                    </StickerBadge>
                   </div>
 
-                  {/* Title */}
-                  <h4 className="text-base font-semibold font-heading text-foreground group-hover:text-primary transition-colors">
+                  <h3 className="text-base font-extrabold text-carbon">
                     {item.capability}
-                  </h4>
+                  </h3>
 
-                  {/* Problem & Behavior */}
                   <div className="space-y-2 text-xs">
-                    <div>
-                      <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block mb-0.5">
-                        The Problem
-                      </span>
-                      <p className="text-muted-foreground leading-relaxed">
-                        {item.problem}
-                      </p>
-                    </div>
-
-                    <div className="pt-2 border-t border-border/50">
-                      <span className="text-[11px] font-semibold text-foreground uppercase tracking-wider block mb-0.5">
-                        System Behavior
-                      </span>
-                      <p className="text-muted-foreground leading-relaxed">
-                        {item.behavior}
-                      </p>
-                    </div>
+                    <p className="text-carbon/85 leading-relaxed font-medium">
+                      {item.behavior}
+                    </p>
                   </div>
                 </div>
 
-                {/* User Benefit */}
-                <div className="pt-3 border-t border-border/60">
-                  <div className="flex items-start gap-2 text-xs text-foreground bg-secondary/40 p-2.5 rounded-sm border border-border/50">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                    <span className="font-medium leading-relaxed">
-                      {item.benefit}
+                <div className="pt-4 border-t border-carbon/20">
+                  <p className="text-xs text-carbon font-bold leading-relaxed">
+                    <span className="text-carbon/70 uppercase text-[10px] block mb-0.5 tracking-wider">
+                      User Benefit
                     </span>
-                  </div>
+                    {item.benefit}
+                  </p>
                 </div>
               </div>
             );

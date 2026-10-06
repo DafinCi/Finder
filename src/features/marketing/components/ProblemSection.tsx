@@ -1,13 +1,6 @@
 import React from "react";
-import {
-  SearchX,
-  EyeOff,
-  FileQuestion,
-  LockKeyhole,
-  Check,
-  X,
-  ArrowRight,
-} from "lucide-react";
+import { SearchX, EyeOff, FileQuestion, Check, X } from "lucide-react";
+import StickerBadge from "./StickerBadge";
 
 export default function ProblemSection() {
   const problems = [
@@ -40,58 +33,60 @@ export default function ProblemSection() {
   return (
     <section
       id="problem"
-      className="py-20 md:py-28 border-b border-border/40 bg-card/20"
+      className="py-20 md:py-28 rounded-[32px] sm:rounded-[44px] border border-carbon bg-paper-white"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto space-y-4 mb-14">
-          <h2 className="text-xs font-mono uppercase tracking-widest text-primary font-semibold">
-            The Industry Problem
+        <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
+          <div className="inline-flex items-center">
+            <StickerBadge color="ember" pill className="text-xs uppercase tracking-[0.032em]">
+              The Industry Problem
+            </StickerBadge>
+          </div>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-carbon leading-[0.95]">
+            TRADITIONAL JOB BOARDS ARE TRANSACTIONAL. FINDER IS ADVISORY.
           </h2>
-          <h3 className="text-3xl sm:text-4xl font-bold font-heading text-foreground tracking-tight">
-            Traditional job boards are transactional. Finder is advisory.
-          </h3>
-          <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+          <p className="text-base sm:text-lg text-carbon/80 font-medium leading-relaxed max-w-2xl mx-auto pt-1">
             Most job sites treat you as an application counter to maximize
             recruiter views. Finder acts as your personal technical career
             strategist.
           </p>
         </div>
 
-        {/* 3 Column Problem Comparison */}
+        {/* 3 Column Problem Comparison Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {problems.map((item, idx) => {
             const Icon = item.icon;
             return (
               <div
                 key={idx}
-                className="rounded-sm border border-border/80 bg-card/60 p-6 flex flex-col justify-between space-y-5 hover:border-border transition-colors"
+                className="rounded-[24px] border border-carbon bg-paper-white p-6 flex flex-col justify-between space-y-6"
               >
                 <div className="space-y-4">
-                  <div className="w-10 h-10 rounded-sm bg-secondary text-foreground flex items-center justify-center border border-border">
-                    <Icon className="w-5 h-5 text-muted-foreground" />
+                  <div className="w-12 h-12 rounded-2xl border border-carbon bg-sky-wash flex items-center justify-center text-carbon">
+                    <Icon className="w-6 h-6 text-carbon" />
                   </div>
-                  <h4 className="text-base font-semibold font-heading text-foreground">
+                  <h3 className="text-lg font-bold text-carbon">
                     {item.title}
-                  </h4>
+                  </h3>
 
                   {/* Traditional Pain Point */}
-                  <div className="space-y-1.5 rounded-sm bg-destructive/5 border border-destructive/15 p-3 text-xs">
-                    <div className="flex items-center gap-1.5 text-destructive font-semibold">
-                      <X className="w-3.5 h-3.5" />
+                  <div className="space-y-1.5 rounded-2xl border border-carbon bg-ember/10 p-4 text-xs">
+                    <div className="flex items-center gap-1.5 text-ember font-bold">
+                      <X className="w-4 h-4 shrink-0" />
                       <span>Traditional Job Portals</span>
                     </div>
-                    <p className="text-muted-foreground leading-relaxed">
+                    <p className="text-carbon/80 leading-relaxed font-medium">
                       {item.traditional}
                     </p>
                   </div>
 
                   {/* Finder Solution */}
-                  <div className="space-y-1.5 rounded-sm bg-emerald-500/5 border border-emerald-500/20 p-3 text-xs">
-                    <div className="flex items-center gap-1.5 text-emerald-400 font-semibold">
-                      <Check className="w-3.5 h-3.5" />
+                  <div className="space-y-1.5 rounded-2xl border border-carbon bg-mint-pop/25 p-4 text-xs">
+                    <div className="flex items-center gap-1.5 text-carbon font-bold">
+                      <Check className="w-4 h-4 text-carbon shrink-0" />
                       <span>The Finder Approach</span>
                     </div>
-                    <p className="text-muted-foreground leading-relaxed">
+                    <p className="text-carbon/90 leading-relaxed font-medium">
                       {item.finder}
                     </p>
                   </div>
