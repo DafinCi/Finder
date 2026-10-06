@@ -7,6 +7,7 @@ import {
   ShieldCheck,
   CheckCircle2,
 } from "lucide-react";
+import { MARKETING_PRIMARY_MODEL } from "../data/ai-stack";
 
 export default function HowItWorksSection() {
   const steps = [
@@ -27,9 +28,9 @@ export default function HowItWorksSection() {
       icon: Cpu,
       title: "AI Candidate Intelligence",
       description:
-        "Groq-accelerated models (qwen/qwen3.8-27b / Prompt v2.1.0) decompose your CV into normalized skills, Core vs Supporting capabilities, seniority level, and verified strengths.",
+        `Groq-accelerated models (${MARKETING_PRIMARY_MODEL}) decompose your resume into normalized skills, Core vs Supporting capabilities, seniority level, and verified strengths.`,
       specs: [
-        "Prompt template v2.1.0",
+        "Versioned prompt template",
         "Strict Zod schema validation",
         "Lineage tracking in database",
       ],

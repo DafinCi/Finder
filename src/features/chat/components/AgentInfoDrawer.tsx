@@ -8,6 +8,19 @@ import { useAgent, DrawerTabType } from "@/contexts/AgentContext";
 import WalrusMemoryInspector from "@/features/memory/components/WalrusMemoryInspector";
 import { isBeyondBigTwo } from "../utils/model-eligibility";
 
+const MIN_DRAWER_WIDTH = 320;
+const MAX_DRAWER_WIDTH = 560;
+const DEFAULT_DRAWER_WIDTH = 380;
+const DRAWER_WIDTH_STORAGE_KEY = "finder_agent_drawer_width";
+
+function saveDrawerWidth(width: number) {
+  try {
+    localStorage.setItem(DRAWER_WIDTH_STORAGE_KEY, String(width));
+  } catch {
+    // Ignore storage errors in restricted contexts.
+  }
+}
+
 interface AgentInfoDrawerProps {
   isOpen: boolean;
   onClose: () => void;
@@ -34,6 +47,79 @@ export default function AgentInfoDrawer({
   const [nameInput, setNameInput] = useState(currentAgentName);
   const [agentStatus, setAgentStatus] = useState<AgentStatus | null>(null);
   const [isStatusLoading, setIsStatusLoading] = useState(false);
+  const [drawerWidth, setDrawerWidth] = useState(DEFAULT_DRAWER_WIDTH);
+  const [isResizing, setIsResizing] = useState(false);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(DRAWER_WIDTH_STORAGE_KEY);
+      if (!saved) return;
+      const parsed = parseInt(saved, 10);
+      if (
+        !isNaN(parsed) &&
+        parsed >= MIN_DRAWER_WIDTH &&
+        parsed <= MAX_DRAWER_WIDTH
+      ) {
+        // Browser-only value: sync after mount to keep SSR markup stable.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setDrawerWidth(parsed);
+      }
+    } catch {
+      // Ignore storage errors in restricted contexts.
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isResizing) return;
+
+    let latestWidth: number | null = null;
+
+    const handleMouseMove = (event: MouseEvent) => {
+      const next = Math.min(
+        MAX_DRAWER_WIDTH,
+        Math.max(MIN_DRAWER_WIDTH, window.innerWidth - event.clientX),
+      );
+      latestWidth = next;
+      setDrawerWidth(next);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      if (latestWidth !== null) {
+        saveDrawerWidth(latestWidth);
+      }
+    };
+
+    document.body.style.userSelect = "none";
+    document.body.style.cursor = "col-resize";
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isResizing]);
+
+  const handleResizerKeyDown = (event: React.KeyboardEvent) => {
+    let next: number | null = null;
+    if (event.key === "ArrowLeft") {
+      next = Math.min(MAX_DRAWER_WIDTH, drawerWidth + 16);
+    } else if (event.key === "ArrowRight") {
+      next = Math.max(MIN_DRAWER_WIDTH, drawerWidth - 16);
+    } else if (event.key === "Home") {
+      next = MIN_DRAWER_WIDTH;
+    } else if (event.key === "End") {
+      next = MAX_DRAWER_WIDTH;
+    }
+    if (next !== null) {
+      event.preventDefault();
+      setDrawerWidth(next);
+      saveDrawerWidth(next);
+    }
+  };
 
   // Resilient tab state: syncs with AgentContext, with local state fallback to prevent HMR desync
   const [localTab, setLocalTab] = useState<DrawerTabType>("info");
@@ -137,18 +223,42 @@ export default function AgentInfoDrawer({
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") onClose();
           }}
-          className="fixed inset-0 bg-background/80 backdrop-blur-xs z-50 transition-opacity animate-in fade-in duration-200"
+          className="fixed inset-0 bg-background/80 backdrop-blur-xs z-50 transition-opacity animate-in fade-in duration-200 lg:hidden"
         />
       )}
 
-      {/* Drawer Sheet */}
+      {/* Drawer Sheet: docked beside the chat on wide screens, overlay on small ones */}
       <aside
         aria-label="Agent information and Walrus memory"
         aria-hidden={!isOpen}
-        className={`fixed inset-y-0 right-0 z-50 w-full sm:max-w-md bg-card border-l border-border/80 shadow-2xl flex flex-col h-[100dvh] overflow-hidden transition-transform duration-300 ease-out ${
-          isOpen ? "translate-x-0" : "translate-x-full"
+        style={{ "--agent-drawer-width": `${drawerWidth}px` } as React.CSSProperties}
+        className={`fixed inset-y-0 right-0 z-50 w-full bg-card border-l border-border/80 shadow-2xl flex flex-col overflow-hidden transition-transform duration-300 ease-out lg:relative lg:inset-auto lg:z-auto lg:h-full lg:shrink-0 lg:shadow-none lg:translate-x-0 lg:transition-none lg:w-[var(--agent-drawer-width)] ${
+          isOpen ? "translate-x-0" : "translate-x-full lg:hidden"
         }`}
       >
+        {isOpen && (
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize agent panel"
+            aria-valuenow={drawerWidth}
+            aria-valuemin={MIN_DRAWER_WIDTH}
+            aria-valuemax={MAX_DRAWER_WIDTH}
+            tabIndex={0}
+            onMouseDown={(event) => {
+              event.preventDefault();
+              setIsResizing(true);
+            }}
+            onKeyDown={handleResizerKeyDown}
+            onDoubleClick={() => {
+              setDrawerWidth(DEFAULT_DRAWER_WIDTH);
+              saveDrawerWidth(DEFAULT_DRAWER_WIDTH);
+            }}
+            title="Drag to resize"
+            className="hidden lg:flex absolute left-0 top-0 h-full w-1.5 cursor-col-resize bg-transparent hover:bg-primary/30 focus-visible:bg-primary/40 focus-visible:outline-none z-10"
+          />
+        )}
+
         {/* Drawer Header with Dual Tab Switcher */}
         <div className="h-14 border-b border-border px-4 flex items-center justify-between shrink-0 bg-card">
           <div className="flex items-center gap-1.5 bg-background p-1 rounded-sm border border-border">

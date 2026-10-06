@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import MatchBadge from "@/features/jobs/components/MatchBadge";
 import { Button } from "@/components/ui/button";
+import { MARKETING_PRIMARY_MODEL } from "../data/ai-stack";
 
 export default function InteractiveDemoShowcase() {
   const [activeTab, setActiveTab] = useState<
@@ -88,7 +89,7 @@ export default function InteractiveDemoShowcase() {
             </div>
             <div className="flex items-center gap-2 text-[11px] font-mono">
               <span className="px-2 py-0.5 rounded bg-secondary text-muted-foreground border border-border">
-                Model: qwen/qwen3.8-27b
+                Model: {MARKETING_PRIMARY_MODEL}
               </span>
               <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
                 Status: Complete
@@ -118,7 +119,7 @@ export default function InteractiveDemoShowcase() {
                     </div>
                   </div>
                   <span className="text-[11px] font-medium text-muted-foreground px-2.5 py-1 rounded-md bg-secondary/80 border border-border w-fit">
-                    Extracted from PDF via Prompt v2.1.0
+                    Extracted from PDF
                   </span>
                 </div>
 

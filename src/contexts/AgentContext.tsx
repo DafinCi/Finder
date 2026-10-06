@@ -8,6 +8,7 @@ import React, {
   useCallback,
   ReactNode,
 } from "react";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 const GLOBAL_AGENT_NICKNAME_KEY = "finder_agent_nickname";
 const SESSION_AGENT_NICKNAMES_KEY = "finder_session_agent_nicknames";
@@ -44,6 +45,15 @@ export function AgentProvider({ children }: { children: ReactNode }) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [drawerTab, setDrawerTab] = useState<DrawerTabType>("info");
   const [isAmnesiaMode, setIsAmnesiaModeState] = useState<boolean>(false);
+
+  // The agent panel is visible by default on desktop and stays closed on mobile.
+  // Applied once, so closing it is respected for the rest of the session.
+  const isDesktopViewport = useMediaQuery("(min-width: 1024px)");
+  const [didApplyDrawerDefault, setDidApplyDrawerDefault] = useState(false);
+  if (isDesktopViewport && !didApplyDrawerDefault) {
+    setDidApplyDrawerDefault(true);
+    setIsDrawerOpen(true);
+  }
 
   // Load from localStorage on mount
   useEffect(() => {

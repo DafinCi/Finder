@@ -5,7 +5,8 @@
 
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   CareerProfile,
@@ -79,58 +80,37 @@ export interface UseCareerProfileResult {
   updateBackground: (background: BackgroundEvidence) => Promise<boolean>;
 }
 
+export const careerProfileQueryKey = ["career-profile"] as const;
+
 export function useCareerProfile(): UseCareerProfileResult {
-  const [profile, setProfile] = useState<CareerProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const queryClient = useQueryClient();
   const [isMutating, setIsMutating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const refreshProfile =
-    useCallback(async (): Promise<CareerProfile | null> => {
-      try {
-        if (!profile) {
-          setIsLoading(true);
-        } else {
-          setIsRefreshing(true);
-        }
-        setError(null);
-        const data = await profileClientService.getProfile();
-        setProfile(data);
-        return data;
-      } catch (err) {
-        const msg = (err as Error).message || "Failed to load profile.";
-        setError(msg);
-        return null;
-      } finally {
-        setIsLoading(false);
-        setIsRefreshing(false);
-      }
-    }, [profile]);
+  // Shared cache: every consumer of this hook reads the same profile request.
+  const profileQuery = useQuery({
+    queryKey: careerProfileQueryKey,
+    queryFn: () => profileClientService.getProfile(),
+  });
 
-  useEffect(() => {
-    let cancelled = false;
+  const profile = profileQuery.data ?? null;
+  const isLoading = profileQuery.isPending;
+  const isRefreshing = profileQuery.isFetching && !profileQuery.isPending;
+  const error = profileQuery.error
+    ? (profileQuery.error as Error).message || "Failed to load profile."
+    : null;
 
-    profileClientService
-      .getProfile()
-      .then((data) => {
-        if (!cancelled) {
-          setProfile(data);
-          setError(null);
-          setIsLoading(false);
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          setError((err as Error).message);
-          setIsLoading(false);
-        }
+  const refreshProfile = useCallback(async (): Promise<CareerProfile | null> => {
+    try {
+      const data = await queryClient.fetchQuery({
+        queryKey: careerProfileQueryKey,
+        queryFn: () => profileClientService.getProfile(),
+        staleTime: 0,
       });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+      return data ?? null;
+    } catch {
+      return null;
+    }
+  }, [queryClient]);
 
   // Derived role groups
   const primaryRole = useMemo(() => {
@@ -238,7 +218,7 @@ export function useCareerProfile(): UseCareerProfileResult {
       setIsMutating(true);
       try {
         const updated = await mutationFn(profile.profileVersion);
-        setProfile(updated);
+        queryClient.setQueryData(careerProfileQueryKey, updated);
         toast.success(successMessage);
         return true;
       } catch (err) {
@@ -257,7 +237,7 @@ export function useCareerProfile(): UseCareerProfileResult {
         setIsMutating(false);
       }
     },
-    [profile, refreshProfile],
+    [profile, queryClient, refreshProfile],
   );
 
   const updateCareerIntent = useCallback(

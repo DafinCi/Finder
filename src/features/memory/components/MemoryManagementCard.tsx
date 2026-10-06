@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Brain,
   ExternalLink,
@@ -14,6 +15,7 @@ import { toast } from "sonner";
 import { CareerMemory, MemoryCategory } from "../types/memory.types";
 import { WALRUS_CONFIG } from "@/lib/walrus/walrus-config";
 import { getMemoryStatusPresentation } from "../utils/memory-status";
+import { memoryFeedQueryKey, useMemoryFeed } from "../hooks/useMemoryFeed";
 
 const CATEGORY_LABELS: Record<MemoryCategory, string> = {
   career_goal: "Career Goal",
@@ -25,51 +27,19 @@ const CATEGORY_LABELS: Record<MemoryCategory, string> = {
 };
 
 export function MemoryManagementCard() {
-  const [memories, setMemories] = useState<CareerMemory[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { data, isLoading, isFetching, error, refetch } = useMemoryFeed();
+  const memories = data?.memories ?? [];
   const [filter, setFilter] = useState<"all" | "active" | "forgotten">(
     "active",
   );
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const loadMemories = useCallback(async (): Promise<CareerMemory[]> => {
-    const res = await fetch("/api/memory");
-    if (!res.ok) {
-      throw new Error("Failed to load career memories.");
-    }
-    const data = await res.json();
-    return (data.memories || []) as CareerMemory[];
-  }, []);
-
-  const fetchMemories = async () => {
-    setIsLoading(true);
-    try {
-      setMemories(await loadMemories());
-    } catch (err) {
-      toast.error((err as Error).message || "Could not load memories.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    let cancelled = false;
-    loadMemories()
-      .then((items) => {
-        if (!cancelled) setMemories(items);
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) {
-          toast.error((err as Error).message || "Could not load memories.");
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [loadMemories]);
+    if (error) {
+      toast.error((error as Error).message || "Could not load memories.");
+    }
+  }, [error]);
 
   const handleForget = async (id: string) => {
     try {
@@ -82,8 +52,17 @@ export function MemoryManagementCard() {
         throw new Error(errData.error || "Failed to forget memory.");
       }
 
-      setMemories((prev) =>
-        prev.map((m) => (m.id === id ? { ...m, status: "forgotten" } : m)),
+      queryClient.setQueryData(
+        memoryFeedQueryKey,
+        (prev: { memories?: CareerMemory[] } | undefined) =>
+          prev
+            ? {
+                ...prev,
+                memories: (prev.memories ?? []).map((m) =>
+                  m.id === id ? { ...m, status: "forgotten" as const } : m,
+                ),
+              }
+            : prev,
       );
       toast.success("Career memory marked as forgotten.");
     } catch (err) {
@@ -158,8 +137,8 @@ export function MemoryManagementCard() {
 
           <button
             type="button"
-            onClick={fetchMemories}
-            disabled={isLoading}
+            onClick={() => void refetch()}
+            disabled={isFetching}
             aria-label="Refresh memories"
             title="Refresh memories"
             className="p-2 rounded-sm bg-secondary/30 border border-border/60 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors cursor-pointer"

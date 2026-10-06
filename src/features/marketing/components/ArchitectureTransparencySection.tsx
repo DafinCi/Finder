@@ -9,6 +9,10 @@ import {
   ExternalLink,
 } from "lucide-react";
 import Link from "next/link";
+import {
+  MARKETING_FALLBACK_MODEL,
+  MARKETING_PRIMARY_MODEL,
+} from "../data/ai-stack";
 
 export default function ArchitectureTransparencySection() {
   const stack = [
@@ -22,16 +26,16 @@ export default function ArchitectureTransparencySection() {
     {
       icon: Cpu,
       title: "AI & LLM Acceleration",
-      technologies: "Groq Cloud API • qwen/qwen3.8-27b",
+      technologies: `Groq Cloud API • ${MARKETING_PRIMARY_MODEL}`,
       description:
-        "Ultra-low latency inference using Groq SDK with automatic secondary fallback (openai/gpt-oss-20b) and deterministic mathematical degradation formulas.",
+        `Ultra-low latency inference using Groq SDK with automatic secondary fallback (${MARKETING_FALLBACK_MODEL}) and deterministic mathematical degradation formulas.`,
     },
     {
       icon: Database,
       title: "Persistence & Security",
       technologies: "Supabase PostgreSQL 15+ • 100% RLS",
       description:
-        "8 relational tables with strict foreign key constraints, automated auth triggers, and private user-isolated storage buckets for resume PDF documents.",
+        "14 relational tables with strict foreign key constraints, automated auth triggers, and private user-isolated storage buckets for resume PDF documents.",
     },
     {
       icon: Coins,
