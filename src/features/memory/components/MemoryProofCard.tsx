@@ -1,71 +1,21 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Copy, Check, ShieldCheck, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-
-interface MemoryStats {
-  total: number;
-  active: number;
-  stored: number;
-  pending: number;
-  failed: number;
-  lastStoredAt: string | null;
-}
-
-interface WalrusMeta {
-  network: string;
-  explorerUrl: string;
-  agentId: string | null;
-  namespace: string;
-  relayerUrl: string;
-}
+import { useMemoryFeed } from "../hooks/useMemoryFeed";
 
 export function MemoryProofCard() {
-  const [stats, setStats] = useState<MemoryStats | null>(null);
-  const [walrusMeta, setWalrusMeta] = useState<WalrusMeta | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data, isLoading, isFetching, error, refetch } = useMemoryFeed();
+  const stats = data?.stats ?? null;
+  const walrusMeta = data?.walrus ?? null;
   const [isCopied, setIsCopied] = useState(false);
 
-  const loadProof = useCallback(async () => {
-    const res = await fetch("/api/memory");
-    if (!res.ok) throw new Error("Failed to load memory proof.");
-    return await res.json();
-  }, []);
-
-  const fetchProof = async () => {
-    setIsLoading(true);
-    try {
-      const data = await loadProof();
-      setStats(data.stats || null);
-      setWalrusMeta(data.walrus || null);
-    } catch (err) {
-      toast.error((err as Error).message || "Could not load memory proof.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    let cancelled = false;
-    loadProof()
-      .then((data) => {
-        if (cancelled) return;
-        setStats(data.stats || null);
-        setWalrusMeta(data.walrus || null);
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) {
-          toast.error((err as Error).message || "Could not load memory proof.");
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [loadProof]);
+    if (error) {
+      toast.error((error as Error).message || "Could not load memory proof.");
+    }
+  }, [error]);
 
   const handleCopy = () => {
     const lines = [
@@ -108,8 +58,8 @@ export function MemoryProofCard() {
         </div>
         <button
           type="button"
-          onClick={fetchProof}
-          disabled={isLoading}
+          onClick={() => void refetch()}
+          disabled={isFetching}
           aria-label="Refresh memory proof"
           title="Refresh memory proof"
           className="p-2 rounded-sm bg-secondary/30 border border-border/60 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors cursor-pointer"

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ExternalLink,
   ShieldCheck,
@@ -17,14 +17,7 @@ import { toast } from "sonner";
 import { CareerMemory } from "@/features/memory/types/memory.types";
 import { useAgent } from "@/contexts/AgentContext";
 import { getMemoryStatusPresentation } from "../utils/memory-status";
-
-interface WalrusMetadata {
-  network: string;
-  explorerUrl: string;
-  agentId: string | null;
-  namespace: string;
-  relayerUrl: string;
-}
+import { useMemoryFeed } from "../hooks/useMemoryFeed";
 
 export default function WalrusMemoryInspector() {
   const router = useRouter();
@@ -34,58 +27,17 @@ export default function WalrusMemoryInspector() {
     setIsAmnesiaMode,
     closeDrawer,
   } = useAgent();
-  const [memories, setMemories] = useState<CareerMemory[]>([]);
-  const [walrusMeta, setWalrusMeta] = useState<WalrusMetadata | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data, isLoading, isFetching, error, refetch } = useMemoryFeed();
+  const memories = data?.memories ?? [];
+  const walrusMeta = data?.walrus ?? null;
   const [isCopied, setIsCopied] = useState(false);
 
-  const loadMemories = useCallback(async () => {
-    const res = await fetch("/api/memory");
-    if (!res.ok) {
-      throw new Error("Failed to fetch memories");
-    }
-    return await res.json();
-  }, []);
-
-  const fetchMemories = async () => {
-    setIsLoading(true);
-    try {
-      const data = await loadMemories();
-      setMemories(data.memories || []);
-      if (data.walrus) {
-        setWalrusMeta(data.walrus);
-      }
-    } catch (err) {
-      console.error("[WalrusMemoryInspector] Error:", err);
-      toast.error("Could not load Walrus memory list");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    let cancelled = false;
-    loadMemories()
-      .then((data) => {
-        if (cancelled) return;
-        setMemories(data.memories || []);
-        if (data.walrus) {
-          setWalrusMeta(data.walrus);
-        }
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) {
-          console.error("[WalrusMemoryInspector] Error:", err);
-          toast.error("Could not load Walrus memory list");
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [loadMemories]);
+    if (error) {
+      console.error("[WalrusMemoryInspector] Error:", error);
+      toast.error("Could not load Walrus memory list");
+    }
+  }, [error]);
 
   const handleCopyAgentId = () => {
     if (!walrusMeta?.agentId) return;
@@ -340,8 +292,8 @@ export default function WalrusMemoryInspector() {
         </div>
         <button
           type="button"
-          onClick={fetchMemories}
-          disabled={isLoading}
+          onClick={() => void refetch()}
+          disabled={isFetching}
           aria-label="Refresh memory list from Walrus"
           className="min-h-[36px] px-2.5 py-1 rounded-sm bg-secondary hover:bg-secondary/80 text-foreground border border-border inline-flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 text-[11px] font-medium"
         >
