@@ -46,7 +46,7 @@ Unlike traditional job boards that require users to search through raw keyword l
 | **Styling & Components**  | [Tailwind CSS 4](https://tailwindcss.com), [Base UI](https://base-ui.com), [Lucide React](https://lucide.dev), [Sonner](https://sonner.emilkowal.ski)                    |
 | **Backend & Runtime**     | Next.js Server & Edge Route Handlers, Node.js 22                                                                                                                         |
 | **Database & Auth**       | [Supabase](https://supabase.com) (PostgreSQL 15+, Row Level Security, Auth SSR)                                                                                          |
-| **AI / LLM Acceleration** | [Groq SDK](https://console.groq.com) (`qwen/qwen3.8-27b`, fallback `openai/gpt-oss-20b` — [Active Models](https://console.groq.com/docs/models))                      |
+| **AI / LLM Acceleration** | [Groq SDK](https://console.groq.com) (`qwen/qwen3.8-27b`, fallback `openai/gpt-oss-20b` - [Active Models](https://console.groq.com/docs/models))                      |
 | **Web3 Blockchain**       | [@mysten/sui](https://sdk.mystenlabs.com/typescript), [@mysten/dapp-kit-react](https://sdk.mystenlabs.com/dapp-kit), [@tanstack/react-query](https://tanstack.com/query) |
 | **Testing & Tooling**     | [Vitest 5](https://vitest.dev), ESLint 9, TypeScript 6                                                                                                                   |
 
@@ -129,26 +129,68 @@ cp .env.example .env.local
 Fill in your configuration:
 
 ```env
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+# 1. Supabase Backend & Database
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
-# Groq AI (Active models: https://console.groq.com/docs/models)
-GROQ_API_KEY=gsk_your_groq_api_key
-GROQ_MODEL=qwen/qwen3.8-27b
-GROQ_FALLBACK_MODEL=openai/gpt-oss-20b
-GROQ_MAX_TOKENS=2500
-
-# Application Base URL
+# 2. Application & Authentication URLs
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
-# Sui Web3 Network
+# 3. Groq AI Engine (Candidate Extraction, Job Matching & Career Copilot)
+# Active models: https://console.groq.com/docs/models
+GROQ_API_KEY=gsk_your_groq_api_key_here
+GROQ_MODEL=qwen/qwen3.8-27b
+GROQ_FALLBACK_MODEL=openai/gpt-oss-20b
+# GROQ_AGENT_MODEL=openai/gpt-oss-20b
+GROQ_MAX_TOKENS=2500
+
+# 4. Web3 / Sui Blockchain Authentication (SIWS)
 NEXT_PUBLIC_SUI_NETWORK=mainnet
 
-# Cron Sync Secret (optional in development)
-CRON_SECRET=your_cron_secret
+# 5. Job Ingestion & Cron Sync
+CRON_SECRET=your_secure_cron_sync_secret_here
+
+# 6. Dedicated Test Environment Credentials (Optional for live integration tests)
+# SUPABASE_TEST_URL=https://your-test-project.supabase.co
+# SUPABASE_TEST_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+# SUPABASE_TEST_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+# 7. Walrus Memory (MemWal) - Sovereign Career Memory Persistence
+MEMWAL_ACCOUNT_ID=0x0000000000000000000000000000000000000000000000000000000000000000
+MEMWAL_DELEGATE_PRIVATE_KEY=your_memwal_delegate_private_key_here
+MEMWAL_SERVER_URL=https://relayer.memory.walrus.xyz
+
+# 8. Walrus Storage Network
+NEXT_PUBLIC_WALRUS_NETWORK=mainnet
+# NEXT_PUBLIC_WALRUS_AGGREGATOR_URL=https://aggregator.walrus-mainnet.walrus.space
+# WALRUS_PUBLISHER_URL=https://your-walrus-publisher.example
 ```
+
+#### Environment Variables Breakdown
+
+| Variable | Scope | Requirement | Description |
+| :--- | :--- | :--- | :--- |
+| `NEXT_PUBLIC_SUPABASE_URL` | Client & Server | Required | Public Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Client & Server | Required | Public Supabase anon key (safe for browser with RLS) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server only | Required | Secret Supabase service role key (never expose to client) |
+| `NEXT_PUBLIC_SITE_URL` | Client & Server | Required | Canonical base URL for redirects, OAuth, and SIWS verification |
+| `GROQ_API_KEY` | Server only | Required | Groq API key from [Groq Console](https://console.groq.com) |
+| `GROQ_MODEL` | Server only | Optional (default: `qwen/qwen3.8-27b`) | Primary LLM model for candidate extraction, job matching, and career chat |
+| `GROQ_FALLBACK_MODEL` | Server only | Optional (default: `openai/gpt-oss-20b`) | Fallback LLM model if primary encounters 429 rate limit or 503 overload |
+| `GROQ_AGENT_MODEL` | Server only | Optional | Dedicated model for chat/agent tool-calling path (falls back to `GROQ_MODEL`) |
+| `GROQ_MAX_TOKENS` | Server only | Optional (default: `2500`) | Maximum completion tokens per response |
+| `NEXT_PUBLIC_SUI_NETWORK` | Client & Server | Optional (default: `mainnet`) | Target Sui network (`mainnet`, `testnet`, `devnet`, `localnet`) |
+| `CRON_SECRET` | Server only | Dev: Optional / Prod: Required | Shared secret for authenticating `POST /api/jobs/sync` |
+| `SUPABASE_TEST_URL` | Test only | Optional | Dedicated test DB URL for `npm run test:integration:live` |
+| `SUPABASE_TEST_ANON_KEY` | Test only | Optional | Dedicated test DB anon key |
+| `SUPABASE_TEST_SERVICE_ROLE_KEY` | Test only | Optional | Dedicated test DB service role key |
+| `MEMWAL_ACCOUNT_ID` | Server only | Required for MemWal | 0x-prefixed 64 hex character MemWal agent account ID |
+| `MEMWAL_DELEGATE_PRIVATE_KEY` | Server only | Required for MemWal | Delegate private key used to sign MemWal operations |
+| `MEMWAL_SERVER_URL` | Server only | Optional (default: `https://relayer.memory.walrus.xyz`) | MemWal relayer endpoint |
+| `NEXT_PUBLIC_WALRUS_NETWORK` | Client & Server | Optional (default: `mainnet`) | Target Walrus network (`mainnet` or `testnet`) |
+| `NEXT_PUBLIC_WALRUS_AGGREGATOR_URL` | Client & Server | Optional | Read endpoint for verifying published blobs (default public aggregator) |
+| `WALRUS_PUBLISHER_URL` | Server only | Optional | Write endpoint for optional public career passport publishing |
 
 ### 3. Setup Database & Storage
 
