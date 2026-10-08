@@ -3,6 +3,10 @@
 import React from "react";
 import Link from "next/link";
 import MarketingNavbar from "./MarketingNavbar";
+import {
+  DemoLoginButton,
+  isDemoAccountConfigured,
+} from "@/features/auth/components/DemoLoginButton";
 
 interface MarketingHeroProps {
   isAuthenticated?: boolean;
@@ -48,15 +52,28 @@ export default function MarketingHero({
             </button>
           </Link>
 
-          <Link href="/jobs" className="w-full sm:w-auto">
-            <button
-              type="button"
-              className="w-full sm:w-auto inline-flex items-center justify-center px-8 sm:px-10 py-3.5 sm:py-4 rounded-full border border-carbon bg-paper-white text-carbon hover:bg-soft-mist text-xs sm:text-sm font-extrabold tracking-wider uppercase transition-colors cursor-pointer"
-            >
-              EXPLORE JOBS
-            </button>
-          </Link>
+          <DemoLoginButton
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 sm:px-10 py-3.5 sm:py-4 rounded-full border border-carbon bg-carbon text-paper-white hover:bg-carbon/90 disabled:opacity-60 text-xs sm:text-sm font-extrabold tracking-wider uppercase transition-colors cursor-pointer"
+            label="TRY THE LIVE DEMO"
+            fallback={
+              <Link href="/jobs" className="w-full sm:w-auto">
+                <button
+                  type="button"
+                  className="w-full sm:w-auto inline-flex items-center justify-center px-8 sm:px-10 py-3.5 sm:py-4 rounded-full border border-carbon bg-paper-white text-carbon hover:bg-soft-mist text-xs sm:text-sm font-extrabold tracking-wider uppercase transition-colors cursor-pointer"
+                >
+                  EXPLORE JOBS
+                </button>
+              </Link>
+            }
+          />
         </div>
+
+        {isDemoAccountConfigured && (
+          <p className="pt-3 text-[11px] sm:text-xs text-carbon/60 text-center max-w-md mx-auto">
+            The demo signs you in as a shared sample account with a pre-filled
+            resume and memories.
+          </p>
+        )}
 
         {/* Official Powered by Groq Badge */}
         <div className="pt-6 sm:pt-8 flex items-center justify-center">

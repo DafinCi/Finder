@@ -164,16 +164,21 @@ export default function OmniPromptInput({
     !isSubmitting;
 
   const safeActiveIndex =
-    paletteCommands.length > 0 ? activeCommandIndex % paletteCommands.length : 0;
+    paletteCommands.length > 0
+      ? activeCommandIndex % paletteCommands.length
+      : 0;
 
   // Command mode signals: the message starts with a slash, so the input must look
   // different from normal prose and say whether the slash is a real command.
   const trimmedPrompt = prompt.trimStart();
-  const isCommandMode = trimmedPrompt.startsWith("/") && trimmedPrompt.length > 1;
+  const isCommandMode =
+    trimmedPrompt.startsWith("/") && trimmedPrompt.length > 1;
   const commandToken = isCommandMode
     ? trimmedPrompt.slice(1).split(/\s+/)[0].toLowerCase()
     : "";
-  const knownCommand = isCommandMode ? findChatCommand(commandToken) : undefined;
+  const knownCommand = isCommandMode
+    ? findChatCommand(commandToken)
+    : undefined;
 
   const applyCommand = (command: ChatCommandDefinition) => {
     setPrompt(`/${command.name} `);
@@ -192,7 +197,8 @@ export default function OmniPromptInput({
       if (e.key === "ArrowUp") {
         e.preventDefault();
         setActiveCommandIndex(
-          (index) => (index - 1 + paletteCommands.length) % paletteCommands.length,
+          (index) =>
+            (index - 1 + paletteCommands.length) % paletteCommands.length,
         );
         return;
       }
@@ -233,7 +239,7 @@ export default function OmniPromptInput({
       <form
         onSubmit={handleSubmit}
         aria-label="Message and CV upload"
-        className={`relative rounded-full border bg-card/95 shadow-md backdrop-blur-md p-1.5 sm:p-2 transition-all ${
+        className={`relative rounded-sm border bg-card/95 shadow-md backdrop-blur-md p-1.5 sm:p-2 transition-all ${
           isDragging
             ? "border-primary ring-2 ring-primary/20 bg-primary/5"
             : "border-border/80"
@@ -241,7 +247,7 @@ export default function OmniPromptInput({
       >
         {/* Drag Overlay Hint */}
         {isDragging && (
-          <div className="absolute inset-0 rounded-full bg-card/95 flex items-center justify-center gap-2 z-10 text-primary font-medium text-sm animate-in fade-in">
+          <div className="absolute inset-0 rounded-sm bg-card/95 flex items-center justify-center gap-2 z-10 text-primary font-medium text-sm animate-in fade-in">
             <UploadCloud className="w-5 h-5 animate-bounce" />
             <span>Drop your CV (PDF) here</span>
           </div>
@@ -249,7 +255,7 @@ export default function OmniPromptInput({
 
         {/* Attached File Preview Badge */}
         {attachedFile && (
-          <div className="flex items-center gap-2 mb-2 p-1 px-2.5 rounded-full bg-secondary/80 border border-border/80 w-fit text-xs text-foreground animate-in fade-in">
+          <div className="flex items-center gap-2 mb-2 p-1 px-2.5 rounded-sm bg-secondary/80 border border-border/80 w-fit text-xs text-foreground animate-in fade-in">
             <FileText className="w-3.5 h-3.5 text-primary shrink-0" />
             <span className="font-medium truncate max-w-xs">
               {attachedFile.name}
@@ -261,7 +267,7 @@ export default function OmniPromptInput({
               type="button"
               onClick={handleRemoveFile}
               aria-label="Remove attached CV"
-              className="p-1 hover:bg-destructive/10 rounded-full text-muted-foreground hover:text-destructive cursor-pointer transition-colors"
+              className="p-1 hover:bg-destructive/10 rounded-sm text-muted-foreground hover:text-destructive cursor-pointer transition-colors"
             >
               <X className="w-3 h-3" />
             </button>
@@ -313,7 +319,9 @@ export default function OmniPromptInput({
           >
             <span
               className={`font-mono font-semibold ${
-                knownCommand ? "text-primary" : "text-amber-600 dark:text-amber-400"
+                knownCommand
+                  ? "text-primary"
+                  : "text-amber-600 dark:text-amber-400"
               }`}
             >
               /{commandToken}
@@ -342,7 +350,7 @@ export default function OmniPromptInput({
             disabled={isLoading || isSubmitting}
             aria-label="Attach CV (PDF up to 5MB)"
             title="Attach CV (PDF)"
-            className="w-10 h-10 sm:w-11 sm:h-11 min-w-[40px] min-h-[40px] sm:min-w-[44px] sm:min-h-[44px] shrink-0 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors cursor-pointer disabled:opacity-50"
+            className="w-10 h-10 sm:w-11 sm:h-11 min-w-[40px] min-h-[40px] sm:min-w-[44px] sm:min-h-[44px] shrink-0 flex items-center justify-center rounded-sm text-muted-foreground hover:text-foreground hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors cursor-pointer disabled:opacity-50"
           >
             <Paperclip className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
           </button>
@@ -400,7 +408,7 @@ export default function OmniPromptInput({
             disabled={!canSubmit}
             aria-label="Send message"
             title="Send message"
-            className={`w-10 h-10 sm:w-11 sm:h-11 min-w-[40px] min-h-[40px] sm:min-w-[44px] sm:min-h-[44px] shrink-0 rounded-full transition-all duration-150 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+            className={`w-10 h-10 sm:w-11 sm:h-11 min-w-[40px] min-h-[40px] sm:min-w-[44px] sm:min-h-[44px] shrink-0 rounded-sm transition-all duration-150 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
               canSubmit
                 ? "bg-primary text-primary-foreground hover:opacity-95 shadow-2xs cursor-pointer active:scale-95"
                 : "bg-secondary text-muted-foreground cursor-not-allowed opacity-40"
