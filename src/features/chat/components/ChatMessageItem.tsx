@@ -16,6 +16,7 @@ import CandidateSummaryCard from "@/features/ai-analysis/components/CandidateSum
 import JobMatchCarousel from "@/features/ai-analysis/components/JobMatchCarousel";
 import ChatMarkdown from "./ChatMarkdown";
 import ActionProposalCard from "./ActionProposalCard";
+import ChatCommandCard from "./ChatCommandCard";
 import MemoryRecallChip from "./MemoryRecallChip";
 
 interface ChatMessageItemProps {
@@ -222,6 +223,11 @@ export default function ChatMessageItem({
             proposal={message.metadata.action_proposal}
             messageId={message.id}
           />
+        )}
+
+        {/* Slash command result: /remember, /help */}
+        {message.metadata?.chat_command && (
+          <ChatCommandCard command={message.metadata.chat_command} />
         )}
 
         {/* Memory recall trace: shows which memories shaped this answer */}

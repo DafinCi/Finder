@@ -3,6 +3,7 @@ import {
   ChatMessage,
   SendMessagePayload,
   ActionProposalData,
+  ChatCommandResult,
   MemoryRecallMetadata,
 } from "@/types/chat";
 
@@ -29,6 +30,7 @@ export interface SendMessageCallbacks {
   onToken?: (token: string) => void;
   onToolEvent?: (event: ToolStreamingEvent) => void;
   onActionProposal?: (proposal: ActionProposalData) => void;
+  onChatCommand?: (command: ChatCommandResult) => void;
   onMemoryUpdated?: (status?: string) => void;
   onMemoryRecall?: (recall: MemoryRecallMetadata) => void;
 }
@@ -150,6 +152,8 @@ export const chatService = {
       typeof callbacks === "object" ? callbacks?.onToolEvent : undefined;
     const cbOnActionProposal =
       typeof callbacks === "object" ? callbacks?.onActionProposal : undefined;
+    const cbOnChatCommand =
+      typeof callbacks === "object" ? callbacks?.onChatCommand : undefined;
     const cbOnMemoryUpdated =
       typeof callbacks === "object" ? callbacks?.onMemoryUpdated : undefined;
     const cbOnMemoryRecall =
@@ -198,6 +202,10 @@ export const chatService = {
 
           if (parsed.type === "action_proposal" && cbOnActionProposal) {
             cbOnActionProposal(parsed.proposal);
+          }
+
+          if (parsed.type === "chat_command" && cbOnChatCommand) {
+            cbOnChatCommand(parsed.command as ChatCommandResult);
           }
 
           if (parsed.type === "memory_updated" && cbOnMemoryUpdated) {

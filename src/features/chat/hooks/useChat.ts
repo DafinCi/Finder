@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { ChatSession, ChatMessage } from "@/types/chat";
 import { useAgent } from "@/contexts/AgentContext";
 import { chatService } from "../services/chat.service";
 import { useResumeProcessingStatus } from "@/features/ai-analysis/hooks/useResumeProcessingStatus";
+import { memoryFeedQueryKey } from "@/features/memory/hooks/useMemoryFeed";
 
 export interface ResumeReviewState {
   resumeId: string;
@@ -19,6 +21,7 @@ export interface ResumeReviewState {
 }
 
 export function useChat(sessionId?: string) {
+  const queryClient = useQueryClient();
   const { isAmnesiaMode } = useAgent();
   const [session, setSession] = useState<ChatSession | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -102,6 +105,14 @@ export function useChat(sessionId?: string) {
       const data = await chatService.getSessionDetail(sessionId);
       setSession(data.session);
       setMessages(data.messages);
+      // A session is created before the assistant replies, so an empty transcript
+      // is expected briefly. Tell the user instead of showing a blank page.
+      if (data.messages.length === 0) {
+        toast.info("Preparing this conversation", {
+          description:
+            "It will appear in your sidebar once the assistant replies.",
+        });
+      }
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -333,6 +344,22 @@ export function useChat(sessionId?: string) {
             onMemoryUpdated: () => {
               toast.success("Saved to career memory", {
                 description: "Finder recorded your career fact.",
+              });
+            },
+            onChatCommand: (command) => {
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === tempAssistantId
+                    ? {
+                        ...msg,
+                        metadata: { ...msg.metadata, chat_command: command },
+                      }
+                    : msg,
+                ),
+              );
+              // Keep the memory feed (and the status shown on the card) current.
+              void queryClient.invalidateQueries({
+                queryKey: memoryFeedQueryKey,
               });
             },
             onMemoryRecall: (recall) => {

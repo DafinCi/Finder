@@ -21,6 +21,11 @@ import {
   AgentToolResult,
 } from "@/features/agent/services/agent-tool-dispatcher.service";
 import { emitAiEvent, obfuscateId } from "@/lib/observability/ai-events";
+import {
+  parseChatCommand,
+  ParsedChatCommand,
+} from "@/features/chat/commands/parse-chat-command";
+import { listAvailableCommands } from "@/features/chat/commands/chat-commands";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +41,134 @@ interface MemoryRecallPayload {
     category: string | null;
     blobId: string | null;
   }>;
+}
+
+const SSE_HEADERS = {
+  "Content-Type": "text/event-stream; charset=utf-8",
+  "Cache-Control": "no-cache, no-transform",
+  Connection: "keep-alive",
+};
+
+/**
+ * Handles a known slash command without ever calling the model. The write goes
+ * through the same memory service the agent tool uses, so there is one write
+ * path for career memory.
+ */
+async function buildChatCommandResponse(params: {
+  sessionId: string;
+  userId: string;
+  userMessage: unknown;
+  parsedCommand: ParsedChatCommand;
+}): Promise<Response> {
+  const { sessionId, userId, userMessage, parsedCommand } = params;
+  const encoder = new TextEncoder();
+
+  let confirmationText = "";
+  let commandPayload: Record<string, unknown> = { name: "" };
+
+  if (parsedCommand.kind === "help") {
+    const lines = listAvailableCommands().map(
+      (command) => `${command.usage} - ${command.summary}`,
+    );
+    confirmationText = ["Available commands:", ...lines].join("\n");
+    commandPayload = { name: "help" };
+  } else if (parsedCommand.kind === "error") {
+    confirmationText = parsedCommand.message;
+    commandPayload = {
+      name: "remember",
+      error: parsedCommand.code,
+      message: parsedCommand.message,
+    };
+  } else {
+    try {
+      const memory = await careerMemoryService.rememberFact(userId, {
+        category: parsedCommand.category,
+        content: parsedCommand.content,
+        source: "explicit_user",
+        confidence: "high",
+      });
+      confirmationText = `Saved to your career memory as ${parsedCommand.category}.`;
+      commandPayload = {
+        name: "remember",
+        category: parsedCommand.category,
+        categorySource: parsedCommand.categorySource,
+        content: parsedCommand.content,
+        memoryId: memory.id,
+        walrusStatus: memory.walrusStatus,
+        supersededId: memory.supersedesId ?? null,
+      };
+    } catch (commandError) {
+      console.error("[CHAT:Command] remember_fact failed:", commandError);
+      confirmationText =
+        "I could not save that to memory just now. Please try again.";
+      commandPayload = {
+        name: "remember",
+        error: "SAVE_FAILED",
+        message: confirmationText,
+      };
+    }
+  }
+
+  const { data: assistantMsg, error: insertError } = await supabaseAdmin
+    .from("chat_messages")
+    .insert({
+      session_id: sessionId,
+      role: "assistant",
+      content: confirmationText,
+      metadata: { chat_command: commandPayload },
+    })
+    .select()
+    .single();
+
+  if (insertError) throw insertError;
+
+  await supabaseAdmin
+    .from("chat_sessions")
+    .update({ updated_at: new Date().toISOString() })
+    .eq("id", sessionId);
+
+  const stream = new ReadableStream({
+    start(controller) {
+      controller.enqueue(
+        encoder.encode(
+          `data: ${JSON.stringify({ token: confirmationText })}\n\n`,
+        ),
+      );
+      controller.enqueue(
+        encoder.encode(
+          `data: ${JSON.stringify({
+            type: "chat_command",
+            command: commandPayload,
+          })}\n\n`,
+        ),
+      );
+      // Only a successful write reports a memory update, so the shared toast
+      // fires for /remember and stays silent for /help and validation errors.
+      if (commandPayload.memoryId) {
+        controller.enqueue(
+          encoder.encode(
+            `data: ${JSON.stringify({
+              type: "memory_updated",
+              status: commandPayload.walrusStatus ?? "pending",
+            })}\n\n`,
+          ),
+        );
+      }
+      controller.enqueue(
+        encoder.encode(
+          `data: ${JSON.stringify({
+            done: true,
+            userMessage,
+            assistantMessage: assistantMsg,
+            chatCommand: commandPayload,
+          })}\n\n`,
+        ),
+      );
+      controller.close();
+    },
+  });
+
+  return new Response(stream, { headers: SSE_HEADERS });
 }
 
 function getToolStartLabel(toolName: string): string {
@@ -146,6 +279,34 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (userMsgError) throw userMsgError;
+
+    // Deterministic slash commands are handled before any agent work. A known
+    // command never reaches the model; unknown slash-prefixed text is treated as
+    // a normal message by parseChatCommand returning null.
+    const parsedCommand = parseChatCommand(cleanContent);
+    if (parsedCommand) {
+      const commandRateLimit = checkRateLimit({
+        key: `chat-command:${user.id}`,
+        limit: 30,
+        windowMs: 60 * 1000,
+      });
+
+      if (!commandRateLimit.success) {
+        return NextResponse.json(
+          {
+            error: `Too many commands. Please wait ${commandRateLimit.resetInSeconds} seconds and try again.`,
+          },
+          { status: 429 },
+        );
+      }
+
+      return buildChatCommandResponse({
+        sessionId: session_id,
+        userId: user.id,
+        userMessage: userMsg,
+        parsedCommand,
+      });
+    }
 
     // 1. Resolve candidate profile & active resume with dual-source fallback
     let candidateContext = "";

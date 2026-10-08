@@ -48,6 +48,18 @@ export interface MemoryRecallMetadata {
   memories: MemoryRecallItem[];
 }
 
+export interface ChatCommandResult {
+  name: string;
+  category?: string;
+  categorySource?: "explicit" | "inferred";
+  content?: string;
+  memoryId?: string;
+  walrusStatus?: string | null;
+  supersededId?: string | null;
+  error?: string;
+  message?: string;
+}
+
 export interface ChatMessageMetadata {
   attachment?: {
     name: string;
@@ -61,6 +73,7 @@ export interface ChatMessageMetadata {
   is_analysis_loading?: boolean;
   tool_calls?: Array<{ name: string; args: unknown; success: boolean }>;
   action_proposal?: ActionProposalData | null;
+  chat_command?: ChatCommandResult | null;
   memory_updated?: boolean;
   memory_status?: "pending" | "stored" | "failed" | null;
   memory_recall?: MemoryRecallMetadata | null;
