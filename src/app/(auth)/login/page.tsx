@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertCircle, ArrowRight } from "lucide-react";
+import { AlertCircle, ArrowRight, ArrowLeft } from "lucide-react";
 import { login } from "@/features/auth/services/auth.service";
 import Logo from "@/components/common/Logo";
 import { Button } from "@/components/ui/button";
@@ -38,11 +38,27 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-background px-4 text-foreground">
+    <main className="min-h-screen flex items-center justify-center bg-background px-4 py-12 text-foreground relative">
+      {/* Back to Home / Marketing Page */}
+      <Link
+        href="/"
+        className="absolute top-4 left-4 sm:top-6 sm:left-6 inline-flex items-center gap-2 px-3 py-1.5 rounded-sm text-xs font-medium text-muted-foreground hover:text-foreground bg-card/60 hover:bg-secondary border border-border/60 hover:border-border transition-all duration-150 group shadow-2xs"
+        aria-label="Back to home"
+      >
+        <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" />
+        <span>Back to home</span>
+      </Link>
+
       <div className="w-full max-w-md rounded-sm bg-card p-8 border border-border shadow-md space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <Logo size={40} alt="" className="mx-auto mb-1" />
+          <Link
+            href="/"
+            className="inline-block hover:opacity-85 transition-opacity"
+            title="Finder Home"
+          >
+            <Logo size={40} alt="Finder" className="mx-auto mb-1" />
+          </Link>
           <h1 className="text-2xl font-bold font-heading text-foreground tracking-tight">
             Welcome to Finder
           </h1>
