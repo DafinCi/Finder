@@ -5,9 +5,9 @@ preparing a resume. It is optional and configured per deployment.
 
 ## Configuration
 
-| Variable | Scope | Purpose |
-| --- | --- | --- |
-| `NEXT_PUBLIC_DEMO_EMAIL` | Public, inlined at build | Demo account email |
+| Variable                    | Scope                    | Purpose               |
+| --------------------------- | ------------------------ | --------------------- |
+| `NEXT_PUBLIC_DEMO_EMAIL`    | Public, inlined at build | Demo account email    |
 | `NEXT_PUBLIC_DEMO_PASSWORD` | Public, inlined at build | Demo account password |
 
 When both are set, the demo button appears in two places: the marketing hero,
@@ -54,8 +54,6 @@ npx tsx --env-file=.env.local scripts/reset-demo-account.ts --yes
 The script clears conversations, memories, saved jobs, feedback, and telemetry for
 the demo account. It keeps the account, its profile, and the uploaded resume. It
 refuses to run without `--yes`.
-
-Run it before judging.
 
 ## Known limitations
 
