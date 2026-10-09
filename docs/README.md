@@ -28,10 +28,12 @@ When documents and code disagree, the code wins. Use this order:
 | Understand domain terms | [glossary.md](glossary.md) |
 | Work on the AI agent | [ai/overview.md](ai/overview.md) |
 | Give context to a coding agent | [ai/agent-context.md](ai/agent-context.md) |
+| Use or extend chat commands | [ai/commands.md](ai/commands.md) |
 | Call or change an API route | [api/overview.md](api/overview.md) |
 | Understand Walrus and MemWal | [integrations/walrus-memwal.md](integrations/walrus-memwal.md) |
 | Set up the project | [development/setup.md](development/setup.md) |
 | Know what to check when changing code | [development/change-map.md](development/change-map.md) |
+| Configure the demo account | [development/demo-account.md](development/demo-account.md) |
 
 ## Documentation rules
 

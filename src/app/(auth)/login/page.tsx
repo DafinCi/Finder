@@ -8,6 +8,7 @@ import { login } from "@/features/auth/services/auth.service";
 import Logo from "@/components/common/Logo";
 import { Button } from "@/components/ui/button";
 import { SuiSignInButton } from "@/features/sui/components/SuiSignInButton";
+import { DemoLoginButton } from "@/features/auth/components/DemoLoginButton";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -153,6 +154,17 @@ export default function LoginPage() {
 
         {/* Sui Wallet SIWS Login */}
         <SuiSignInButton mode="signin" />
+
+        <div className="pt-2 space-y-2">
+          <DemoLoginButton
+            className="w-full inline-flex items-center justify-center gap-2 min-h-[44px] h-11 rounded-sm border border-border bg-secondary/40 text-foreground hover:bg-secondary/70 disabled:opacity-60 text-xs font-semibold transition-colors cursor-pointer"
+            label="Try the live demo"
+          />
+          <p className="text-[11px] text-muted-foreground text-center leading-relaxed">
+            Signs you in as a shared sample account with a pre-filled resume and
+            memories.
+          </p>
+        </div>
 
         {/* Footer Navigation */}
         <p className="text-center text-xs text-muted-foreground font-sans pt-2 border-t border-border/60">
